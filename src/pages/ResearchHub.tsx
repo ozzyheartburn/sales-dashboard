@@ -73,17 +73,30 @@ export function ResearchHub() {
   const activeAccounts = 12;
   const researchToOpp = 66;
 
-  // Modal submit handler (API call to be added)
+  // Modal submit handler (calls n8n webhook)
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
-    // TODO: Replace with n8n webhook call
-    setTimeout(() => {
+    try {
+      const res = await fetch(
+        "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            account_name: accountName,
+            website_url: website,
+          }),
+        }
+      );
+      // Optionally check response status
+    } catch (err) {
+      // Optionally handle error (show toast, etc)
+    } finally {
       setIsSubmitting(false);
       setShowModal(false);
       setAccountName("");
       setWebsite("");
-      // Optionally show a toast/notification
-    }, 1200);
+    }
   };
 
   return (
