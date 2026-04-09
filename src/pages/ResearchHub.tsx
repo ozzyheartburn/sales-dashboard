@@ -546,17 +546,17 @@ const accounts = [
               </span>
             </div>
           </motion.div>
-        ))}
-      </div>
+        {
+          name: "Bestseller",
+          country: "🇩🇰 Denmark",
+          priority: "P2",
+          score: 68,
+          growth: "+12%",
+          status: "Researching",
+        },
+      ];
 
-      {/* Modal for new research */}
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
+      export function ResearchHub() {
             height: "100vh",
             background: "rgba(24,20,36,0.18)",
             zIndex: 1000,
