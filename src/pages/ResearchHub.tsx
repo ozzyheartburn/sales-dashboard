@@ -283,7 +283,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Agent Orchestration & Customization
+              Orchestration & Customization
             </div>
             <div
               style={{
@@ -292,11 +292,27 @@ export function ResearchHub() {
                 marginTop: 2,
               }}
             >
-              Customize your agentic research by providing prompts, additional
-              signals, and configuration options. Tailor the AI agents to focus
-              on the signals and pain points most relevant to your sales process
-              and ICP.
+              Fine-tune your Deep Research Agents by providing custom signals,
+              ICP information and competitive intelligence data
             </div>
+            <button
+              style={{
+                marginTop: 14,
+                background:
+                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                color: "#fff",
+                fontWeight: 700,
+                fontFamily: "var(--font-label)",
+                border: "none",
+                borderRadius: 10,
+                fontSize: "1rem",
+                padding: "0.7rem 1.2rem",
+                cursor: "pointer",
+                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
+              }}
+            >
+              Review & Update Agent Configuration
+            </button>
           </div>
         </motion.div>
         <motion.div
@@ -338,26 +354,36 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Deep Insights Generated
-            </div>
-            <div
-              style={{
-                fontSize: "2.1rem",
-                fontWeight: 800,
-                color: "var(--primary)",
-                marginTop: 2,
-              }}
-            >
-              {deepInsights}
+              Deep Learning & Agentic Insights
             </div>
             <div
               style={{
                 fontSize: "0.93rem",
                 color: "var(--on-surface-variant)",
+                marginTop: 2,
               }}
             >
-              in the last 30 days
+              PG Machine has identified 19 high value targets based on their
+              urgency & investment signals, pain hypothesis and Proof Points.
             </div>
+            <button
+              style={{
+                marginTop: 14,
+                background:
+                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                color: "#fff",
+                fontWeight: 700,
+                fontFamily: "var(--font-label)",
+                border: "none",
+                borderRadius: 10,
+                fontSize: "1rem",
+                padding: "0.7rem 1.2rem",
+                cursor: "pointer",
+                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
+              }}
+            >
+              Review Action Items
+            </button>
           </div>
         </motion.div>
         <motion.div
@@ -399,26 +425,37 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Research → Opportunity Rate
-            </div>
-            <div
-              style={{
-                fontSize: "2.1rem",
-                fontWeight: 800,
-                color: "var(--primary)",
-                marginTop: 2,
-              }}
-            >
-              {researchToOpp}%
+              Research Analytics & Progression
             </div>
             <div
               style={{
                 fontSize: "0.93rem",
                 color: "var(--on-surface-variant)",
+                marginTop: 2,
               }}
             >
-              conversion from research to opp
+              5 active deep researches including value pyramid & org chart in PG
+              Machine. 11 champion candidates identified. 67.28% research to
+              opportunity conversion.
             </div>
+            <button
+              style={{
+                marginTop: 14,
+                background:
+                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                color: "#fff",
+                fontWeight: 700,
+                fontFamily: "var(--font-label)",
+                border: "none",
+                borderRadius: 10,
+                fontSize: "1rem",
+                padding: "0.7rem 1.2rem",
+                cursor: "pointer",
+                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
+              }}
+            >
+              View Analytics & Suggestions
+            </button>
           </div>
         </motion.div>
       </div>
