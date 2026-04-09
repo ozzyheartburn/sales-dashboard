@@ -56,15 +56,11 @@ const accounts = [
     name: "Bestseller",
     country: "🇩🇰 Denmark",
     priority: "P2",
-      {/* Top widgets */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "1.25rem",
-          marginBottom: "2.5rem",
-        }}
-      >
+    score: 68,
+    growth: "+12%",
+    status: "Researching",
+  },
+];
         {/* Widget 1: Agent Orchestration & Customization */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
