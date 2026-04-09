@@ -431,20 +431,6 @@ const accounts = [
               </span>
             </div>
           </motion.div>
-            >
-              ×
-            </button>
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.15rem",
-                color: "var(--on-background)",
-                marginBottom: 2,
-              }}
-            >
-              Initiate Deep Research
-            </div>
             <label
               style={{
                 fontSize: "0.92rem",
