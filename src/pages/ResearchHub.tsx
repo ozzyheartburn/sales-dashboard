@@ -56,117 +56,6 @@ const accounts = [
     name: "Bestseller",
     country: "🇩🇰 Denmark",
     priority: "P2",
-    score: 68,
-    growth: "+12%",
-    status: "Researching",
-  },
-];
-
-export function ResearchHub() {
-  const [showModal, setShowModal] = useState(false);
-  const [accountName, setAccountName] = useState("");
-  const [website, setWebsite] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Placeholder for research stats
-  const deepInsights = 7;
-  const activeAccounts = 12;
-  const researchToOpp = 66;
-
-  // Modal submit handler (calls n8n webhook)
-  const handleInitiateResearch = async () => {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(
-        "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            account_name: accountName,
-            website_url: website,
-          }),
-        },
-      );
-      // Optionally check response status
-    } catch (err) {
-      // Optionally handle error (show toast, etc)
-    } finally {
-      setIsSubmitting(false);
-      setShowModal(false);
-      setAccountName("");
-      setWebsite("");
-    }
-  };
-
-  return (
-    <div
-      style={{
-        padding: "1.5rem",
-        maxWidth: 1440,
-        margin: "0 auto",
-        minHeight: "100vh",
-        backgroundColor: "var(--background)",
-        fontFamily: "var(--font-body)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginBottom: "2.5rem",
-          gap: "1.5rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1
-            style={{
-              fontFamily: "var(--font-headline)",
-              fontWeight: 800,
-              fontSize: "1.5rem",
-              color: "var(--on-background)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Research Hub
-          </h1>
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--on-surface-variant)",
-              marginTop: "0.25rem",
-            }}
-          >
-            Account intelligence & org charts for your target accounts.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            background:
-              "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-            color: "#fff",
-            fontWeight: 700,
-            fontFamily: "var(--font-label)",
-            border: "none",
-            borderRadius: 12,
-            fontSize: "0.95rem",
-            padding: "0.7rem 1.4rem",
-            boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
-            cursor: "pointer",
-            marginLeft: "auto",
-            minWidth: 0,
-          }}
-        >
-          <Plus size={17} /> Start New Research
-        </button>
-      </div>
-
       {/* Top widgets */}
       <div
         style={{
@@ -176,7 +65,7 @@ export function ResearchHub() {
           marginBottom: "2.5rem",
         }}
       >
-        {/* Widget 1: Train AI */}
+        {/* Widget 1: Agent Orchestration & Customization */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -214,7 +103,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Train the AI
+              Agent Orchestration & Customization
             </div>
             <div
               style={{
@@ -223,13 +112,11 @@ export function ResearchHub() {
                 marginTop: 2,
               }}
             >
-              Upload custom prompts, sales/marketing materials, proof points,
-              competitive intelligence, ICP & champion info to supercharge
-              research.
+              Customize your agentic research by providing prompts, additional signals, and configuration options. Tailor the AI agents to focus on the signals and pain points most relevant to your sales process and ICP.
             </div>
           </div>
         </motion.div>
-        {/* Widget 2: Deep Insights */}
+        {/* Widget 2: Deep Account Insights */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -250,6 +137,102 @@ export function ResearchHub() {
               height: 44,
               borderRadius: 12,
               background:
+                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Lightbulb size={22} color="#fff" />
+          </div>
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.08rem",
+                color: "var(--on-background)",
+              }}
+            >
+              Deep Account Insights
+            </div>
+            <div
+              style={{
+                fontSize: "0.93rem",
+                color: "var(--on-surface-variant)",
+                marginTop: 2,
+              }}
+            >
+              AI has identified <span style={{ fontWeight: 700, color: "var(--primary)" }}>6 accounts</span> with high urgency and investment signals, strong pain hypothesis, and identified champion candidates.<br />
+              <span style={{ fontSize: "0.85em", color: "var(--on-surface-variant)" }}>
+                This analytics view highlights where AI-driven automation delivers the most value.
+              </span>
+            </div>
+            <button
+              style={{
+                marginTop: 14,
+                background: 'linear-gradient(135deg, var(--tertiary), var(--secondary-brand))',
+                color: '#fff', fontWeight: 700, fontFamily: 'var(--font-label)',
+                border: 'none', borderRadius: 10, fontSize: '1rem', padding: '0.7rem 1.2rem',
+                cursor: 'pointer', boxShadow: '0 2px 12px 0 rgba(135,32,222,0.08)'
+              }}
+            >Review Account-Based Signals</button>
+          </div>
+        </motion.div>
+        {/* Widget 3: Active Accounts in PG Machine */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.14 }}
+          className="luminous-shadow"
+          style={{
+            borderRadius: "1rem",
+            padding: "1.25rem",
+            backgroundColor: "var(--surface-container-lowest)",
+            display: "flex",
+            gap: 18,
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background:
+                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Users size={22} color="#fff" />
+          </div>
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.08rem",
+                color: "var(--on-background)",
+              }}
+            >
+              Active Accounts in PG Machine
+            </div>
+            <div
+              style={{
+                fontSize: "0.93rem",
+                color: "var(--on-surface-variant)",
+                marginTop: 2,
+              }}
+            >
+              <span style={{ fontWeight: 700, color: "var(--primary)" }}>{activeAccounts}</span> accounts are currently in the research process.<br />
+              <span style={{ fontWeight: 700, color: "var(--tertiary)" }}>4 Tier 1</span> accounts open/identified.<br />
+              <span style={{ fontWeight: 700, color: "var(--primary)" }}>7 champion</span> and <span style={{ fontWeight: 700, color: "var(--secondary-brand)" }}>2 EB</span> candidates identified.
+            </div>
+          </div>
+        </motion.div>
+      </div>
                 "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
               display: "flex",
               alignItems: "center",
