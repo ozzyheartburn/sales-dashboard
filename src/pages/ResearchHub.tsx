@@ -7,7 +7,6 @@ import {
   Star,
   Sparkles,
   Lightbulb,
-  Users,
   Plus,
 } from "lucide-react";
 
@@ -61,7 +60,190 @@ const accounts = [
     status: "Researching",
   },
 ];
-        {/* Widget 1: Agent Orchestration & Customization */}
+
+export function ResearchHub() {
+  const [showModal, setShowModal] = useState(false);
+  const [accountName, setAccountName] = useState("");
+  const [website, setWebsite] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const deepInsights = 7;
+  const activeAccounts = 12;
+  const researchToOpp = 66;
+
+  const handleInitiateResearch = async () => {
+    setIsSubmitting(true);
+    try {
+      await fetch(
+        "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            account_name: accountName,
+            website_url: website,
+          }),
+        },
+      );
+    } catch (err) {}
+    setIsSubmitting(false);
+    setShowModal(false);
+    setAccountName("");
+    setWebsite("");
+  };
+
+  return (
+    <div
+      style={{
+        padding: "1.5rem",
+        maxWidth: 1440,
+        margin: "0 auto",
+        minHeight: "100vh",
+        backgroundColor: "var(--background)",
+        fontFamily: "var(--font-body)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 32,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "var(--font-headline)",
+            fontWeight: 800,
+            fontSize: "2rem",
+            color: "var(--on-background)",
+          }}
+        >
+          Research Hub
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "0.7rem 1.5rem",
+            fontFamily: "var(--font-label)",
+            fontWeight: 700,
+            fontSize: "1rem",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(135,32,222,0.08)",
+          }}
+        >
+          <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} />{" "}
+          Initiate Deep Research
+        </button>
+      </div>
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.18)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "var(--surface-container-lowest)",
+              borderRadius: 16,
+              padding: 32,
+              minWidth: 340,
+              boxShadow: "0 4px 32px rgba(0,0,0,0.10)",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.2rem",
+                marginBottom: 18,
+              }}
+            >
+              Initiate Deep Research
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="Account Name"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.6rem",
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  marginBottom: 10,
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Website URL"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.6rem",
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                }}
+              />
+            </div>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+            >
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--on-surface-variant)",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-label)",
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInitiateResearch}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "0.6rem 1.2rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                }}
+                disabled={isSubmitting || !accountName || !website}
+              >
+                {isSubmitting ? "Submitting..." : "Initiate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div
+        style={{ display: "flex", gap: 24, marginBottom: 36, flexWrap: "wrap" }}
+      >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,6 +256,8 @@ const accounts = [
             display: "flex",
             gap: 18,
             alignItems: "flex-start",
+            minWidth: 320,
+            flex: 1,
           }}
         >
           <div
@@ -108,11 +292,13 @@ const accounts = [
                 marginTop: 2,
               }}
             >
-              Customize your agentic research by providing prompts, additional signals, and configuration options. Tailor the AI agents to focus on the signals and pain points most relevant to your sales process and ICP.
+              Customize your agentic research by providing prompts, additional
+              signals, and configuration options. Tailor the AI agents to focus
+              on the signals and pain points most relevant to your sales process
+              and ICP.
             </div>
           </div>
         </motion.div>
-        {/* Widget 2: Deep Account Insights */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -125,6 +311,8 @@ const accounts = [
             display: "flex",
             gap: 18,
             alignItems: "flex-start",
+            minWidth: 220,
+            flex: 1,
           }}
         >
           <div
@@ -150,32 +338,28 @@ const accounts = [
                 color: "var(--on-background)",
               }}
             >
-              Deep Account Insights
+              Deep Insights Generated
+            </div>
+            <div
+              style={{
+                fontSize: "2.1rem",
+                fontWeight: 800,
+                color: "var(--primary)",
+                marginTop: 2,
+              }}
+            >
+              {deepInsights}
             </div>
             <div
               style={{
                 fontSize: "0.93rem",
                 color: "var(--on-surface-variant)",
-                marginTop: 2,
               }}
             >
-              AI has identified <span style={{ fontWeight: 700, color: "var(--primary)" }}>6 accounts</span> with high urgency and investment signals, strong pain hypothesis, and identified champion candidates.<br />
-              <span style={{ fontSize: "0.85em", color: "var(--on-surface-variant)" }}>
-                This analytics view highlights where AI-driven automation delivers the most value.
-              </span>
+              in the last 30 days
             </div>
-            <button
-              style={{
-                marginTop: 14,
-                background: 'linear-gradient(135deg, var(--tertiary), var(--secondary-brand))',
-                color: '#fff', fontWeight: 700, fontFamily: 'var(--font-label)',
-                border: 'none', borderRadius: 10, fontSize: '1rem', padding: '0.7rem 1.2rem',
-                cursor: 'pointer', boxShadow: '0 2px 12px 0 rgba(135,32,222,0.08)'
-              }}
-            >Review Account-Based Signals</button>
           </div>
         </motion.div>
-        {/* Widget 3: Active Accounts in PG Machine */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -188,6 +372,8 @@ const accounts = [
             display: "flex",
             gap: 18,
             alignItems: "flex-start",
+            minWidth: 220,
+            flex: 1,
           }}
         >
           <div
@@ -202,7 +388,7 @@ const accounts = [
               justifyContent: "center",
             }}
           >
-            <Users size={22} color="#fff" />
+            <TrendingUp size={22} color="#fff" />
           </div>
           <div>
             <div
@@ -213,302 +399,178 @@ const accounts = [
                 color: "var(--on-background)",
               }}
             >
-              Active Accounts in PG Machine
+              Research → Opportunity Rate
+            </div>
+            <div
+              style={{
+                fontSize: "2.1rem",
+                fontWeight: 800,
+                color: "var(--primary)",
+                marginTop: 2,
+              }}
+            >
+              {researchToOpp}%
             </div>
             <div
               style={{
                 fontSize: "0.93rem",
                 color: "var(--on-surface-variant)",
-                marginTop: 2,
               }}
             >
-              <span style={{ fontWeight: 700, color: "var(--primary)" }}>{activeAccounts}</span> accounts are currently in the research process.<br />
-              <span style={{ fontWeight: 700, color: "var(--tertiary)" }}>4 Tier 1</span> accounts open/identified.<br />
-              <span style={{ fontWeight: 700, color: "var(--primary)" }}>7 champion</span> and <span style={{ fontWeight: 700, color: "var(--secondary-brand)" }}>2 EB</span> candidates identified.
+              conversion from research to opp
             </div>
           </div>
         </motion.div>
       </div>
-
-      {/* Search */}
       <div
-        style={{ position: "relative", marginBottom: "1.5rem", maxWidth: 400 }}
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
       >
-        <Search
-          size={14}
-          color="var(--on-surface-variant)"
+        <div style={{ position: "relative", flex: 1 }}>
+          <Search
+            size={18}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: 13,
+              color: "var(--on-surface-variant)",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Search accounts..."
+            style={{
+              width: "100%",
+              padding: "0.7rem 0.7rem 0.7rem 2.2rem",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              fontSize: "1rem",
+              background: "var(--surface-container-low)",
+              color: "var(--on-surface)",
+              fontFamily: "var(--font-body)",
+            }}
+          />
+        </div>
+        <div
           style={{
-            position: "absolute",
-            left: 14,
-            top: "50%",
-            transform: "translateY(-50%)",
+            fontSize: "0.95rem",
+            color: "var(--on-surface-variant)",
+            fontFamily: "var(--font-label)",
+            fontWeight: 600,
           }}
-        />
-        <input
-          placeholder="Search accounts..."
-          style={{
-            width: "100%",
-            padding: "0.625rem 0.875rem 0.625rem 2.5rem",
-            borderRadius: "0.75rem",
-            border: "1px solid rgba(167,176,222,0.15)",
-            backgroundColor: "var(--surface-container-lowest)",
-            color: "var(--on-surface)",
-            fontFamily: "var(--font-body)",
-            fontSize: "0.875rem",
-            outline: "none",
-          }}
-        />
+        >
+          {activeAccounts} Active Accounts
+        </div>
       </div>
-
-      {/* Account Cards */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-          gap: "1rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: 24,
+          marginTop: 8,
         }}
       >
-        {accounts.map((acc, i) => (
+        {accounts.map((acc, idx) => (
           <motion.div
             key={acc.name}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.06 }}
+            transition={{ duration: 0.35, delay: idx * 0.07 }}
             className="luminous-shadow"
             style={{
               borderRadius: "1rem",
               padding: "1.25rem",
               backgroundColor: "var(--surface-container-lowest)",
-              cursor: "pointer",
-              border: "1px solid rgba(167,176,222,0.05)",
-              transition: "border-color 140ms",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "rgba(18,74,241,0.2)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "rgba(167,176,222,0.05)";
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              position: "relative",
+              minHeight: 120,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                marginBottom: "1rem",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background:
-                      "linear-gradient(135deg, var(--primary), var(--secondary-brand))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Building2 size={18} color="#fff" />
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontFamily: "var(--font-headline)",
-                      fontWeight: 700,
-                      fontSize: "0.9rem",
-                      color: "var(--on-background)",
-                    }}
-                  >
-                    {acc.name}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.72rem",
-                      color: "var(--on-surface-variant)",
-                    }}
-                  >
-                    {acc.country}
-                  </p>
-                </div>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Building2 size={20} color="var(--primary)" />
               <span
                 style={{
-                  fontSize: "0.65rem",
+                  fontFamily: "var(--font-headline)",
                   fontWeight: 700,
-                  fontFamily: "var(--font-label)",
-                  borderRadius: 4,
-                  padding: "0.15rem 0.5rem",
-                  backgroundColor:
-                    acc.priority === "P1" ? "var(--error)" : "#f59e0b",
-                  color: "#fff",
+                  fontSize: "1.08rem",
+                  color: "var(--on-background)",
                 }}
               >
-                {acc.priority}
+                {acc.name}
+              </span>
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  color: "var(--on-surface-variant)",
+                  marginLeft: 6,
+                }}
+              >
+                {acc.country}
               </span>
             </div>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                gap: 12,
+                marginTop: 2,
               }}
             >
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    marginBottom: 4,
-                  }}
-                >
-                  <Star size={11} color="#f59e0b" fill="#f59e0b" />
-                  <span
-                    style={{
-                      fontFamily: "var(--font-headline)",
-                      fontWeight: 700,
-                      fontSize: "0.9rem",
-                      color: "var(--on-background)",
-                    }}
-                  >
-                    {acc.score}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "0.68rem",
-                      color: "var(--on-surface-variant)",
-                    }}
-                  >
-                    priority score
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <TrendingUp size={11} color="#22c55e" />
-                  <span
-                    style={{
-                      fontSize: "0.72rem",
-                      color: "#22c55e",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {acc.growth} YoY
-                  </span>
-                </div>
-              </div>
               <span
                 style={{
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem",
+                  borderRadius: 4,
+                  background:
+                    acc.priority === "P1"
+                      ? "var(--primary)"
+                      : "var(--secondary-brand)",
+                  color: "#fff",
+                  padding: "0.15rem 0.6rem",
                   fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                  borderRadius: "9999px",
-                  padding: "0.2rem 0.75rem",
-                  backgroundColor:
+                  fontWeight: 700,
+                }}
+              >
+                {acc.priority}
+              </span>
+              <span style={{ fontSize: "0.93rem", color: "var(--on-surface)" }}>
+                Score: <b>{acc.score}</b>
+              </span>
+              <span
+                style={{
+                  fontSize: "0.93rem",
+                  color: "var(--on-surface-variant)",
+                }}
+              >
+                Growth: {acc.growth}
+              </span>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  borderRadius: 9999,
+                  background:
                     acc.status === "Active"
-                      ? "rgba(34,197,94,0.1)"
-                      : acc.status === "At Risk"
-                        ? "rgba(172,49,73,0.1)"
-                        : "rgba(18,74,241,0.1)",
-                  color:
-                    acc.status === "Active"
-                      ? "#22c55e"
+                      ? "var(--primary)"
                       : acc.status === "At Risk"
                         ? "var(--error)"
-                        : "var(--primary)",
+                        : "var(--secondary-brand)",
+                  color: "#fff",
+                  padding: "0.15rem 0.6rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
                 }}
               >
                 {acc.status}
               </span>
             </div>
           </motion.div>
-            <label
-              style={{
-                fontSize: "0.92rem",
-                color: "var(--on-surface-variant)",
-                marginBottom: 2,
-              }}
-            >
-              Account Name
-            </label>
-            <input
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              style={{
-                padding: "0.7rem 1rem",
-                borderRadius: 10,
-                border: "1px solid rgba(167,176,222,0.18)",
-                background: "var(--surface-container-low)",
-                color: "var(--on-surface)",
-                fontFamily: "var(--font-body)",
-                fontSize: "1rem",
-                marginBottom: 8,
-                outline: "none",
-              }}
-              placeholder="e.g. Nemlig"
-              autoFocus
-            />
-            <label
-              style={{
-                fontSize: "0.92rem",
-                color: "var(--on-surface-variant)",
-                marginBottom: 2,
-              }}
-            >
-              Website Address
-            </label>
-            <input
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              style={{
-                padding: "0.7rem 1rem",
-                borderRadius: 10,
-                border: "1px solid rgba(167,176,222,0.18)",
-                background: "var(--surface-container-low)",
-                color: "var(--on-surface)",
-                fontFamily: "var(--font-body)",
-                fontSize: "1rem",
-                marginBottom: 8,
-                outline: "none",
-              }}
-              placeholder="e.g. nemlig.com"
-            />
-            <button
-              onClick={handleInitiateResearch}
-              disabled={!accountName || !website || isSubmitting}
-              style={{
-                marginTop: 10,
-                background:
-                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                color: "#fff",
-                fontWeight: 700,
-                fontFamily: "var(--font-label)",
-                border: "none",
-                borderRadius: 10,
-                fontSize: "1rem",
-                padding: "0.8rem 1.2rem",
-                cursor:
-                  !accountName || !website || isSubmitting
-                    ? "not-allowed"
-                    : "pointer",
-                opacity: !accountName || !website || isSubmitting ? 0.7 : 1,
-                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
-              }}
-            >
-              {isSubmitting ? "Initiating..." : "Initiate Deep Research"}
-            </button>
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
