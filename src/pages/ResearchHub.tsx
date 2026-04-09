@@ -428,7 +428,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Research Analytics & Progression
+              Active Researches
             </div>
             <div
               style={{
