@@ -431,53 +431,6 @@ const accounts = [
               </span>
             </div>
           </motion.div>
-        {
-          name: "Bestseller",
-          country: "🇩🇰 Denmark",
-          priority: "P2",
-          score: 68,
-          growth: "+12%",
-          status: "Researching",
-        },
-      ];
-
-      export function ResearchHub() {
-            height: "100vh",
-            background: "rgba(24,20,36,0.18)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "var(--surface-container-lowest)",
-              borderRadius: 18,
-              padding: "2.2rem 2.5rem",
-              minWidth: 340,
-              boxShadow: "0 6px 32px 0 rgba(18,74,241,0.10)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 18,
-              alignItems: "stretch",
-              position: "relative",
-            }}
-          >
-            <button
-              onClick={() => setShowModal(false)}
-              style={{
-                position: "absolute",
-                top: 18,
-                right: 18,
-                background: "none",
-                border: "none",
-                color: "var(--on-surface-variant)",
-                fontSize: 22,
-                cursor: "pointer",
-                padding: 0,
-              }}
-              aria-label="Close"
             >
               ×
             </button>
