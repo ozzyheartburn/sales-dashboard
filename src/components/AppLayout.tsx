@@ -5,13 +5,12 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: LayoutDashboard, label: 'Territory Overview', path: '/dashboard' },
   { icon: Search, label: 'Research Hub', path: '/dashboard/research-hub' },
-  { icon: Target, label: 'Deal Tracker', path: '/dashboard/deals' },
-  { icon: Users, label: 'Stakeholders', path: '/dashboard/stakeholders' },
-  { icon: BarChart3, label: 'Pipeline', path: '/dashboard/pipeline' },
-  { icon: Briefcase, label: 'Accounts', path: '/dashboard/accounts' },
-]
+  { icon: Target, label: 'War Room', path: '/dashboard/war-room' },
+  { icon: BarChart3, label: 'Analytics & Automation', path: '/dashboard/analytics' },
+  { icon: Briefcase, label: 'Integrations', path: '/dashboard/integrations' },
+];
 
 export function AppLayout() {
   const navigate = useNavigate()
@@ -34,7 +33,7 @@ export function AppLayout() {
             <span style={{
               fontFamily: 'var(--font-headline)', fontWeight: 800,
               fontSize: '0.9rem', color: 'var(--on-background)', letterSpacing: '-0.02em'
-            }}>SalesAI</span>
+            }}>PG Machine</span>
           </div>
           <p style={{ fontSize: '0.65rem', color: 'var(--on-surface-variant)', paddingLeft: 2 }}>
             Nordic Enterprise Sales

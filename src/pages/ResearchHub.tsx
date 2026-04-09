@@ -86,7 +86,7 @@ export function ResearchHub() {
             account_name: accountName,
             website_url: website,
           }),
-        }
+        },
       );
       // Optionally check response status
     } catch (err) {
