@@ -255,7 +255,7 @@ export function ResearchHub() {
             backgroundColor: "var(--surface-container-lowest)",
             display: "flex",
             gap: 18,
-            alignItems: "flex-start",
+            alignItems: "stretch",
             minWidth: 320,
             flex: 1,
           }}
@@ -270,11 +270,12 @@ export function ResearchHub() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <Sparkles size={22} color="#fff" />
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div
               style={{
                 fontFamily: "var(--font-headline)",
@@ -297,7 +298,7 @@ export function ResearchHub() {
             </div>
             <button
               style={{
-                marginTop: 14,
+                marginTop: "auto",
                 background:
                   "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                 color: "#fff",
@@ -326,7 +327,7 @@ export function ResearchHub() {
             backgroundColor: "var(--surface-container-lowest)",
             display: "flex",
             gap: 18,
-            alignItems: "flex-start",
+            alignItems: "stretch",
             minWidth: 220,
             flex: 1,
           }}
@@ -341,11 +342,12 @@ export function ResearchHub() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <Lightbulb size={22} color="#fff" />
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div
               style={{
                 fontFamily: "var(--font-headline)",
@@ -368,7 +370,7 @@ export function ResearchHub() {
             </div>
             <button
               style={{
-                marginTop: 14,
+                marginTop: "auto",
                 background:
                   "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                 color: "#fff",
@@ -397,7 +399,7 @@ export function ResearchHub() {
             backgroundColor: "var(--surface-container-lowest)",
             display: "flex",
             gap: 18,
-            alignItems: "flex-start",
+            alignItems: "stretch",
             minWidth: 220,
             flex: 1,
           }}
@@ -412,11 +414,12 @@ export function ResearchHub() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <TrendingUp size={22} color="#fff" />
           </div>
-          <div>
+          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div
               style={{
                 fontFamily: "var(--font-headline)",
@@ -440,7 +443,7 @@ export function ResearchHub() {
             </div>
             <button
               style={{
-                marginTop: 14,
+                marginTop: "auto",
                 background:
                   "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                 color: "#fff",
