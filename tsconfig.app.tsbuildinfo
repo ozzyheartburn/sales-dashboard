@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/applayout.tsx","./src/pages/dashboardhome.tsx","./src/pages/researchhub.tsx","./src/pages/warroom.tsx"],"version":"6.0.2"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/applayout.tsx","./src/pages/agentswarm.tsx","./src/pages/dashboardhome.tsx","./src/pages/researchhub.tsx","./src/pages/warroom.tsx"],"version":"6.0.2"}

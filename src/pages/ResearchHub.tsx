@@ -154,8 +154,24 @@ export function ResearchHub() {
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "2rem", color: "#fff" }}>Research Hub</div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "var(--font-headline)",
+            fontWeight: 800,
+            fontSize: "2rem",
+            color: "#fff",
+          }}
+        >
+          Research Hub
+        </div>
         <button
           onClick={() => setShowModal(true)}
           style={{
@@ -171,28 +187,64 @@ export function ResearchHub() {
             boxShadow: "0 2px 8px rgba(135,32,222,0.08)",
           }}
         >
-          <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} /> Initiate Deep Research
+          <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} />{" "}
+          Initiate Deep Research
         </button>
       </div>
-      <div style={{ fontSize: "0.95rem", color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>
-        Identify pain above the noise and investment urgency based on data driven proof
+      <div
+        style={{
+          fontSize: "0.95rem",
+          color: "rgba(255,255,255,0.5)",
+          marginBottom: 32,
+        }}
+      >
+        Identify pain above the noise and investment urgency based on data
+        driven proof
       </div>
 
       {/* --- ANALYTICS VIEWS --- */}
       <div style={{ display: "flex", gap: 24, marginBottom: 40 }}>
         {/* Quantitative Metrics */}
         <div style={{ flex: 1, ...glassCard }}>
-          <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.15rem", color: "#fff", marginBottom: 10 }}>
+          <div
+            style={{
+              fontFamily: "var(--font-headline)",
+              fontWeight: 700,
+              fontSize: "1.15rem",
+              color: "#fff",
+              marginBottom: 10,
+            }}
+          >
             Quantitative Metrics
           </div>
           {/* Filters */}
           <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
-            <select style={{ background: "rgba(255,255,255,0.04)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.4rem 0.8rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+            <select
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "0.4rem 0.8rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+              }}
+            >
               <option>Last 30 days</option>
               <option>Last 90 days</option>
               <option>Last 12 months</option>
             </select>
-            <select style={{ background: "rgba(255,255,255,0.04)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.4rem 0.8rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+            <select
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "0.4rem 0.8rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+              }}
+            >
               <option>All Accounts</option>
               <option>Top Priority</option>
               <option>Medium Priority</option>
@@ -200,60 +252,123 @@ export function ResearchHub() {
           </div>
           {/* KPIs */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ color: "#fff", fontSize: "1.05rem", fontWeight: 700 }}>
-              7.2 <span style={{ color: "#2dd4bf", fontWeight: 600, fontSize: "0.92rem" }}>research processes/week</span>
+            <div
+              style={{ color: "#fff", fontSize: "1.05rem", fontWeight: 700 }}
+            >
+              7.2{" "}
+              <span
+                style={{
+                  color: "#2dd4bf",
+                  fontWeight: 600,
+                  fontSize: "0.92rem",
+                }}
+              >
+                research processes/week
+              </span>
             </div>
-            <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}>
-              Contacts/account (avg): CXO <b style={{ color: "#14b8a6" }}>2.1</b>, VP/Dir <b style={{ color: "#4e45e4" }}>3.4</b>, End User <b style={{ color: "#8720de" }}>4.7</b>, Detractor <b style={{ color: "#ef4444" }}>1.2</b>, High Value <b style={{ color: "#f59e0b" }}>1.0</b>
+            <div
+              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
+            >
+              Contacts/account (avg): CXO{" "}
+              <b style={{ color: "#14b8a6" }}>2.1</b>, VP/Dir{" "}
+              <b style={{ color: "#4e45e4" }}>3.4</b>, End User{" "}
+              <b style={{ color: "#8720de" }}>4.7</b>, Detractor{" "}
+              <b style={{ color: "#ef4444" }}>1.2</b>, High Value{" "}
+              <b style={{ color: "#f59e0b" }}>1.0</b>
             </div>
-            <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}>
-              Sales touches to 1st meeting: <b style={{ color: "#14b8a6" }}>5.8/account</b>, <b style={{ color: "#4e45e4" }}>3.2/contact</b>
+            <div
+              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
+            >
+              Sales touches to 1st meeting:{" "}
+              <b style={{ color: "#14b8a6" }}>5.8/account</b>,{" "}
+              <b style={{ color: "#4e45e4" }}>3.2/contact</b>
             </div>
-            <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}>
-              Net new meetings via Deep Research: <b style={{ color: "#2dd4bf" }}>2.3/week</b>, <b style={{ color: "#8720de" }}>8.9/month</b>, <b style={{ color: "#f59e0b" }}>27/quarter</b>
+            <div
+              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
+            >
+              Net new meetings via Deep Research:{" "}
+              <b style={{ color: "#2dd4bf" }}>2.3/week</b>,{" "}
+              <b style={{ color: "#8720de" }}>8.9/month</b>,{" "}
+              <b style={{ color: "#f59e0b" }}>27/quarter</b>
             </div>
-            <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}>
-              SQOs from meetings: <b style={{ color: "#22c55e" }}>1.1/week</b>, <b style={{ color: "#4e45e4" }}>4.2/month</b>, <b style={{ color: "#8720de" }}>13/quarter</b>
+            <div
+              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
+            >
+              SQOs from meetings: <b style={{ color: "#22c55e" }}>1.1/week</b>,{" "}
+              <b style={{ color: "#4e45e4" }}>4.2/month</b>,{" "}
+              <b style={{ color: "#8720de" }}>13/quarter</b>
             </div>
-            <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}>
-              Pipeline deal size: <b style={{ color: "#2dd4bf" }}>$42.5k avg</b>, <b style={{ color: "#14b8a6" }}>$120k max</b>, <b style={{ color: "#ef4444" }}>$8.2k min</b>
+            <div
+              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
+            >
+              Pipeline deal size: <b style={{ color: "#2dd4bf" }}>$42.5k avg</b>
+              , <b style={{ color: "#14b8a6" }}>$120k max</b>,{" "}
+              <b style={{ color: "#ef4444" }}>$8.2k min</b>
             </div>
           </div>
         </div>
         {/* Qualitative Metrics */}
         <div style={{ flex: 1, ...glassCard }}>
-          <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.15rem", color: "#fff", marginBottom: 10 }}>
+          <div
+            style={{
+              fontFamily: "var(--font-headline)",
+              fontWeight: 700,
+              fontSize: "1.15rem",
+              color: "#fff",
+              marginBottom: 10,
+            }}
+          >
             Qualitative Metrics
           </div>
           {/* Filters */}
           <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
-            <select style={{ background: "rgba(255,255,255,0.04)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.4rem 0.8rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+            <select
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "0.4rem 0.8rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+              }}
+            >
               <option>Last 30 days</option>
               <option>Last 90 days</option>
               <option>Last 12 months</option>
             </select>
-            <select style={{ background: "rgba(255,255,255,0.04)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.4rem 0.8rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+            <select
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 8,
+                padding: "0.4rem 0.8rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+              }}
+            >
               <option>All Accounts</option>
               <option>Top Priority</option>
               <option>Medium Priority</option>
             </select>
           </div>
           {/* Placeholder for qualitative metrics */}
-          <div style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600, opacity: 0.7 }}>
-            Coming soon: champion sentiment, win/loss themes, buyer journey insights, and more.
+          <div
+            style={{
+              color: "#fff",
+              fontSize: "0.98rem",
+              fontWeight: 600,
+              opacity: 0.7,
+            }}
+          >
+            Coming soon: champion sentiment, win/loss themes, buyer journey
+            insights, and more.
           </div>
         </div>
       </div>
 
       {/* --- WIDGETS --- */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 20,
-          marginBottom: 36,
-        }}
-      >
       {showModal && (
         <div
           style={{
@@ -365,7 +480,7 @@ export function ResearchHub() {
       >
         {[
           {
-            icon: <Sparkles size={22} color="#fff" />, 
+            icon: <Sparkles size={22} color="#fff" />,
             name: "Agent Swarm",
             description:
               "Deploy and customize your Agent Swarm with custom signals, ICP definitions, market research and competitive intelligence data",
@@ -487,8 +602,16 @@ export function ResearchHub() {
                 gap: 6,
               }}
             >
-              <span style={kpiBadgeStyle("#124af1")}> <Target size={10} /> {accounts.length} Active Workflows </span>
-              <span style={kpiBadgeStyle("#22c55e")}> <Users size={10} /> {pollingAccount ? accounts.length + 1 : accounts.length} Contacts Identified </span>
+              <span style={kpiBadgeStyle("#124af1")}>
+                {" "}
+                <Target size={10} /> {accounts.length} Active Workflows{" "}
+              </span>
+              <span style={kpiBadgeStyle("#22c55e")}>
+                {" "}
+                <Users size={10} />{" "}
+                {pollingAccount ? accounts.length + 1 : accounts.length}{" "}
+                Contacts Identified{" "}
+              </span>
             </div>
             <div
               style={{
@@ -502,7 +625,8 @@ export function ResearchHub() {
               }}
             >
               <span>
-                Research → Meeting <strong style={{ color: "#124af1" }}>34%</strong>
+                Research → Meeting{" "}
+                <strong style={{ color: "#124af1" }}>34%</strong>
               </span>
               <span>
                 Meeting → Opp <strong style={{ color: "#22c55e" }}>66%</strong>
@@ -535,8 +659,8 @@ export function ResearchHub() {
           }}
         >
           <Sparkles size={18} className="spin" />
-          AI research in progress for  201c{pollingAccount} 201d  2012mdash;
-          this may take a few minutes. The page will update automatically.
+          AI research in progress for  201c{pollingAccount} 201d  2012mdash; this
+          may take a few minutes. The page will update automatically.
         </motion.div>
       )}
 

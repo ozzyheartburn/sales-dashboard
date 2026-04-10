@@ -15,6 +15,11 @@ import {
   FileText,
   Settings,
   ChevronRight,
+  Users,
+  Target,
+  Clock,
+  Trophy,
+  AlertTriangle,
 } from "lucide-react";
 
 interface Agent {
@@ -35,43 +40,99 @@ interface IntelCard {
 
 const defaultAgents: Agent[] = [
   {
-    id: "tech-scout",
-    name: "Tech Scout",
+    id: "financial-agent",
+    name: "FinancialAgent",
     description:
-      "Monitors technology stack changes, new tool adoption, and digital transformation signals",
+      "Pulls revenue, EBIT margin, growth trajectory, and capital allocation signals (buybacks, capex) to assess whether the account has budget pressure or surplus that drives CVR optimization urgency.",
+    icon: <BarChart3 size={18} />,
+    enabled: true,
+  },
+  {
+    id: "tech-stack-agent",
+    name: "TechStackAgent",
+    description:
+      "Identifies current search, personalization, recommendations, CDP, and ecommerce platform vendors to detect discovery stack gaps and estimate how replaceable the current setup is.",
     icon: <Cpu size={18} />,
     enabled: true,
   },
   {
-    id: "regulatory-monitor",
-    name: "Regulatory Monitor",
+    id: "hiring-agent",
+    name: "HiringAgent",
     description:
-      "Tracks regulatory changes, compliance requirements, and policy shifts in target markets",
-    icon: <Shield size={18} />,
-    enabled: true,
-  },
-  {
-    id: "industry-monitor",
-    name: "Trend & Industry Monitor",
-    description:
-      "Identifies emerging industry trends, market shifts, and competitive landscape changes",
-    icon: <TrendingUp size={18} />,
+      "Scrapes job boards for open roles in search, ML, product discovery, and ecommerce to detect whether a build-vs-buy decision is imminent or a tech team is scaling.",
+    icon: <Users size={18} />,
     enabled: false,
   },
   {
-    id: "trend-forecaster",
-    name: "Trend Forecaster",
+    id: "initiative-agent",
+    name: "InitiativeAgent",
     description:
-      "Predicts market movements and buying intent signals using AI-powered forecasting",
+      "Surfaces active platform migrations, M&A events, replatforming projects, and strategic transformation programs that create procurement windows.",
+    icon: <Sparkles size={18} />,
+    enabled: false,
+  },
+  {
+    id: "category-complexity-agent",
+    name: "CategoryComplexityAgent",
+    description:
+      "Estimates SKU count, number of markets, and catalog breadth to quantify how hard product discovery is to manage manually — and therefore how much value Constructor can add.",
     icon: <BarChart3 size={18} />,
     enabled: false,
   },
   {
-    id: "social-listener",
-    name: "Social Listener",
+    id: "competitor-agent",
+    name: "CompetitorAgent",
     description:
-      "Monitors social media, forums, and communities for brand mentions and sentiment shifts",
+      "Researches the discovery maturity of the account's direct competitors to identify whether falling behind on search/personalization is a competitive risk the account should feel urgency about.",
+    icon: <Target size={18} />,
+    enabled: false,
+  },
+  {
+    id: "sentiment-agent",
+    name: "SentimentAgent",
+    description:
+      "Mines iOS App Store and Google Play reviews for user complaints about search, recommendations, and product finding to surface qualitative discovery pain that no financial report will mention.",
     icon: <Eye size={18} />,
+    enabled: false,
+  },
+  {
+    id: "leadership-agent",
+    name: "LeadershipAgent",
+    description:
+      "Tracks recent CXO and VP hires in digital, product, and ecommerce roles — new leadership with a mandate is one of the strongest buying triggers in B2B sales.",
+    icon: <Users size={18} />,
+    enabled: false,
+  },
+  {
+    id: "earnings-call-agent",
+    name: "EarningsCallAgent",
+    description:
+      "Extracts statements from public earnings call transcripts where executives mention digital conversion, search experience, product discovery, or ecommerce optimization as a priority or problem.",
+    icon: <FileText size={18} />,
+    enabled: false,
+  },
+  {
+    id: "vendor-tenure-agent",
+    name: "VendorTenureAgent",
+    description:
+      "Estimates how long the account has been on their current discovery vendor by tracking first-detection dates, flagging accounts approaching likely contract renewal windows.",
+    icon: <Clock size={18} />,
+    enabled: false,
+  },
+  {
+    id: "champion-building-agent",
+    name: "ChampionBuildingAgent",
+    description:
+      "One of the world's most appraised cognitive and behavioral psychologists, who understands how different type of personas get motivated and how to support them in achieving their dreams, while ensuring the sales team also gets their reward for doing it.",
+    icon: <Trophy size={18} />,
+    enabled: false,
+  },
+  {
+    id: "risk-flagger-agent",
+    name: "RiskFlaggerAgent",
+    description:
+      "The doomsayer who always finds something negative of the current situation, and is solely focused on what could go wrong. Good thing with his character is, however, that his concerns are always based on reality, facts and data driven proof - and not just paranoia.",
+    icon: <AlertTriangle size={18} />,
     enabled: false,
   },
 ];
@@ -377,6 +438,7 @@ export function AgentSwarm() {
                     transition: "all 0.2s",
                   }}
                 >
+                  {/* Agent logo with tooltip on hover */}
                   <div
                     style={{
                       width: 32,
@@ -390,7 +452,9 @@ export function AgentSwarm() {
                       justifyContent: "center",
                       color: agent.enabled ? "#fff" : dark.textDim,
                       flexShrink: 0,
+                      position: "relative",
                     }}
+                    title={agent.description}
                   >
                     {agent.icon}
                   </div>
@@ -462,9 +526,7 @@ export function AgentSwarm() {
                     fontWeight: activeTab === tab.key ? 700 : 500,
                     fontFamily: "var(--font-label)",
                     color:
-                      activeTab === tab.key
-                        ? dark.accentLight
-                        : dark.textDim,
+                      activeTab === tab.key ? dark.accentLight : dark.textDim,
                     borderBottom:
                       activeTab === tab.key
                         ? `2px solid ${dark.accent}`
@@ -896,16 +958,8 @@ export function AgentSwarm() {
                   x2="0%"
                   y2="100%"
                 >
-                  <stop
-                    offset="0%"
-                    stopColor={dark.accent}
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor={dark.accent}
-                    stopOpacity={0}
-                  />
+                  <stop offset="0%" stopColor={dark.accent} stopOpacity={0.3} />
+                  <stop offset="100%" stopColor={dark.accent} stopOpacity={0} />
                 </linearGradient>
               </defs>
               {/* Area fill */}
