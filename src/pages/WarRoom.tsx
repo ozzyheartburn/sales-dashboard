@@ -511,6 +511,18 @@ export function WarRoom() {
     },
   ]);
   const [chatInput, setChatInput] = useState("");
+  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const toggleInsight = (key: string) => {
+    setExpandedInsights((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
@@ -1129,67 +1141,111 @@ export function WarRoom() {
                     </div>
 
                     {/* 3 Detail Cards */}
-                    {row.cards.map((card) => (
-                      <div
-                        key={card.title}
-                        className="luminous-shadow"
-                        style={{
-                          borderRadius: "0.75rem",
-                          padding: "1rem 1.1rem",
-                          backgroundColor: "var(--surface-container-lowest)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
-                        }}
-                      >
+                    {row.cards.map((card, cardIdx) => {
+                      const insightKey = `${rowIdx}-${cardIdx}`;
+                      const isExpanded = expandedInsights.has(insightKey);
+                      return (
                         <div
+                          key={card.title}
+                          className="luminous-shadow"
                           style={{
+                            borderRadius: "0.75rem",
+                            padding: "1rem 1.1rem",
+                            backgroundColor: "var(--surface-container-lowest)",
                             display: "flex",
-                            alignItems: "center",
+                            flexDirection: "column",
                             gap: 6,
                           }}
                         >
-                          <span
+                          <div
                             style={{
-                              fontSize: "0.62rem",
-                              fontWeight: 700,
-                              fontFamily: "var(--font-label)",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.06em",
-                              color: "var(--on-surface-variant)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 6,
                             }}
                           >
-                            {card.title}
-                          </span>
-                          {card.badge && (
-                            <span
+                            <div
                               style={{
-                                fontSize: "0.55rem",
-                                fontWeight: 700,
-                                fontFamily: "var(--font-label)",
-                                padding: "0.12rem 0.5rem",
-                                borderRadius: 9999,
-                                background: card.badgeColor
-                                  ? `${card.badgeColor}18`
-                                  : "rgba(18,74,241,0.08)",
-                                color: card.badgeColor || "var(--primary)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
-                              {card.badge}
-                            </span>
+                              <span
+                                style={{
+                                  fontSize: "0.62rem",
+                                  fontWeight: 700,
+                                  fontFamily: "var(--font-label)",
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.06em",
+                                  color: "var(--on-surface-variant)",
+                                }}
+                              >
+                                {card.title}
+                              </span>
+                              {card.badge && (
+                                <span
+                                  style={{
+                                    fontSize: "0.55rem",
+                                    fontWeight: 700,
+                                    fontFamily: "var(--font-label)",
+                                    padding: "0.12rem 0.5rem",
+                                    borderRadius: 9999,
+                                    background: card.badgeColor
+                                      ? `${card.badgeColor}18`
+                                      : "rgba(18,74,241,0.08)",
+                                    color: card.badgeColor || "var(--primary)",
+                                  }}
+                                >
+                                  {card.badge}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => toggleInsight(insightKey)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "0.65rem",
+                                fontWeight: 600,
+                                fontFamily: "var(--font-label)",
+                                color: "var(--primary)",
+                                padding: "2px 6px",
+                                borderRadius: 6,
+                                transition: "background 0.15s",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background =
+                                  "rgba(18,74,241,0.08)")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "none")
+                              }
+                            >
+                              {isExpanded ? "Collapse" : "Expand"}
+                            </button>
+                          </div>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              style={{
+                                fontSize: "0.84rem",
+                                color: "var(--on-surface)",
+                                lineHeight: 1.45,
+                                overflow: "hidden",
+                              }}
+                            >
+                              {card.description}
+                            </motion.div>
                           )}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.84rem",
-                            color: "var(--on-surface)",
-                            lineHeight: 1.45,
-                          }}
-                        >
-                          {card.description}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 ))}
               </div>
