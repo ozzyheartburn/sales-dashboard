@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Search,
@@ -10,65 +10,52 @@ import {
   Plus,
 } from "lucide-react";
 
-const accounts = [
-  {
-    name: "Nemlig",
-    country: "🇩🇰 Denmark",
-    priority: "P1",
-    score: 92,
-    growth: "+18%",
-    status: "Active",
-  },
-  {
-    name: "Matas Group",
-    country: "🇩🇰 Denmark",
-    priority: "P1",
-    score: 88,
-    growth: "+14%",
-    status: "Active",
-  },
-  {
-    name: "SOK",
-    country: "🇫🇮 Finland",
-    priority: "P1",
-    score: 85,
-    growth: "+11%",
-    status: "Active",
-  },
-  {
-    name: "Onninen",
-    country: "🇫🇮 Finland",
-    priority: "P2",
-    score: 74,
-    growth: "+9%",
-    status: "At Risk",
-  },
-  {
-    name: "Helly Hansen",
-    country: "🇳🇴 Norway",
-    priority: "P2",
-    score: 71,
-    growth: "+7%",
-    status: "At Risk",
-  },
-  {
-    name: "Bestseller",
-    country: "🇩🇰 Denmark",
-    priority: "P2",
-    score: 68,
-    growth: "+12%",
-    status: "Researching",
-  },
-];
+interface Account {
+  _id: string;
+  companyName: string;
+  website: string;
+  buyingSignalScore: number;
+  priority: string;
+  rationale: string;
+  insights: {
+    strategicContext: unknown[];
+    ecommercePriorities: unknown[];
+    activeInitiatives: unknown[];
+    keyChallenges: unknown[];
+    opportunityFrame: unknown[];
+  };
+  reports: {
+    chatGptAnalysis: string;
+    perplexityResearch: string;
+  };
+  metadata: {
+    citations: unknown[];
+    searchResults: unknown[];
+  };
+  timestamp: string;
+}
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export function ResearchHub() {
   const [showModal, setShowModal] = useState(false);
   const [accountName, setAccountName] = useState("");
   const [website, setWebsite] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
   const deepInsights = 7;
-  const activeAccounts = 12;
   const researchToOpp = 66;
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/accounts`)
+      .then((res) => res.json())
+      .then((data) => {
+        setAccounts(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
@@ -503,114 +490,135 @@ export function ResearchHub() {
             fontWeight: 600,
           }}
         >
-          {activeAccounts} Active Accounts
+          {accounts.length} Active Accounts
         </div>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: 24,
-          marginTop: 8,
-        }}
-      >
-        {accounts.map((acc, idx) => (
-          <motion.div
-            key={acc.name}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: idx * 0.07 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              position: "relative",
-              minHeight: 120,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Building2 size={20} color="var(--primary)" />
-              <span
-                style={{
-                  fontFamily: "var(--font-headline)",
-                  fontWeight: 700,
-                  fontSize: "1.08rem",
-                  color: "var(--on-background)",
-                }}
-              >
-                {acc.name}
-              </span>
-              <span
-                style={{
-                  fontSize: "0.85rem",
-                  color: "var(--on-surface-variant)",
-                  marginLeft: 6,
-                }}
-              >
-                {acc.country}
-              </span>
-            </div>
-            <div
+      {loading ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "2rem",
+            color: "var(--on-surface-variant)",
+          }}
+        >
+          Loading accounts...
+        </div>
+      ) : accounts.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "2rem",
+            color: "var(--on-surface-variant)",
+          }}
+        >
+          No accounts found.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: 24,
+            marginTop: 8,
+          }}
+        >
+          {accounts.map((acc, idx) => (
+            <motion.div
+              key={acc._id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: idx * 0.07 }}
+              className="luminous-shadow"
               style={{
+                borderRadius: "1rem",
+                padding: "1.25rem",
+                backgroundColor: "var(--surface-container-lowest)",
                 display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 2,
+                flexDirection: "column",
+                gap: 10,
+                position: "relative",
+                minHeight: 120,
               }}
             >
-              <span
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Building2 size={20} color="var(--primary)" />
+                <span
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1.08rem",
+                    color: "var(--on-background)",
+                  }}
+                >
+                  {acc.companyName}
+                </span>
+                {acc.website && (
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--on-surface-variant)",
+                      marginLeft: 6,
+                    }}
+                  >
+                    {acc.website}
+                  </span>
+                )}
+              </div>
+              <div
                 style={{
-                  fontSize: "0.65rem",
-                  borderRadius: 4,
-                  background:
-                    acc.priority === "P1"
-                      ? "var(--primary)"
-                      : "var(--secondary-brand)",
-                  color: "#fff",
-                  padding: "0.15rem 0.6rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginTop: 2,
+                  flexWrap: "wrap",
                 }}
               >
-                {acc.priority}
-              </span>
-              <span style={{ fontSize: "0.93rem", color: "var(--on-surface)" }}>
-                Score: <b>{acc.score}</b>
-              </span>
-              <span
-                style={{
-                  fontSize: "0.93rem",
-                  color: "var(--on-surface-variant)",
-                }}
-              >
-                Growth: {acc.growth}
-              </span>
-              <span
-                style={{
-                  fontSize: "0.65rem",
-                  borderRadius: 9999,
-                  background:
-                    acc.status === "Active"
-                      ? "var(--primary)"
-                      : acc.status === "At Risk"
-                        ? "var(--error)"
-                        : "var(--secondary-brand)",
-                  color: "#fff",
-                  padding: "0.15rem 0.6rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 700,
-                }}
-              >
-                {acc.status}
-              </span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                {acc.priority && (
+                  <span
+                    style={{
+                      fontSize: "0.65rem",
+                      borderRadius: 4,
+                      background:
+                        acc.priority === "P1"
+                          ? "var(--primary)"
+                          : "var(--secondary-brand)",
+                      color: "#fff",
+                      padding: "0.15rem 0.6rem",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {acc.priority}
+                  </span>
+                )}
+                {acc.buyingSignalScore != null && (
+                  <span
+                    style={{ fontSize: "0.93rem", color: "var(--on-surface)" }}
+                  >
+                    Score: <b>{acc.buyingSignalScore}</b>
+                  </span>
+                )}
+              </div>
+              {acc.rationale && (
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--on-surface-variant)",
+                    marginTop: 4,
+                    lineHeight: 1.4,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {acc.rationale}
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

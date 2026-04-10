@@ -37,18 +37,27 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Account {
   _id: string;
-  CompanyName: string;
-  Website: string;
-  score: number;
+  companyName: string;
+  website: string;
+  buyingSignalScore: number;
   priority: string;
-  BuyingSignals: string;
   rationale: string;
-  strategicContext: string;
-  procurementPriorities: string;
-  activeInitiatives: string;
-  keyChallenges: string;
-  opportunityFrame: string;
-  created_at: string;
+  insights: {
+    strategicContext: unknown[];
+    ecommercePriorities: unknown[];
+    activeInitiatives: unknown[];
+    keyChallenges: unknown[];
+    opportunityFrame: unknown[];
+  };
+  reports: {
+    chatGptAnalysis: string;
+    perplexityResearch: string;
+  };
+  metadata: {
+    citations: unknown[];
+    searchResults: unknown[];
+  };
+  timestamp: string;
 }
 
 interface ChatMessage {
@@ -473,7 +482,7 @@ export function WarRoom() {
       .then((res) => res.json())
       .then((data: Account[]) => {
         const sorted = [...data].sort(
-          (a, b) => (b.score || 0) - (a.score || 0),
+          (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
         );
         setAccounts(sorted);
         if (sorted.length > 0) setSelectedAccount(sorted[0]);
@@ -493,7 +502,7 @@ export function WarRoom() {
       const aiResponse: ChatMessage = {
         role: "assistant",
         content: selectedAccount
-          ? `Based on the research for **${selectedAccount.CompanyName}**, here's what I found:\n\n${selectedAccount.rationale ? selectedAccount.rationale.slice(0, 400) + "..." : "No detailed research available yet. Initiate a deep research from the Research Hub to populate this account's intelligence."}`
+          ? `Based on the research for **${selectedAccount.companyName}**, here's what I found:\n\n${selectedAccount.rationale ? selectedAccount.rationale.slice(0, 400) + "..." : "No detailed research available yet. Initiate a deep research from the Research Hub to populate this account's intelligence."}`
           : "Please select an account from the sidebar to get contextual insights.",
       };
       setChatMessages((prev) => [...prev, aiResponse]);
@@ -621,7 +630,7 @@ export function WarRoom() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {acc.CompanyName}
+                  {acc.companyName}
                 </div>
                 <div
                   style={{
@@ -629,7 +638,7 @@ export function WarRoom() {
                     color: "var(--on-surface-variant)",
                   }}
                 >
-                  {acc.Website}
+                  {acc.website}
                 </div>
               </div>
               <div
@@ -640,7 +649,7 @@ export function WarRoom() {
                   gap: 2,
                 }}
               >
-                {acc.score != null && (
+                {acc.buyingSignalScore != null && (
                   <span
                     style={{
                       fontSize: "0.75rem",
@@ -648,7 +657,7 @@ export function WarRoom() {
                       color: "var(--primary)",
                     }}
                   >
-                    {acc.score}
+                    {acc.buyingSignalScore}
                   </span>
                 )}
                 {acc.priority && (
@@ -708,9 +717,9 @@ export function WarRoom() {
                   color: "var(--on-background)",
                 }}
               >
-                {selectedAccount?.CompanyName || "Select an Account"}
+                {selectedAccount?.companyName || "Select an Account"}
               </div>
-              {selectedAccount?.Website && (
+              {selectedAccount?.website && (
                 <div
                   style={{
                     fontSize: "0.85rem",
@@ -718,13 +727,13 @@ export function WarRoom() {
                     marginTop: 2,
                   }}
                 >
-                  {selectedAccount.Website}
+                  {selectedAccount.website}
                 </div>
               )}
             </div>
             {selectedAccount && (
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                {selectedAccount.score != null && (
+                {selectedAccount.buyingSignalScore != null && (
                   <div style={{ textAlign: "center" }}>
                     <div
                       style={{
@@ -733,7 +742,7 @@ export function WarRoom() {
                         color: "var(--primary)",
                       }}
                     >
-                      {selectedAccount.score}
+                      {selectedAccount.buyingSignalScore}
                     </div>
                     <div
                       style={{
@@ -798,18 +807,58 @@ export function WarRoom() {
         <div style={{ flex: 1, overflow: "auto" }}>
           {/* ── Value Pyramid Tab ───────────────────────────────── */}
           {activeTab === "pyramid" && (
-            <div style={{ padding: "1.5rem", maxWidth: 1200, margin: "0 auto" }}>
+            <div
+              style={{ padding: "1.5rem", maxWidth: 1200, margin: "0 auto" }}
+            >
               {/* ── Section Header ── */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 24,
+                }}
+              >
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, fontFamily: "var(--font-label)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--primary)" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 700,
+                        fontFamily: "var(--font-label)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "var(--primary)",
+                      }}
+                    >
                       Active Strategic Target
                     </span>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#22c55e",
+                        display: "inline-block",
+                      }}
+                    />
                   </div>
-                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.6rem", color: "var(--on-background)" }}>
-                    {selectedAccount?.CompanyName || "Select an Account"}
+                  <div
+                    style={{
+                      fontFamily: "var(--font-headline)",
+                      fontWeight: 800,
+                      fontSize: "1.6rem",
+                      color: "var(--on-background)",
+                    }}
+                  >
+                    {selectedAccount?.companyName || "Select an Account"}
                   </div>
                 </div>
                 <button
@@ -835,7 +884,8 @@ export function WarRoom() {
                     padding: "0.5rem 1.2rem",
                     borderRadius: 8,
                     border: "none",
-                    background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                    background:
+                      "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                     color: "#fff",
                     fontFamily: "var(--font-label)",
                     fontWeight: 700,
@@ -851,12 +901,43 @@ export function WarRoom() {
               </div>
 
               {/* ── Metric Cards Row ── */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 16,
+                  marginBottom: 32,
+                }}
+              >
                 {[
-                  { label: "Primary Industry", value: "Enterprise SaaS", icon: <Briefcase size={16} color="var(--on-surface-variant)" /> },
-                  { label: "Annual Revenue", value: "$14.2B USD", icon: <TrendingUp size={16} color="var(--on-surface-variant)" /> },
-                  { label: "Employee Count", value: "42,500+", icon: <UsersRound size={16} color="var(--on-surface-variant)" /> },
-                  { label: "Revenue Growth Target", value: "8.5% YoY", icon: <TrendingUp size={16} color="var(--on-surface-variant)" /> },
+                  {
+                    label: "Primary Industry",
+                    value: "Enterprise SaaS",
+                    icon: (
+                      <Briefcase size={16} color="var(--on-surface-variant)" />
+                    ),
+                  },
+                  {
+                    label: "Annual Revenue",
+                    value: "$14.2B USD",
+                    icon: (
+                      <TrendingUp size={16} color="var(--on-surface-variant)" />
+                    ),
+                  },
+                  {
+                    label: "Employee Count",
+                    value: "42,500+",
+                    icon: (
+                      <UsersRound size={16} color="var(--on-surface-variant)" />
+                    ),
+                  },
+                  {
+                    label: "Revenue Growth Target",
+                    value: "8.5% YoY",
+                    icon: (
+                      <TrendingUp size={16} color="var(--on-surface-variant)" />
+                    ),
+                  },
                 ].map((metric, i) => (
                   <motion.div
                     key={metric.label}
@@ -870,13 +951,36 @@ export function WarRoom() {
                       backgroundColor: "var(--surface-container-lowest)",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 700, fontFamily: "var(--font-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--on-surface-variant)" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          fontFamily: "var(--font-label)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          color: "var(--on-surface-variant)",
+                        }}
+                      >
                         {metric.label}
                       </span>
                       {metric.icon}
                     </div>
-                    <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.15rem", color: "var(--on-background)" }}>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-headline)",
+                        fontWeight: 800,
+                        fontSize: "1.15rem",
+                        color: "var(--on-background)",
+                      }}
+                    >
                       {metric.value}
                     </div>
                   </motion.div>
@@ -884,9 +988,30 @@ export function WarRoom() {
               </div>
 
               {/* ── Strategic Value Pyramid Heading ── */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 4, height: 28, borderRadius: 2, background: "var(--on-background)" }} />
-                <span style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.2rem", color: "var(--on-background)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    width: 4,
+                    height: 28,
+                    borderRadius: 2,
+                    background: "var(--on-background)",
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1.2rem",
+                    color: "var(--on-background)",
+                  }}
+                >
                   Strategic Value Pyramid
                 </span>
                 <span
@@ -907,14 +1032,26 @@ export function WarRoom() {
               </div>
 
               {/* ── Pyramid Rows ── */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                  marginBottom: 32,
+                }}
+              >
                 {defaultPyramidRows.map((row, rowIdx) => (
                   <motion.div
                     key={row.label}
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: rowIdx * 0.07 }}
-                    style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 14, alignItems: "stretch" }}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "180px 1fr 1fr 1fr",
+                      gap: 14,
+                      alignItems: "stretch",
+                    }}
                   >
                     {/* Row Label */}
                     <div
@@ -928,7 +1065,16 @@ export function WarRoom() {
                         minHeight: 90,
                       }}
                     >
-                      <span style={{ color: "#fff", fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "0.88rem", textAlign: "center", lineHeight: 1.3 }}>
+                      <span
+                        style={{
+                          color: "#fff",
+                          fontFamily: "var(--font-headline)",
+                          fontWeight: 700,
+                          fontSize: "0.88rem",
+                          textAlign: "center",
+                          lineHeight: 1.3,
+                        }}
+                      >
                         {row.label}
                       </span>
                     </div>
@@ -947,8 +1093,23 @@ export function WarRoom() {
                           gap: 6,
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: "0.62rem", fontWeight: 700, fontFamily: "var(--font-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--on-surface-variant)" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.62rem",
+                              fontWeight: 700,
+                              fontFamily: "var(--font-label)",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.06em",
+                              color: "var(--on-surface-variant)",
+                            }}
+                          >
                             {card.title}
                           </span>
                           {card.badge && (
@@ -959,7 +1120,9 @@ export function WarRoom() {
                                 fontFamily: "var(--font-label)",
                                 padding: "0.12rem 0.5rem",
                                 borderRadius: 9999,
-                                background: card.badgeColor ? `${card.badgeColor}18` : "rgba(18,74,241,0.08)",
+                                background: card.badgeColor
+                                  ? `${card.badgeColor}18`
+                                  : "rgba(18,74,241,0.08)",
                                 color: card.badgeColor || "var(--primary)",
                               }}
                             >
@@ -967,7 +1130,13 @@ export function WarRoom() {
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: "0.84rem", color: "var(--on-surface)", lineHeight: 1.45 }}>
+                        <div
+                          style={{
+                            fontSize: "0.84rem",
+                            color: "var(--on-surface)",
+                            lineHeight: 1.45,
+                          }}
+                        >
                           {card.description}
                         </div>
                       </div>
@@ -996,7 +1165,8 @@ export function WarRoom() {
                     width: 44,
                     height: 44,
                     borderRadius: 12,
-                    background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                    background:
+                      "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1006,16 +1176,39 @@ export function WarRoom() {
                   <Sparkles size={22} color="#fff" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1rem", color: "var(--on-background)", marginBottom: 6 }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-headline)",
+                      fontWeight: 700,
+                      fontSize: "1rem",
+                      color: "var(--on-background)",
+                      marginBottom: 6,
+                    }}
+                  >
                     Proprietary AI Insight
                   </div>
-                  <div style={{ fontSize: "0.86rem", color: "var(--on-surface)", lineHeight: 1.55 }}>
+                  <div
+                    style={{
+                      fontSize: "0.86rem",
+                      color: "var(--on-surface)",
+                      lineHeight: 1.55,
+                    }}
+                  >
                     {selectedAccount?.rationale
-                      ? selectedAccount.rationale.slice(0, 350) + (selectedAccount.rationale.length > 350 ? "..." : "")
+                      ? selectedAccount.rationale.slice(0, 350) +
+                        (selectedAccount.rationale.length > 350 ? "..." : "")
                       : 'Analysis of Global Tech Systems\' recent quarterly report suggests a 12% increase in R&D focus toward edge computing. There is a \u00A084% correlation\u00A0 between their "Sustainability Goal" and our new Carbon Tracker module. Recommendation: Pitch the Tracker as a value-add during the Q3 renewal cycle.'}
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: 8,
+                    flexShrink: 0,
+                  }}
+                >
                   <button
                     style={{
                       padding: "0.5rem 1rem",
@@ -1031,7 +1224,15 @@ export function WarRoom() {
                   >
                     Action Suggestion
                   </button>
-                  <span style={{ fontSize: "0.72rem", color: "var(--primary)", cursor: "pointer", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "var(--primary)",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 600,
+                    }}
+                  >
                     Dismiss Insight
                   </span>
                 </div>
@@ -1187,7 +1388,7 @@ export function WarRoom() {
                     onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
                     placeholder={
                       selectedAccount
-                        ? `Ask about ${selectedAccount.CompanyName}...`
+                        ? `Ask about ${selectedAccount.companyName}...`
                         : "Select an account first..."
                     }
                     style={{
@@ -1374,7 +1575,7 @@ export function WarRoom() {
                 </div>
 
                 {/* Key Challenges */}
-                {selectedAccount?.keyChallenges && (
+                {(selectedAccount?.insights?.keyChallenges?.length ?? 0) > 0 && (
                   <div
                     className="luminous-shadow"
                     style={{
@@ -1408,8 +1609,8 @@ export function WarRoom() {
                         overflow: "auto",
                       }}
                     >
-                      {selectedAccount.keyChallenges.slice(0, 300)}
-                      {selectedAccount.keyChallenges.length > 300 && "..."}
+                      {JSON.stringify(selectedAccount?.insights?.keyChallenges).slice(0, 300)}
+                      {JSON.stringify(selectedAccount?.insights?.keyChallenges).length > 300 && "..."}
                     </div>
                   </div>
                 )}

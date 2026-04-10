@@ -1,29 +1,52 @@
 // Simple Node.js Express server for backend operations
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+// MongoDB connection
+const client = new MongoClient(process.env.MONGODB_URI, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
 });
 
-// Example MongoDB connection (update URI in .env)
-// const { MongoClient } = require('mongodb');
-// const client = new MongoClient(process.env.MONGODB_URI);
-// app.get('/api/data', async (req, res) => {
-//   await client.connect();
-//   const db = client.db('your-db');
-//   const data = await db.collection('your-collection').find({}).toArray();
-//   res.json(data);
-// });
+let db;
+async function connectDB() {
+  if (!db) {
+    await client.connect();
+    db = client.db("PG_Machine");
+  }
+  return db;
+}
 
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
+
+// Get accounts from PG_Machine collection
+app.get("/api/accounts", async (req, res) => {
+  try {
+    const database = await connectDB();
+    const collection = database.collection("PG_Machine");
+    const accounts = await collection
+      .find({ companyName: { $ne: null } })
+      .toArray();
+    res.json(accounts);
+  } catch (err) {
+    console.error("Error fetching accounts:", err);
+    res.status(500).json({ error: "Failed to fetch accounts" });
+  }
+});
 // Example n8n workflow trigger endpoint
-app.post('/api/research', async (req, res) => {
+app.post("/api/research", async (req, res) => {
   // Call n8n webhook or handle workflow logic here
   res.json({ success: true, received: req.body });
 });
