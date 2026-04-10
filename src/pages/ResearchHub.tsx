@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   Crosshair,
   Clock,
+  Network,
+  BarChart3,
 } from "lucide-react";
 
 interface Account {
@@ -127,7 +129,7 @@ export function ResearchHub() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 32,
+          marginBottom: 8,
         }}
       >
         <div
@@ -159,6 +161,16 @@ export function ResearchHub() {
           <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} />{" "}
           Initiate Deep Research
         </button>
+      </div>
+      <div
+        style={{
+          fontSize: "0.95rem",
+          color: "var(--on-surface-variant)",
+          marginBottom: 32,
+        }}
+      >
+        Identify pain above the noise and investment urgency based on data
+        driven proof
       </div>
       {showModal && (
         <div
@@ -262,225 +274,93 @@ export function ResearchHub() {
         </div>
       )}
       <div
-        style={{ display: "flex", gap: 24, marginBottom: 36, flexWrap: "wrap" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 20,
+          marginBottom: 36,
+        }}
       >
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0 }}
-          className="luminous-shadow"
-          style={{
-            borderRadius: "1rem",
-            padding: "1.25rem",
-            backgroundColor: "var(--surface-container-lowest)",
-            display: "flex",
-            gap: 18,
-            alignItems: "stretch",
-            minWidth: 320,
-            flex: 1,
-          }}
-        >
-          <div
+        {[
+          {
+            icon: <Sparkles size={22} color="#fff" />,
+            name: "Agent Swarm",
+            description:
+              "Deploy, orchestrate and customize your agent swarm with custom signals, ICP definitions, and market / competitive intelligence data",
+          },
+          {
+            icon: <Network size={22} color="#fff" />,
+            name: "Territory Neural Network",
+            description:
+              "Dynamic territory management based on agentic automation & analytics",
+          },
+          {
+            icon: <Lightbulb size={22} color="#fff" />,
+            name: "Deep Insights & Actions",
+            description:
+              "PG Machine has identified 7 new HVTs, 2 high urgency signals and 1 new market trend impacting your business",
+          },
+          {
+            icon: <BarChart3 size={22} color="#fff" />,
+            name: "Activity Dashboard & Overview",
+            description:
+              "Review, edit or pause your active research campaigns and agentic swarms with key metrics",
+          },
+        ].map((widget, i) => (
+          <motion.div
+            key={widget.name}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: i * 0.07 }}
+            className="luminous-shadow"
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background:
-                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+              borderRadius: "1rem",
+              padding: "1.25rem",
+              backgroundColor: "var(--surface-container-lowest)",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              gap: 14,
+              alignItems: "flex-start",
             }}
           >
-            <Sparkles size={22} color="#fff" />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div
               style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.08rem",
-                color: "var(--on-background)",
-              }}
-            >
-              Agent Orchestration
-            </div>
-            <div
-              style={{
-                fontSize: "0.93rem",
-                color: "var(--on-surface-variant)",
-                marginTop: 2,
-              }}
-            >
-              Fine-tune your Deep Research Agents by providing custom signals,
-              ICP information and competitive intelligence data
-            </div>
-            <button
-              style={{
-                marginTop: "auto",
+                width: 44,
+                height: 44,
+                borderRadius: 12,
                 background:
                   "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                color: "#fff",
-                fontWeight: 700,
-                fontFamily: "var(--font-label)",
-                border: "none",
-                borderRadius: 10,
-                fontSize: "1rem",
-                padding: "0.7rem 1.2rem",
-                cursor: "pointer",
-                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              Review & Update Agent Configuration
-            </button>
-          </div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.07 }}
-          className="luminous-shadow"
-          style={{
-            borderRadius: "1rem",
-            padding: "1.25rem",
-            backgroundColor: "var(--surface-container-lowest)",
-            display: "flex",
-            gap: 18,
-            alignItems: "stretch",
-            minWidth: 220,
-            flex: 1,
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background:
-                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Lightbulb size={22} color="#fff" />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.08rem",
-                color: "var(--on-background)",
-              }}
-            >
-              Deep Learning & Insights
+              {widget.icon}
             </div>
-            <div
-              style={{
-                fontSize: "0.93rem",
-                color: "var(--on-surface-variant)",
-                marginTop: 2,
-              }}
-            >
-              PG Machine has identified 19 high value targets based on their
-              urgency & investment signals, pain hypothesis and Proof Points.
+            <div>
+              <div
+                style={{
+                  fontFamily: "var(--font-headline)",
+                  fontWeight: 700,
+                  fontSize: "1.05rem",
+                  color: "var(--on-background)",
+                }}
+              >
+                {widget.name}
+              </div>
+              <div
+                style={{
+                  fontSize: "0.88rem",
+                  color: "var(--on-surface-variant)",
+                  marginTop: 4,
+                  lineHeight: 1.45,
+                }}
+              >
+                {widget.description}
+              </div>
             </div>
-            <button
-              style={{
-                marginTop: "auto",
-                background:
-                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                color: "#fff",
-                fontWeight: 700,
-                fontFamily: "var(--font-label)",
-                border: "none",
-                borderRadius: 10,
-                fontSize: "1rem",
-                padding: "0.7rem 1.2rem",
-                cursor: "pointer",
-                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
-              }}
-            >
-              Review Action Items
-            </button>
-          </div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.14 }}
-          className="luminous-shadow"
-          style={{
-            borderRadius: "1rem",
-            padding: "1.25rem",
-            backgroundColor: "var(--surface-container-lowest)",
-            display: "flex",
-            gap: 18,
-            alignItems: "stretch",
-            minWidth: 220,
-            flex: 1,
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background:
-                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <TrendingUp size={22} color="#fff" />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.08rem",
-                color: "var(--on-background)",
-              }}
-            >
-              Active PG Machines
-            </div>
-            <div
-              style={{
-                fontSize: "0.93rem",
-                color: "var(--on-surface-variant)",
-                marginTop: 2,
-              }}
-            >
-              5 active deep researches including value pyramid & org chart in PG
-              Machine. 11 champion candidates identified. 67.28% research to
-              opportunity conversion.
-            </div>
-            <button
-              style={{
-                marginTop: "auto",
-                background:
-                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                color: "#fff",
-                fontWeight: 700,
-                fontFamily: "var(--font-label)",
-                border: "none",
-                borderRadius: 10,
-                fontSize: "1rem",
-                padding: "0.7rem 1.2rem",
-                cursor: "pointer",
-                boxShadow: "0 2px 12px 0 rgba(135,32,222,0.08)",
-              }}
-            >
-              View Analytics & Suggestions
-            </button>
-          </div>
-        </motion.div>
+          </motion.div>
+        ))}
       </div>
       <div
         style={{
