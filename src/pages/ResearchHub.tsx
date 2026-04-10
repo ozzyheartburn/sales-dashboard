@@ -69,7 +69,8 @@ export function ResearchHub() {
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
     try {
-      await fetch(
+      // 1. Trigger n8n workflow and wait for the structured result
+      const n8nRes = await fetch(
         "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d",
         {
           method: "POST",
@@ -80,7 +81,30 @@ export function ResearchHub() {
           }),
         },
       );
-    } catch (err) {}
+      const rawData = await n8nRes.json();
+
+      // n8n "All Incoming Items" returns an array — extract the first item
+      const researchData = Array.isArray(rawData) ? rawData[0] : rawData;
+
+      // 2. Save the result to MongoDB via our backend
+      await fetch(`${API_URL}/api/research`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(researchData),
+      });
+
+      // 3. Refresh the accounts list
+      const accountsRes = await fetch(`${API_URL}/api/accounts`);
+      const accounts: Account[] = await accountsRes.json();
+      const sorted = accounts
+        .filter((a) => a.companyName)
+        .sort(
+          (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+        );
+      setAccounts(sorted);
+    } catch (err) {
+      console.error("Research workflow error:", err);
+    }
     setIsSubmitting(false);
     setShowModal(false);
     setAccountName("");

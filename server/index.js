@@ -46,10 +46,39 @@ app.get("/api/accounts", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch accounts" });
   }
 });
-// Example n8n workflow trigger endpoint
+// Save research result from n8n workflow into MongoDB
 app.post("/api/research", async (req, res) => {
-  // Call n8n webhook or handle workflow logic here
-  res.json({ success: true, received: req.body });
+  try {
+    const doc = req.body;
+    if (!doc || !doc.companyName) {
+      return res.status(400).json({ error: "Missing companyName in payload" });
+    }
+
+    const database = await connectDB();
+    const collection = database.collection("PG_Machine");
+
+    // Upsert: update if account exists, insert if new
+    const result = await collection.updateOne(
+      { companyName: doc.companyName },
+      {
+        $set: { ...doc, timestamp: doc.timestamp || new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+
+    console.log(
+      `Research saved for ${doc.companyName}:`,
+      result.upsertedId ? "inserted" : "updated",
+    );
+    res.json({
+      success: true,
+      companyName: doc.companyName,
+      upserted: !!result.upsertedId,
+    });
+  } catch (err) {
+    console.error("Error saving research:", err);
+    res.status(500).json({ error: "Failed to save research" });
+  }
 });
 
 const PORT = process.env.PORT || 4000;
