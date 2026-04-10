@@ -493,7 +493,7 @@ function buildPyramidRows(account: Account | null): PyramidRow[] {
   });
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL || "http://51.21.219.66:4000";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function WarRoom() {
