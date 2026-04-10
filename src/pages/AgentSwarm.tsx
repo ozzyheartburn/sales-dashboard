@@ -22,6 +22,17 @@ import {
   ShieldCheck,
   Check,
   Loader2,
+  Settings,
+  MessageSquare,
+  Palette,
+  Volume2,
+  Mail,
+  Phone,
+  Globe,
+  Sliders,
+  Brain,
+  Shield,
+  ChevronRight,
 } from "lucide-react";
 
 interface Agent {
@@ -353,7 +364,7 @@ export function AgentSwarm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "340px 1fr",
+          gridTemplateColumns: "340px 1fr 1fr",
           gap: 24,
           alignItems: "start",
         }}
@@ -682,13 +693,25 @@ export function AgentSwarm() {
             overflow: "hidden",
           }}
         >
-          {/* Background glow effect */}
+          {/* Background image from Figma */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "url(/swarm-bg.png)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: 0.3,
+              pointerEvents: "none",
+            }}
+          />
+          {/* Dark overlay for readability */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "radial-gradient(circle at 50% 50%, rgba(135,32,222,0.08) 0%, rgba(20,184,166,0.04) 40%, transparent 70%)",
+                "linear-gradient(180deg, rgba(10,14,26,0.5) 0%, rgba(10,14,26,0.7) 50%, rgba(10,14,26,0.85) 100%)",
               pointerEvents: "none",
             }}
           />
@@ -852,6 +875,342 @@ export function AgentSwarm() {
               </span>{" "}
               Status
             </span>
+          </div>
+        </motion.div>
+
+        {/* RIGHT: Cockpit */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          style={{
+            ...glassCard,
+            minHeight: 500,
+            padding: 0,
+            overflow: "hidden",
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Cockpit background image */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: "url(/cockpit-bg.png)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: 0.35,
+              pointerEvents: "none",
+            }}
+          />
+          {/* Dark overlay for readability */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(10,14,26,0.7) 0%, rgba(10,14,26,0.85) 60%, rgba(10,14,26,0.95) 100%)",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Content */}
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              padding: "1.25rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+              flex: 1,
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: dark.gradient,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: `0 2px 16px ${dark.purpleGlow}`,
+                  }}
+                >
+                  <Settings size={18} color="#fff" />
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-headline)",
+                      fontWeight: 700,
+                      fontSize: "1.05rem",
+                      color: dark.text,
+                    }}
+                  >
+                    Cockpit
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.62rem",
+                      color: dark.textDim,
+                      fontFamily: "var(--font-label)",
+                    }}
+                  >
+                    AI Platform Control Center
+                  </div>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  padding: "0.15rem 0.6rem",
+                  borderRadius: 9999,
+                  background: "rgba(34,197,94,0.15)",
+                  color: "#4ade80",
+                }}
+              >
+                Systems Online
+              </span>
+            </div>
+
+            {/* Cockpit Modules */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                {
+                  icon: <Brain size={14} />,
+                  label: "AI Personality Engine",
+                  desc: "Tone, empathy level & communication style",
+                  color: dark.purple,
+                  status: "Active",
+                },
+                {
+                  icon: <MessageSquare size={14} />,
+                  label: "Messaging Framework",
+                  desc: "Templates, value props & objection handling",
+                  color: dark.accent,
+                  status: "12 templates",
+                },
+                {
+                  icon: <Palette size={14} />,
+                  label: "Personalization Rules",
+                  desc: "Industry, persona & buying stage adaptation",
+                  color: "#f59e0b",
+                  status: "8 rules",
+                },
+                {
+                  icon: <Volume2 size={14} />,
+                  label: "Voice & Tone Profiles",
+                  desc: "Executive, technical & champion variants",
+                  color: "#22c55e",
+                  status: "3 profiles",
+                },
+                {
+                  icon: <Shield size={14} />,
+                  label: "Compliance & Guardrails",
+                  desc: "Brand safety, legal review & approval flows",
+                  color: "#ef4444",
+                  status: "Enforced",
+                },
+              ].map((module) => (
+                <div
+                  key={module.label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "0.55rem 0.65rem",
+                    borderRadius: 10,
+                    background: "rgba(255,255,255,0.03)",
+                    border: `1px solid ${dark.cardBorder}`,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      background: `${module.color}20`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: module.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {module.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        fontFamily: "var(--font-label)",
+                        color: dark.text,
+                      }}
+                    >
+                      {module.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.62rem",
+                        color: dark.textMuted,
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {module.desc}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "0.58rem",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-label)",
+                      color: module.color,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {module.status}
+                  </span>
+                  <ChevronRight size={13} color={dark.textDim} />
+                </div>
+              ))}
+            </div>
+
+            {/* Channel Configuration */}
+            <div
+              style={{
+                borderTop: `1px solid ${dark.cardBorder}`,
+                paddingTop: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                  color: dark.textDim,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  marginBottom: 8,
+                }}
+              >
+                Active Channels
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[
+                  { icon: <Mail size={14} />, label: "Email", active: true },
+                  { icon: <Phone size={14} />, label: "Phone", active: true },
+                  { icon: <Globe size={14} />, label: "Web", active: true },
+                  {
+                    icon: <MessageSquare size={14} />,
+                    label: "Chat",
+                    active: false,
+                  },
+                ].map((ch) => (
+                  <div
+                    key={ch.label}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "0.5rem 0.3rem",
+                      borderRadius: 8,
+                      background: ch.active
+                        ? "rgba(20,184,166,0.06)"
+                        : "rgba(255,255,255,0.02)",
+                      border: ch.active
+                        ? "1px solid rgba(20,184,166,0.2)"
+                        : `1px solid ${dark.cardBorder}`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: ch.active ? dark.accentLight : dark.textDim,
+                      }}
+                    >
+                      {ch.icon}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "0.58rem",
+                        fontWeight: 600,
+                        fontFamily: "var(--font-label)",
+                        color: ch.active ? dark.text : dark.textDim,
+                      }}
+                    >
+                      {ch.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: "auto",
+              }}
+            >
+              {[
+                { label: "Response Rate", value: "94%", color: "#22c55e" },
+                { label: "Personalization", value: "87%", color: dark.accent },
+                { label: "Compliance", value: "100%", color: dark.purple },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  style={{
+                    flex: 1,
+                    padding: "0.5rem",
+                    borderRadius: 8,
+                    background: "rgba(255,255,255,0.03)",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "1.1rem",
+                      fontWeight: 800,
+                      fontFamily: "var(--font-headline)",
+                      color: stat.color,
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.55rem",
+                      color: dark.textDim,
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>
