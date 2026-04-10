@@ -4,10 +4,15 @@ import {
   Search,
   Building2,
   TrendingUp,
-  Star,
   Sparkles,
   Lightbulb,
   Plus,
+  Globe,
+  Target,
+  Zap,
+  AlertTriangle,
+  Crosshair,
+  Clock,
 } from "lucide-react";
 
 interface Account {
@@ -50,8 +55,12 @@ export function ResearchHub() {
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`)
       .then((res) => res.json())
-      .then((data) => {
-        setAccounts(data);
+      .then((data: Account[]) => {
+        const populated = data.filter((a) => a.companyName);
+        populated.sort(
+          (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+        );
+        setAccounts(populated);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -540,6 +549,7 @@ export function ResearchHub() {
                 minHeight: 120,
               }}
             >
+              {/* Header: Name + Website */}
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Building2 size={20} color="var(--primary)" />
                 <span
@@ -555,37 +565,44 @@ export function ResearchHub() {
                 {acc.website && (
                   <span
                     style={{
-                      fontSize: "0.85rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: "0.82rem",
                       color: "var(--on-surface-variant)",
-                      marginLeft: 6,
                     }}
                   >
-                    {acc.website}
+                    <Globe size={12} /> {acc.website}
                   </span>
                 )}
               </div>
+
+              {/* Badges Row: Priority + Score + Timestamp */}
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
-                  marginTop: 2,
+                  gap: 10,
                   flexWrap: "wrap",
                 }}
               >
                 {acc.priority && (
                   <span
                     style={{
-                      fontSize: "0.65rem",
+                      fontSize: "0.62rem",
                       borderRadius: 4,
                       background:
-                        acc.priority === "P1"
-                          ? "var(--primary)"
-                          : "var(--secondary-brand)",
+                        acc.priority === "high"
+                          ? "var(--error)"
+                          : acc.priority === "medium"
+                            ? "#f59e0b"
+                            : "var(--secondary-brand)",
                       color: "#fff",
                       padding: "0.15rem 0.6rem",
                       fontFamily: "var(--font-label)",
                       fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
                     }}
                   >
                     {acc.priority}
@@ -593,19 +610,40 @@ export function ResearchHub() {
                 )}
                 {acc.buyingSignalScore != null && (
                   <span
-                    style={{ fontSize: "0.93rem", color: "var(--on-surface)" }}
+                    style={{
+                      fontSize: "0.88rem",
+                      color: "var(--primary)",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-label)",
+                    }}
                   >
-                    Score: <b>{acc.buyingSignalScore}</b>
+                    {acc.buyingSignalScore}/10
+                  </span>
+                )}
+                {acc.timestamp && (
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "var(--on-surface-variant)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      marginLeft: "auto",
+                    }}
+                  >
+                    <Clock size={11} />
+                    {new Date(acc.timestamp).toLocaleDateString()}
                   </span>
                 )}
               </div>
+
+              {/* Rationale */}
               {acc.rationale && (
                 <div
                   style={{
-                    fontSize: "0.85rem",
+                    fontSize: "0.84rem",
                     color: "var(--on-surface-variant)",
-                    marginTop: 4,
-                    lineHeight: 1.4,
+                    lineHeight: 1.45,
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
@@ -615,10 +653,94 @@ export function ResearchHub() {
                   {acc.rationale}
                 </div>
               )}
+
+              {/* Insights Pill Row */}
+              {acc.insights && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 6,
+                    flexWrap: "wrap",
+                    marginTop: 2,
+                  }}
+                >
+                  {(acc.insights.strategicContext?.length ?? 0) > 0 && (
+                    <span style={insightPillStyle("#124af1")}>
+                      <Target size={10} />{" "}
+                      {acc.insights.strategicContext.length} Strategic
+                    </span>
+                  )}
+                  {(acc.insights.ecommercePriorities?.length ?? 0) > 0 && (
+                    <span style={insightPillStyle("#4e45e4")}>
+                      <TrendingUp size={10} />{" "}
+                      {acc.insights.ecommercePriorities.length} Priorities
+                    </span>
+                  )}
+                  {(acc.insights.activeInitiatives?.length ?? 0) > 0 && (
+                    <span style={insightPillStyle("#22c55e")}>
+                      <Zap size={10} /> {acc.insights.activeInitiatives.length}{" "}
+                      Initiatives
+                    </span>
+                  )}
+                  {(acc.insights.keyChallenges?.length ?? 0) > 0 && (
+                    <span style={insightPillStyle("#ef4444")}>
+                      <AlertTriangle size={10} />{" "}
+                      {acc.insights.keyChallenges.length} Challenges
+                    </span>
+                  )}
+                  {(acc.insights.opportunityFrame?.length ?? 0) > 0 && (
+                    <span style={insightPillStyle("#8720de")}>
+                      <Crosshair size={10} />{" "}
+                      {acc.insights.opportunityFrame.length} Opportunities
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Reports indicator */}
+              {acc.reports?.chatGptAnalysis && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginTop: "auto",
+                    paddingTop: 6,
+                    borderTop: "1px solid rgba(107,113,148,0.1)",
+                  }}
+                >
+                  <Sparkles size={13} color="var(--tertiary)" />
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--on-surface-variant)",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    AI Analysis Available
+                  </span>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
       )}
     </div>
   );
+}
+
+function insightPillStyle(color: string): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: "0.62rem",
+    fontWeight: 700,
+    fontFamily: "var(--font-label)",
+    padding: "0.15rem 0.55rem",
+    borderRadius: 9999,
+    background: `${color}14`,
+    color,
+  };
 }
