@@ -1207,7 +1207,7 @@ export function WarRoom() {
                           </div>
                           <p
                             style={{
-                              fontSize: "0.84rem",
+                              fontSize: headline.length > 120 ? "0.72rem" : headline.length > 80 ? "0.78rem" : "0.84rem",
                               color: "var(--on-surface)",
                               lineHeight: 1.45,
                               margin: 0,
