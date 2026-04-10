@@ -29,7 +29,6 @@ import {
   Mail,
   Phone,
   Globe,
-  Sliders,
   Brain,
   Shield,
   ChevronRight,
@@ -360,331 +359,23 @@ export function AgentSwarm() {
         </div>
       </div>
 
-      {/* 3 Column Layout */}
+      {/* Two-Column Layout: Agent Swarm + Cockpit */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "340px 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
           gap: 24,
           alignItems: "start",
         }}
       >
-        {/* LEFT: Deploy & Orchestrate */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Deploy & Orchestrate Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            style={glassCard}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.05rem",
-                color: dark.text,
-                marginBottom: 14,
-              }}
-            >
-              Deploy & Orchestrate
-            </div>
-
-            {/* Search / Account Input */}
-            <div style={{ position: "relative", marginBottom: 12 }}>
-              <Search
-                size={15}
-                style={{
-                  position: "absolute",
-                  left: 10,
-                  top: 10,
-                  color: dark.textDim,
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Search accounts or signals..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.55rem 0.6rem 0.55rem 2rem",
-                  borderRadius: 8,
-                  border: `1px solid ${dark.inputBorder}`,
-                  fontSize: "0.85rem",
-                  background: dark.inputBg,
-                  color: dark.text,
-                  fontFamily: "var(--font-body)",
-                }}
-              />
-            </div>
-
-            {/* ICP & Persona Tags */}
-            <div style={{ marginBottom: 14 }}>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  color: dark.textDim,
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                  marginBottom: 6,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                Active ICP & Persona Filters
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {["Nordic Enterprise", "Ecommerce", "Head of Digital"].map(
-                  (tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        fontSize: "0.65rem",
-                        fontWeight: 600,
-                        fontFamily: "var(--font-label)",
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: 9999,
-                        background: dark.accentGlow,
-                        color: dark.accentLight,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ),
-                )}
-              </div>
-            </div>
-
-            {/* Auto-deploy Toggle */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0.5rem 0",
-                borderTop: `1px solid ${dark.cardBorder}`,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.8rem",
-                  color: dark.text,
-                  fontWeight: 600,
-                }}
-              >
-                Auto-deploy on new accounts
-              </span>
-              <ToggleSwitch enabled={true} onToggle={() => {}} />
-            </div>
-          </motion.div>
-
-          {/* Instructions / Signals Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.14 }}
-            style={glassCard}
-          >
-            {/* Tabs */}
-            <div
-              style={{
-                display: "flex",
-                gap: 0,
-                marginBottom: 12,
-                borderBottom: `1px solid ${dark.cardBorder}`,
-              }}
-            >
-              {(
-                [
-                  { key: "instructions", label: "Custom Instructions" },
-                  { key: "dependencies", label: "Dependencies" },
-                  { key: "signals", label: "Signals" },
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: "0.5rem 0.8rem",
-                    fontSize: "0.72rem",
-                    fontWeight: activeTab === tab.key ? 700 : 500,
-                    fontFamily: "var(--font-label)",
-                    color:
-                      activeTab === tab.key ? dark.accentLight : dark.textDim,
-                    borderBottom:
-                      activeTab === tab.key
-                        ? `2px solid ${dark.accent}`
-                        : "2px solid transparent",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {activeTab === "instructions" && (
-              <textarea
-                placeholder="Add custom instructions, notes, or context for this swarm run..."
-                value={customInstructions}
-                onChange={(e) => setCustomInstructions(e.target.value)}
-                style={{
-                  width: "100%",
-                  minHeight: 80,
-                  padding: "0.6rem",
-                  borderRadius: 8,
-                  border: `1px solid ${dark.inputBorder}`,
-                  background: dark.inputBg,
-                  color: dark.text,
-                  fontSize: "0.82rem",
-                  fontFamily: "var(--font-body)",
-                  resize: "vertical",
-                }}
-              />
-            )}
-
-            {activeTab === "dependencies" && (
-              <div
-                style={{
-                  fontSize: "0.82rem",
-                  color: dark.textDim,
-                  padding: "0.5rem 0",
-                }}
-              >
-                No dependencies configured. Agents run independently by default.
-              </div>
-            )}
-
-            {activeTab === "signals" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {[
-                  "Revenue Decline > 10%",
-                  "Leadership Change",
-                  "New Funding Round",
-                ].map((signal) => (
-                  <div
-                    key={signal}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "0.4rem 0.6rem",
-                      borderRadius: 8,
-                      background: "rgba(255,255,255,0.03)",
-                      fontSize: "0.78rem",
-                      color: dark.text,
-                    }}
-                  >
-                    <Sparkles size={12} color={dark.accent} />
-                    {signal}
-                  </div>
-                ))}
-                <button
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    background: "none",
-                    border: `1px dashed ${dark.cardBorder}`,
-                    borderRadius: 8,
-                    padding: "0.4rem 0.6rem",
-                    fontSize: "0.78rem",
-                    color: dark.textDim,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-label)",
-                    fontWeight: 600,
-                  }}
-                >
-                  <Plus size={12} /> Add Signal
-                </button>
-              </div>
-            )}
-
-            {/* Run Swarm Button */}
-            <button
-              onClick={runSwarm}
-              disabled={swarmStatus === "running"}
-              style={{
-                width: "100%",
-                marginTop: 14,
-                padding: "0.7rem",
-                borderRadius: 10,
-                border: "none",
-                background:
-                  swarmStatus === "running"
-                    ? "rgba(255,255,255,0.08)"
-                    : dark.gradient,
-                color: "#fff",
-                fontFamily: "var(--font-label)",
-                fontWeight: 700,
-                fontSize: "0.92rem",
-                cursor: swarmStatus === "running" ? "wait" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                boxShadow:
-                  swarmStatus === "running"
-                    ? "none"
-                    : `0 2px 16px ${dark.purpleGlow}`,
-                opacity: swarmStatus === "running" ? 0.7 : 1,
-              }}
-            >
-              {swarmStatus === "running" ? (
-                <>
-                  <Loader2 size={16} className="spin" /> Running Swarm...
-                </>
-              ) : swarmStatus === "done" ? (
-                <>
-                  <Check size={16} /> Swarm Deployed
-                </>
-              ) : (
-                <>
-                  <Play size={16} /> Run Swarm
-                </>
-              )}
-            </button>
-
-            {/* Swarm status message */}
-            <AnimatePresence>
-              {swarmMessage && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  style={{
-                    marginTop: 8,
-                    fontSize: "0.75rem",
-                    color:
-                      swarmStatus === "done"
-                        ? dark.accentLight
-                        : swarmStatus === "idle"
-                          ? "#f87171"
-                          : dark.textMuted,
-                    fontFamily: "var(--font-label)",
-                    fontWeight: 600,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {swarmMessage}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        {/* CENTER: Swarm Visualization */}
+        {/* LEFT: Swarm Visualization */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           style={{
             ...glassCard,
-            minHeight: 500,
+            aspectRatio: "1",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -885,7 +576,7 @@ export function AgentSwarm() {
           transition={{ duration: 0.5, delay: 0.15 }}
           style={{
             ...glassCard,
-            minHeight: 500,
+            aspectRatio: "1",
             padding: 0,
             overflow: "hidden",
             position: "relative",
@@ -1214,6 +905,507 @@ export function AgentSwarm() {
           </div>
         </motion.div>
       </div>
+
+      {/* Customization Workflow */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.18 }}
+        style={{ ...glassCard, marginTop: 24 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 20,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.05rem",
+                color: dark.text,
+              }}
+            >
+              Mission Control
+            </div>
+            <div
+              style={{
+                fontSize: "0.72rem",
+                color: dark.textMuted,
+                marginTop: 2,
+              }}
+            >
+              Configure your swarm from account selection through deployment
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {swarmStatus === "done" && (
+              <span
+                style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  padding: "0.15rem 0.6rem",
+                  borderRadius: 9999,
+                  background: "rgba(34,197,94,0.15)",
+                  color: "#4ade80",
+                }}
+              >
+                Swarm Deployed
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Step indicators */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: 20,
+            gap: 0,
+          }}
+        >
+          {[
+            { num: 1, label: "Select Account" },
+            { num: 2, label: "Custom Instructions" },
+            { num: 3, label: "Intel & Signals" },
+            { num: 4, label: "Deploy Swarm" },
+          ].map((step, i) => (
+            <div
+              key={step.num}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background:
+                      i === 0 ? dark.gradient : `rgba(255,255,255,0.06)`,
+                    border: i === 0 ? "none" : `1px solid ${dark.cardBorder}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    color: i === 0 ? "#fff" : dark.textDim,
+                    flexShrink: 0,
+                  }}
+                >
+                  {step.num}
+                </div>
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    fontWeight: i === 0 ? 700 : 500,
+                    fontFamily: "var(--font-label)",
+                    color: i === 0 ? dark.text : dark.textDim,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {i < 3 && (
+                <div
+                  style={{
+                    flex: 1,
+                    height: 1,
+                    background: dark.cardBorder,
+                    margin: "0 12px",
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Workflow content — 4-column grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            gap: 16,
+          }}
+        >
+          {/* Step 1: Account Selection */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${dark.cardBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Search size={14} color={dark.accent} />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  color: dark.text,
+                }}
+              >
+                Target Account
+              </span>
+            </div>
+            <div style={{ position: "relative", marginBottom: 10 }}>
+              <Search
+                size={13}
+                style={{
+                  position: "absolute",
+                  left: 8,
+                  top: 9,
+                  color: dark.textDim,
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Search accounts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0.5rem 0.5rem 1.8rem",
+                  borderRadius: 8,
+                  border: `1px solid ${dark.inputBorder}`,
+                  fontSize: "0.78rem",
+                  background: dark.inputBg,
+                  color: dark.text,
+                  fontFamily: "var(--font-body)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                fontSize: "0.65rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+                color: dark.textDim,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                marginBottom: 6,
+              }}
+            >
+              ICP & Persona Filters
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {["Nordic Enterprise", "Ecommerce", "Head of Digital"].map(
+                (tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      fontSize: "0.6rem",
+                      fontWeight: 600,
+                      fontFamily: "var(--font-label)",
+                      padding: "0.15rem 0.5rem",
+                      borderRadius: 9999,
+                      background: dark.accentGlow,
+                      color: dark.accentLight,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
+
+          {/* Step 2: Custom Instructions */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${dark.cardBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <MessageSquare size={14} color={dark.purple} />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  color: dark.text,
+                }}
+              >
+                Agent Instructions
+              </span>
+            </div>
+            <textarea
+              placeholder="Instruct your agents with custom prompts, context, priorities, and strategic direction..."
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              style={{
+                width: "100%",
+                minHeight: 90,
+                padding: "0.5rem",
+                borderRadius: 8,
+                border: `1px solid ${dark.inputBorder}`,
+                background: dark.inputBg,
+                color: dark.text,
+                fontSize: "0.75rem",
+                fontFamily: "var(--font-body)",
+                resize: "vertical",
+                lineHeight: 1.5,
+              }}
+            />
+          </div>
+
+          {/* Step 3: Intel & Signals */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${dark.cardBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Sparkles size={14} color="#f59e0b" />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  color: dark.text,
+                }}
+              >
+                Competitive Intel & Signals
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {[
+                "Revenue Decline > 10%",
+                "Leadership Change",
+                "New Funding Round",
+                "Platform Migration",
+              ].map((signal) => (
+                <div
+                  key={signal}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "0.35rem 0.5rem",
+                    borderRadius: 7,
+                    background: "rgba(255,255,255,0.03)",
+                    fontSize: "0.72rem",
+                    color: dark.text,
+                  }}
+                >
+                  <Sparkles size={10} color={dark.accent} />
+                  {signal}
+                </div>
+              ))}
+              <button
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  background: "none",
+                  border: `1px dashed ${dark.cardBorder}`,
+                  borderRadius: 7,
+                  padding: "0.35rem 0.5rem",
+                  fontSize: "0.72rem",
+                  color: dark.textDim,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
+                <Plus size={10} /> Add Signal
+              </button>
+            </div>
+          </div>
+
+          {/* Step 4: Deploy */}
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${dark.cardBorder}`,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Zap size={14} color="#22c55e" />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  color: dark.text,
+                }}
+              >
+                Deploy & Run
+              </span>
+            </div>
+
+            <div
+              style={{
+                fontSize: "0.72rem",
+                color: dark.textMuted,
+                lineHeight: 1.5,
+                marginBottom: 12,
+              }}
+            >
+              <span style={{ color: dark.accentLight, fontWeight: 700 }}>
+                {activeCount}
+              </span>{" "}
+              agents selected across{" "}
+              <span style={{ color: dark.accentLight, fontWeight: 700 }}>
+                {activeTemplate
+                  ? valueDriverTemplates.find((t) => t.id === activeTemplate)
+                      ?.name
+                  : "custom"}
+              </span>{" "}
+              template
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.4rem 0",
+                marginBottom: 10,
+                borderTop: `1px solid ${dark.cardBorder}`,
+                borderBottom: `1px solid ${dark.cardBorder}`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  color: dark.text,
+                  fontWeight: 600,
+                }}
+              >
+                Auto-deploy on new accounts
+              </span>
+              <ToggleSwitch enabled={true} onToggle={() => {}} />
+            </div>
+
+            <button
+              onClick={runSwarm}
+              disabled={swarmStatus === "running"}
+              style={{
+                width: "100%",
+                marginTop: "auto",
+                padding: "0.65rem",
+                borderRadius: 10,
+                border: "none",
+                background:
+                  swarmStatus === "running"
+                    ? "rgba(255,255,255,0.08)"
+                    : dark.gradient,
+                color: "#fff",
+                fontFamily: "var(--font-label)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                cursor: swarmStatus === "running" ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow:
+                  swarmStatus === "running"
+                    ? "none"
+                    : `0 2px 16px ${dark.purpleGlow}`,
+                opacity: swarmStatus === "running" ? 0.7 : 1,
+              }}
+            >
+              {swarmStatus === "running" ? (
+                <>
+                  <Loader2 size={16} className="spin" /> Running...
+                </>
+              ) : swarmStatus === "done" ? (
+                <>
+                  <Check size={16} /> Deployed
+                </>
+              ) : (
+                <>
+                  <Play size={16} /> Run Swarm
+                </>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {swarmMessage && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{
+                    marginTop: 8,
+                    fontSize: "0.68rem",
+                    color:
+                      swarmStatus === "done"
+                        ? dark.accentLight
+                        : swarmStatus === "idle"
+                          ? "#f87171"
+                          : dark.textMuted,
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {swarmMessage}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Value Driver Templates & Agent Selection — full-width below main grid */}
       <motion.div
