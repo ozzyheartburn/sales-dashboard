@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   Cpu,
-  Shield,
   TrendingUp,
   BarChart3,
   Eye,
@@ -13,13 +12,17 @@ import {
   Sparkles,
   Globe,
   FileText,
-  Settings,
-  ChevronRight,
   Users,
   Target,
   Clock,
   Trophy,
   AlertTriangle,
+  DollarSign,
+  Heart,
+  Zap,
+  ShieldCheck,
+  Check,
+  Loader2,
 } from "lucide-react";
 
 interface Agent {
@@ -135,6 +138,78 @@ const defaultAgents: Agent[] = [
     icon: <AlertTriangle size={18} />,
     enabled: false,
   },
+  {
+    id: "market-research-agent",
+    name: "MarketResearchAgent",
+    description:
+      "Aggregates macro market trends, TAM/SAM sizing, analyst reports, and industry benchmarks to contextualize how market forces create urgency or opportunity for the account.",
+    icon: <TrendingUp size={18} />,
+    enabled: false,
+  },
+];
+
+// Value driver templates — each groups agents by enterprise buying theme
+interface ValueDriverTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  agentIds: string[];
+}
+
+const valueDriverTemplates: ValueDriverTemplate[] = [
+  {
+    id: "lower-tco",
+    name: "Lower TCO / Higher ROI",
+    description:
+      "Financial signals, earnings insights, and market trends that quantify cost savings and ROI potential for the buyer.",
+    icon: <DollarSign size={18} />,
+    color: "#22c55e",
+    agentIds: [
+      "financial-agent",
+      "earnings-call-agent",
+      "market-research-agent",
+    ],
+  },
+  {
+    id: "improved-cx",
+    name: "Improved Customer Experience",
+    description:
+      "Sentiment analysis, competitive benchmarking, and tech stack evaluation to build the case for better discovery UX.",
+    icon: <Heart size={18} />,
+    color: "#8720de",
+    agentIds: ["sentiment-agent", "competitor-agent", "tech-stack-agent"],
+  },
+  {
+    id: "transformation-urgency",
+    name: "Business Transformation & Urgency",
+    description:
+      "Hiring signals, leadership changes, platform initiatives, and financial pressure that create a time-sensitive buying window.",
+    icon: <Zap size={18} />,
+    color: "#f59e0b",
+    agentIds: [
+      "initiative-agent",
+      "hiring-agent",
+      "vendor-tenure-agent",
+      "leadership-agent",
+      "financial-agent",
+    ],
+  },
+  {
+    id: "reduce-risk",
+    name: "Reduce Risk & Improve CX (Tech Stack)",
+    description:
+      "Vendor lock-in risk, category complexity, build-vs-buy signals, and platform migration readiness assessment.",
+    icon: <ShieldCheck size={18} />,
+    color: "#124af1",
+    agentIds: [
+      "vendor-tenure-agent",
+      "category-complexity-agent",
+      "hiring-agent",
+      "initiative-agent",
+    ],
+  },
 ];
 
 const competitiveIntel: IntelCard[] = [
@@ -207,11 +282,77 @@ export function AgentSwarm() {
   const [activeTab, setActiveTab] = useState<
     "instructions" | "dependencies" | "signals"
   >("instructions");
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const [swarmStatus, setSwarmStatus] = useState<"idle" | "running" | "done">(
+    "idle",
+  );
+  const [swarmMessage, setSwarmMessage] = useState("");
+
+  const API_URL = import.meta.env.VITE_API_URL || "";
 
   const toggleAgent = (id: string) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a)),
     );
+  };
+
+  const applyTemplate = (templateId: string) => {
+    const template = valueDriverTemplates.find((t) => t.id === templateId);
+    if (!template) return;
+    const isAlreadyActive = activeTemplate === templateId;
+    if (isAlreadyActive) {
+      // Deselect: disable all agents
+      setAgents((prev) => prev.map((a) => ({ ...a, enabled: false })));
+      setActiveTemplate(null);
+      return;
+    }
+    // Enable only the agents in this template
+    setAgents((prev) =>
+      prev.map((a) => ({
+        ...a,
+        enabled: template.agentIds.includes(a.id),
+      })),
+    );
+    setActiveTemplate(templateId);
+  };
+
+  const runSwarm = async () => {
+    if (!searchQuery.trim()) {
+      setSwarmMessage("Enter an account name to run the swarm against.");
+      return;
+    }
+    const enabledAgents = agents.filter((a) => a.enabled);
+    if (enabledAgents.length === 0) {
+      setSwarmMessage("Select at least one agent or value driver template.");
+      return;
+    }
+    setSwarmStatus("running");
+    setSwarmMessage("");
+    try {
+      const res = await fetch(`${API_URL}/api/swarm/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          account_name: searchQuery.trim(),
+          agents: enabledAgents.map((a) => a.id),
+          template: activeTemplate || "custom",
+          instructions: customInstructions || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSwarmStatus("done");
+        setSwarmMessage(
+          `Swarm deployed for "${searchQuery.trim()}" — ${enabledAgents.length} agents running in parallel. Results will be synthesized into a buying signal brief.`,
+        );
+      } else {
+        setSwarmStatus("idle");
+        setSwarmMessage(data.error || "Failed to start swarm.");
+      }
+    } catch {
+      setSwarmStatus("idle");
+      setSwarmMessage("Network error — could not reach the server.");
+    }
   };
 
   const activeCount = agents.filter((a) => a.enabled).length;
@@ -506,27 +647,74 @@ export function AgentSwarm() {
 
             {/* Run Swarm Button */}
             <button
+              onClick={runSwarm}
+              disabled={swarmStatus === "running"}
               style={{
                 width: "100%",
                 marginTop: 14,
                 padding: "0.7rem",
                 borderRadius: 10,
                 border: "none",
-                background: dark.gradient,
+                background:
+                  swarmStatus === "running"
+                    ? "rgba(255,255,255,0.08)"
+                    : dark.gradient,
                 color: "#fff",
                 fontFamily: "var(--font-label)",
                 fontWeight: 700,
                 fontSize: "0.92rem",
-                cursor: "pointer",
+                cursor: swarmStatus === "running" ? "wait" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                boxShadow: `0 2px 16px ${dark.purpleGlow}`,
+                boxShadow:
+                  swarmStatus === "running"
+                    ? "none"
+                    : `0 2px 16px ${dark.purpleGlow}`,
+                opacity: swarmStatus === "running" ? 0.7 : 1,
               }}
             >
-              <Play size={16} /> Run Swarm
+              {swarmStatus === "running" ? (
+                <>
+                  <Loader2 size={16} className="spin" /> Running Swarm...
+                </>
+              ) : swarmStatus === "done" ? (
+                <>
+                  <Check size={16} /> Swarm Deployed
+                </>
+              ) : (
+                <>
+                  <Play size={16} /> Run Swarm
+                </>
+              )}
             </button>
+
+            {/* Swarm status message */}
+            <AnimatePresence>
+              {swarmMessage && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{
+                    marginTop: 8,
+                    fontSize: "0.75rem",
+                    color:
+                      swarmStatus === "done"
+                        ? dark.accentLight
+                        : swarmStatus === "idle"
+                          ? "#f87171"
+                          : dark.textMuted,
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {swarmMessage}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 
@@ -905,7 +1093,7 @@ export function AgentSwarm() {
         </div>
       </div>
 
-      {/* Select Agents — full-width below main grid */}
+      {/* Value Driver Templates & Agent Selection — full-width below main grid */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -917,7 +1105,7 @@ export function AgentSwarm() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 14,
+            marginBottom: 16,
           }}
         >
           <div
@@ -928,7 +1116,7 @@ export function AgentSwarm() {
               color: dark.text,
             }}
           >
-            Select Agents
+            Select Agents by Value Driver
           </div>
           <span
             style={{
@@ -945,6 +1133,127 @@ export function AgentSwarm() {
           </span>
         </div>
 
+        {/* Template Cards */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          {valueDriverTemplates.map((template) => {
+            const isActive = activeTemplate === template.id;
+            return (
+              <motion.button
+                key={template.id}
+                onClick={() => applyTemplate(template.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  background: isActive
+                    ? `${template.color}18`
+                    : "rgba(255,255,255,0.02)",
+                  border: isActive
+                    ? `2px solid ${template.color}60`
+                    : `1px solid ${dark.cardBorder}`,
+                  borderRadius: 12,
+                  padding: "0.85rem 0.75rem",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.2s",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {isActive && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: template.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Check size={11} color="#fff" />
+                  </div>
+                )}
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: `${template.color}20`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: template.color,
+                    marginBottom: 8,
+                  }}
+                >
+                  {template.icon}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 700,
+                    fontSize: "0.78rem",
+                    color: dark.text,
+                    marginBottom: 4,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {template.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.62rem",
+                    color: dark.textMuted,
+                    lineHeight: 1.35,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical" as const,
+                    overflow: "hidden",
+                  }}
+                >
+                  {template.description}
+                </div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: "0.58rem",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    color: isActive ? template.color : dark.textDim,
+                  }}
+                >
+                  {template.agentIds.length} agents
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* All Agents Grid — grouped by active template highlight */}
+        <div
+          style={{
+            fontSize: "0.7rem",
+            fontFamily: "var(--font-label)",
+            fontWeight: 600,
+            color: dark.textDim,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            marginBottom: 8,
+          }}
+        >
+          All Agents
+        </div>
         <div
           style={{
             display: "grid",

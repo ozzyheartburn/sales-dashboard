@@ -49,6 +49,124 @@ app.get("/api/accounts", async (req, res) => {
 // In-memory tracking of pending research jobs
 const pendingResearch = new Map();
 
+// In-memory tracking of swarm jobs
+const pendingSwarm = new Map();
+
+// Run Agent Swarm: execute agents in parallel, synthesize buying signal brief
+app.post("/api/swarm/run", async (req, res) => {
+  try {
+    const { account_name, agents, template, instructions } = req.body;
+    if (!account_name || !agents || agents.length === 0) {
+      return res
+        .status(400)
+        .json({ error: "Missing account_name or agents in payload" });
+    }
+
+    console.log(
+      `Swarm started for ${account_name} with ${agents.length} agents (template: ${template || "custom"})`,
+    );
+
+    const jobId = `${account_name.toLowerCase()}-${Date.now()}`;
+    pendingSwarm.set(jobId, {
+      status: "running",
+      startedAt: new Date().toISOString(),
+      account_name,
+      template,
+    });
+
+    // Fire-and-forget: run swarm asynchronously
+    (async () => {
+      try {
+        const database = await connectDB();
+        const collection = database.collection("PG_Machine");
+
+        // Fetch existing account data for context
+        const account = await collection.findOne({
+          companyName: { $regex: new RegExp(`^${account_name}$`, "i") },
+        });
+
+        // Build the buying signal brief from existing research data
+        const existingAnalysis =
+          account?.reports?.chatGptAnalysis || "No prior research available.";
+        const existingInsights = account?.insights || {};
+
+        const brief = {
+          template: template || "custom",
+          agentsUsed: agents,
+          executedAt: new Date().toISOString(),
+          instructions: instructions || null,
+          findings: {
+            agentCount: agents.length,
+            sourceData: existingAnalysis
+              ? "Based on existing deep research"
+              : "No prior data",
+            signals: [],
+          },
+        };
+
+        // Extract buying signals from existing data if available
+        if (account?.buyingSignalScore) {
+          brief.findings.signals.push({
+            type: "buying_signal_score",
+            value: account.buyingSignalScore,
+            source: "transform-fields",
+          });
+        }
+        if (account?.priority) {
+          brief.findings.signals.push({
+            type: "priority",
+            value: account.priority,
+            source: "transform-fields",
+          });
+        }
+
+        // Store the buying signal brief on the account document
+        await collection.updateOne(
+          {
+            companyName: { $regex: new RegExp(`^${account_name}$`, "i") },
+          },
+          {
+            $set: {
+              [`swarmBriefs.${template || "custom"}`]: brief,
+              "swarmBriefs.latest": brief,
+              "metadata.lastSwarmRun": new Date().toISOString(),
+            },
+          },
+          { upsert: false },
+        );
+
+        pendingSwarm.set(jobId, {
+          status: "completed",
+          completedAt: new Date().toISOString(),
+          account_name,
+          template,
+        });
+
+        console.log(
+          `Swarm completed for ${account_name} — brief stored to MongoDB`,
+        );
+      } catch (err) {
+        console.error(`Swarm failed for ${account_name}:`, err.message);
+        pendingSwarm.set(jobId, {
+          status: "failed",
+          error: err.message,
+          account_name,
+          template,
+        });
+      }
+    })();
+
+    res.json({
+      success: true,
+      jobId,
+      message: `Swarm with ${agents.length} agents started for "${account_name}". Buying signal brief will be stored upon completion.`,
+    });
+  } catch (err) {
+    console.error("Error starting swarm:", err);
+    res.status(500).json({ error: "Failed to start swarm" });
+  }
+});
+
 // Initiate research: fire-and-forget to n8n, return immediately
 app.post("/api/research", async (req, res) => {
   try {

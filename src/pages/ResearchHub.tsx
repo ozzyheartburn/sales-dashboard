@@ -232,17 +232,53 @@ export function ResearchHub() {
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "#1a1a2e" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                color: "#1a1a2e",
+              }}
+            >
               Quantitative Metrics
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+              <select
+                style={{
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: "0.3rem 0.6rem",
+                  fontSize: "0.72rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
                 <option>Last 30 days</option>
                 <option>Last 90 days</option>
                 <option>Last 12 months</option>
               </select>
-              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+              <select
+                style={{
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: "0.3rem 0.6rem",
+                  fontSize: "0.72rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
                 <option>All Accounts</option>
                 <option>Top Priority</option>
                 <option>Medium Priority</option>
@@ -257,42 +293,128 @@ export function ResearchHub() {
               { label: "SQOs/mo", value: "4.2", color: "#8720de" },
               { label: "Avg Deal", value: "$42.5k", color: "#f59e0b" },
             ].map((kpi) => (
-              <div key={kpi.label} style={{ flex: 1, background: "#f8f9fc", borderRadius: 10, padding: "0.6rem 0.75rem", textAlign: "center" }}>
-                <div style={{ fontSize: "1.2rem", fontWeight: 800, color: kpi.color, fontFamily: "var(--font-headline)" }}>{kpi.value}</div>
-                <div style={{ fontSize: "0.65rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginTop: 2 }}>{kpi.label}</div>
+              <div
+                key={kpi.label}
+                style={{
+                  flex: 1,
+                  background: "#f8f9fc",
+                  borderRadius: 10,
+                  padding: "0.6rem 0.75rem",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: 800,
+                    color: kpi.color,
+                    fontFamily: "var(--font-headline)",
+                  }}
+                >
+                  {kpi.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.65rem",
+                    fontWeight: 600,
+                    color: "#6b7194",
+                    fontFamily: "var(--font-label)",
+                    marginTop: 2,
+                  }}
+                >
+                  {kpi.label}
+                </div>
               </div>
             ))}
           </div>
           {/* Meetings & SQOs Bar Chart */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6 }}>Meetings & SQOs (last 6 months)</div>
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#6b7194",
+              fontFamily: "var(--font-label)",
+              marginBottom: 6,
+            }}
+          >
+            Meetings & SQOs (last 6 months)
+          </div>
           <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={[
-              { month: "Oct", meetings: 6, sqos: 2 },
-              { month: "Nov", meetings: 8, sqos: 3 },
-              { month: "Dec", meetings: 7, sqos: 3 },
-              { month: "Jan", meetings: 10, sqos: 4 },
-              { month: "Feb", meetings: 9, sqos: 5 },
-              { month: "Mar", meetings: 11, sqos: 5 },
-            ]} barGap={2} barCategoryGap="20%">
+            <BarChart
+              data={[
+                { month: "Oct", meetings: 6, sqos: 2 },
+                { month: "Nov", meetings: 8, sqos: 3 },
+                { month: "Dec", meetings: 7, sqos: 3 },
+                { month: "Jan", meetings: 10, sqos: 4 },
+                { month: "Feb", meetings: 9, sqos: 5 },
+                { month: "Mar", meetings: 11, sqos: 5 },
+              ]}
+              barGap={2}
+              barCategoryGap="20%"
+            >
               <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194", fontFamily: "var(--font-label)" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
-              <Bar dataKey="meetings" fill="#124af1" radius={[4, 4, 0, 0]} name="Meetings" />
-              <Bar dataKey="sqos" fill="#8720de" radius={[4, 4, 0, 0]} name="SQOs" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{
+                  fontSize: 11,
+                  fill: "#6b7194",
+                  fontFamily: "var(--font-label)",
+                }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#6b7194" }}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#fff",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  fontSize: "0.8rem",
+                }}
+              />
+              <Bar
+                dataKey="meetings"
+                fill="#124af1"
+                radius={[4, 4, 0, 0]}
+                name="Meetings"
+              />
+              <Bar
+                dataKey="sqos"
+                fill="#8720de"
+                radius={[4, 4, 0, 0]}
+                name="SQOs"
+              />
             </BarChart>
           </ResponsiveContainer>
           {/* Pipeline Trend */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 14 }}>Pipeline Value ($k)</div>
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#6b7194",
+              fontFamily: "var(--font-label)",
+              marginBottom: 6,
+              marginTop: 14,
+            }}
+          >
+            Pipeline Value ($k)
+          </div>
           <ResponsiveContainer width="100%" height={120}>
-            <AreaChart data={[
-              { month: "Oct", value: 85 },
-              { month: "Nov", value: 110 },
-              { month: "Dec", value: 95 },
-              { month: "Jan", value: 140 },
-              { month: "Feb", value: 168 },
-              { month: "Mar", value: 195 },
-            ]}>
+            <AreaChart
+              data={[
+                { month: "Oct", value: 85 },
+                { month: "Nov", value: 110 },
+                { month: "Dec", value: 95 },
+                { month: "Jan", value: 140 },
+                { month: "Feb", value: 168 },
+                { month: "Mar", value: 195 },
+              ]}
+            >
               <defs>
                 <linearGradient id="pipelineGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#124af1" stopOpacity={0.2} />
@@ -300,14 +422,49 @@ export function ResearchHub() {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
-              <Area type="monotone" dataKey="value" stroke="#124af1" strokeWidth={2.5} fill="url(#pipelineGrad)" name="Pipeline ($k)" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#6b7194" }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#6b7194" }}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#fff",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  fontSize: "0.8rem",
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#124af1"
+                strokeWidth={2.5}
+                fill="url(#pipelineGrad)"
+                name="Pipeline ($k)"
+              />
             </AreaChart>
           </ResponsiveContainer>
           {/* Contacts breakdown */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 14 }}>Contacts per Account (avg)</div>
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#6b7194",
+              fontFamily: "var(--font-label)",
+              marginBottom: 6,
+              marginTop: 14,
+            }}
+          >
+            Contacts per Account (avg)
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
             {[
               { label: "CXO", value: 2.1, color: "#14b8a6" },
@@ -317,11 +474,44 @@ export function ResearchHub() {
               { label: "High Value", value: 1.0, color: "#f59e0b" },
             ].map((c) => (
               <div key={c.label} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ height: 48, display: "flex", alignItems: "flex-end", justifyContent: "center", marginBottom: 4 }}>
-                  <div style={{ width: 24, borderRadius: "4px 4px 0 0", background: c.color, height: `${(c.value / 5) * 48}px`, transition: "height 0.3s" }} />
+                <div
+                  style={{
+                    height: 48,
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    marginBottom: 4,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 24,
+                      borderRadius: "4px 4px 0 0",
+                      background: c.color,
+                      height: `${(c.value / 5) * 48}px`,
+                      transition: "height 0.3s",
+                    }}
+                  />
                 </div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: c.color }}>{c.value}</div>
-                <div style={{ fontSize: "0.58rem", color: "#6b7194", fontFamily: "var(--font-label)", fontWeight: 600 }}>{c.label}</div>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: c.color,
+                  }}
+                >
+                  {c.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.58rem",
+                    color: "#6b7194",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {c.label}
+                </div>
               </div>
             ))}
           </div>
@@ -341,17 +531,53 @@ export function ResearchHub() {
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "#1a1a2e" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                color: "#1a1a2e",
+              }}
+            >
               Qualitative Metrics
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+              <select
+                style={{
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: "0.3rem 0.6rem",
+                  fontSize: "0.72rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
                 <option>Last 30 days</option>
                 <option>Last 90 days</option>
                 <option>Last 12 months</option>
               </select>
-              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+              <select
+                style={{
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: "0.3rem 0.6rem",
+                  fontSize: "0.72rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
                 <option>All Accounts</option>
                 <option>Top Priority</option>
                 <option>Medium Priority</option>
@@ -361,7 +587,17 @@ export function ResearchHub() {
           {/* Champion Sentiment Donut */}
           <div style={{ display: "flex", gap: 24, marginBottom: 18 }}>
             <div style={{ flex: "0 0 140px" }}>
-              <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 4 }}>Champion Sentiment</div>
+              <div
+                style={{
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "#6b7194",
+                  fontFamily: "var(--font-label)",
+                  marginBottom: 4,
+                }}
+              >
+                Champion Sentiment
+              </div>
               <ResponsiveContainer width={140} height={140}>
                 <PieChart>
                   <Pie
@@ -370,42 +606,147 @@ export function ResearchHub() {
                       { name: "Neutral", value: 27 },
                       { name: "Negative", value: 15 },
                     ]}
-                    cx="50%" cy="50%" innerRadius={36} outerRadius={60}
-                    paddingAngle={3} dataKey="value" strokeWidth={0}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={60}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
                   >
                     <Cell fill="#22c55e" />
                     <Cell fill="#f59e0b" />
                     <Cell fill="#ef4444" />
                   </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "none",
+                      background: "#fff",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                      fontSize: "0.8rem",
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 2 }}>
-                {[{ color: "#22c55e", label: "Pos" }, { color: "#f59e0b", label: "Neut" }, { color: "#ef4444", label: "Neg" }].map((l) => (
-                  <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "0.58rem", color: "#6b7194", fontFamily: "var(--font-label)", fontWeight: 600 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />{l.label}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 10,
+                  marginTop: 2,
+                }}
+              >
+                {[
+                  { color: "#22c55e", label: "Pos" },
+                  { color: "#f59e0b", label: "Neut" },
+                  { color: "#ef4444", label: "Neg" },
+                ].map((l) => (
+                  <div
+                    key={l.label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                      fontSize: "0.58rem",
+                      color: "#6b7194",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: "50%",
+                        background: l.color,
+                      }}
+                    />
+                    {l.label}
                   </div>
                 ))}
               </div>
             </div>
             {/* Win/Loss Themes */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 8 }}>Win / Loss Themes</div>
+              <div
+                style={{
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: "#6b7194",
+                  fontFamily: "var(--font-label)",
+                  marginBottom: 8,
+                }}
+              >
+                Win / Loss Themes
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {[
-                  { theme: "Discovery relevance", wins: 14, losses: 2, color: "#22c55e" },
-                  { theme: "Personalization depth", wins: 11, losses: 4, color: "#124af1" },
-                  { theme: "Integration complexity", wins: 3, losses: 9, color: "#ef4444" },
-                  { theme: "Time-to-value", wins: 8, losses: 5, color: "#f59e0b" },
-                  { theme: "Pricing / ROI clarity", wins: 10, losses: 3, color: "#8720de" },
+                  {
+                    theme: "Discovery relevance",
+                    wins: 14,
+                    losses: 2,
+                    color: "#22c55e",
+                  },
+                  {
+                    theme: "Personalization depth",
+                    wins: 11,
+                    losses: 4,
+                    color: "#124af1",
+                  },
+                  {
+                    theme: "Integration complexity",
+                    wins: 3,
+                    losses: 9,
+                    color: "#ef4444",
+                  },
+                  {
+                    theme: "Time-to-value",
+                    wins: 8,
+                    losses: 5,
+                    color: "#f59e0b",
+                  },
+                  {
+                    theme: "Pricing / ROI clarity",
+                    wins: 10,
+                    losses: 3,
+                    color: "#8720de",
+                  },
                 ].map((t) => (
                   <div key={t.theme}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", fontFamily: "var(--font-label)", fontWeight: 600, color: "#374151", marginBottom: 2 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.7rem",
+                        fontFamily: "var(--font-label)",
+                        fontWeight: 600,
+                        color: "#374151",
+                        marginBottom: 2,
+                      }}
+                    >
                       <span>{t.theme}</span>
-                      <span style={{ color: "#6b7194" }}>{t.wins}W / {t.losses}L</span>
+                      <span style={{ color: "#6b7194" }}>
+                        {t.wins}W / {t.losses}L
+                      </span>
                     </div>
-                    <div style={{ height: 6, borderRadius: 3, background: "#f3f4f6", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 3, background: t.color, width: `${(t.wins / (t.wins + t.losses)) * 100}%`, transition: "width 0.4s" }} />
+                    <div
+                      style={{
+                        height: 6,
+                        borderRadius: 3,
+                        background: "#f3f4f6",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          borderRadius: 3,
+                          background: t.color,
+                          width: `${(t.wins / (t.wins + t.losses)) * 100}%`,
+                          transition: "width 0.4s",
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -413,19 +754,56 @@ export function ResearchHub() {
             </div>
           </div>
           {/* Buyer Journey Insights */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6 }}>Buyer Journey Stage Distribution</div>
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#6b7194",
+              fontFamily: "var(--font-label)",
+              marginBottom: 6,
+            }}
+          >
+            Buyer Journey Stage Distribution
+          </div>
           <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={[
-              { stage: "Awareness", count: 18 },
-              { stage: "Interest", count: 14 },
-              { stage: "Evaluate", count: 9 },
-              { stage: "Commit", count: 6 },
-              { stage: "Closed", count: 4 },
-            ]} layout="vertical" barCategoryGap="18%">
-              <CartesianGrid stroke="rgba(167,176,222,0.15)" horizontal={false} />
-              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
-              <YAxis type="category" dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} width={70} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+            <BarChart
+              data={[
+                { stage: "Awareness", count: 18 },
+                { stage: "Interest", count: 14 },
+                { stage: "Evaluate", count: 9 },
+                { stage: "Commit", count: 6 },
+                { stage: "Closed", count: 4 },
+              ]}
+              layout="vertical"
+              barCategoryGap="18%"
+            >
+              <CartesianGrid
+                stroke="rgba(167,176,222,0.15)"
+                horizontal={false}
+              />
+              <XAxis
+                type="number"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#6b7194" }}
+              />
+              <YAxis
+                type="category"
+                dataKey="stage"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#374151", fontWeight: 600 }}
+                width={70}
+              />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#fff",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                  fontSize: "0.8rem",
+                }}
+              />
               <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Accounts">
                 {[
                   { stage: "Awareness", count: 18 },
@@ -434,13 +812,29 @@ export function ResearchHub() {
                   { stage: "Commit", count: 6 },
                   { stage: "Closed", count: 4 },
                 ].map((_, i) => (
-                  <Cell key={i} fill={["#124af1", "#4e45e4", "#8720de", "#06b6d4", "#22c55e"][i]} />
+                  <Cell
+                    key={i}
+                    fill={
+                      ["#124af1", "#4e45e4", "#8720de", "#06b6d4", "#22c55e"][i]
+                    }
+                  />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           {/* Key Themes */}
-          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 12 }}>Top Pain Points (across accounts)</div>
+          <div
+            style={{
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              color: "#6b7194",
+              fontFamily: "var(--font-label)",
+              marginBottom: 6,
+              marginTop: 12,
+            }}
+          >
+            Top Pain Points (across accounts)
+          </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {[
               { label: "Search relevance", count: 12 },
@@ -450,8 +844,25 @@ export function ResearchHub() {
               { label: "Manual merchandising", count: 6 },
               { label: "Data silos", count: 5 },
             ].map((p) => (
-              <span key={p.label} style={{ fontSize: "0.65rem", fontWeight: 600, fontFamily: "var(--font-label)", padding: "0.2rem 0.6rem", borderRadius: 9999, background: "#f3f4f6", color: "#374151", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                {p.label} <span style={{ color: "#8720de", fontWeight: 700 }}>{p.count}</span>
+              <span
+                key={p.label}
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-label)",
+                  padding: "0.2rem 0.6rem",
+                  borderRadius: 9999,
+                  background: "#f3f4f6",
+                  color: "#374151",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                {p.label}{" "}
+                <span style={{ color: "#8720de", fontWeight: 700 }}>
+                  {p.count}
+                </span>
               </span>
             ))}
           </div>
