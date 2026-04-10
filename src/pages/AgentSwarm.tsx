@@ -10,7 +10,6 @@ import {
   Play,
   Plus,
   Sparkles,
-  Globe,
   FileText,
   Users,
   Target,
@@ -31,14 +30,6 @@ interface Agent {
   description: string;
   icon: React.ReactNode;
   enabled: boolean;
-}
-
-interface IntelCard {
-  id: string;
-  title: string;
-  summary: string;
-  source: string;
-  type: "alert" | "insight" | "trend";
 }
 
 const defaultAgents: Agent[] = [
@@ -212,49 +203,6 @@ const valueDriverTemplates: ValueDriverTemplate[] = [
   },
 ];
 
-const competitiveIntel: IntelCard[] = [
-  {
-    id: "1",
-    title: "ESG Monitoring Inc. Launches New AI-Powered Compliance Tool",
-    summary:
-      "Direct competitor released new product targeting Nordic enterprise segment.",
-    source: "TechCrunch",
-    type: "alert",
-  },
-  {
-    id: "2",
-    title: "Global Ecommerce SaaS Market Expected to Reach $45B by 2028",
-    summary:
-      "Market growth accelerating in Nordic and DACH regions with 23% YoY increase.",
-    source: "Gartner",
-    type: "insight",
-  },
-  {
-    id: "3",
-    title: "AI & Analytics Sector Seeing Record PE Investment",
-    summary:
-      "Private equity firms invested $12.4B in AI analytics companies in Q1 2026.",
-    source: "PitchBook",
-    type: "insight",
-  },
-  {
-    id: "4",
-    title: "Market Consolidation Expected to Result in Product Line Changes",
-    summary: "Three major competitors exploring M&A activity in the Nordics.",
-    source: "Bloomberg",
-    type: "alert",
-  },
-];
-
-const marketShareData = [
-  { month: "Oct", value: 14 },
-  { month: "Nov", value: 16 },
-  { month: "Dec", value: 15 },
-  { month: "Jan", value: 18 },
-  { month: "Feb", value: 21 },
-  { month: "Mar", value: 24 },
-];
-
 // Dark glassmorphic theme tokens
 const dark = {
   bg: "#0a0e1a",
@@ -405,7 +353,7 @@ export function AgentSwarm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "340px 1fr 380px",
+          gridTemplateColumns: "340px 1fr",
           gap: 24,
           alignItems: "start",
         }}
@@ -906,191 +854,6 @@ export function AgentSwarm() {
             </span>
           </div>
         </motion.div>
-
-        {/* RIGHT: Competitive Comps */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-            style={glassCard}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-headline)",
-                  fontWeight: 700,
-                  fontSize: "1.05rem",
-                  color: dark.text,
-                }}
-              >
-                Competitive Comps
-              </div>
-              <span
-                style={{
-                  fontSize: "0.62rem",
-                  fontWeight: 700,
-                  fontFamily: "var(--font-label)",
-                  padding: "0.15rem 0.6rem",
-                  borderRadius: 9999,
-                  background: "rgba(239,68,68,0.15)",
-                  color: "#f87171",
-                }}
-              >
-                Latest Intelligence
-              </span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {competitiveIntel.map((intel) => (
-                <div
-                  key={intel.id}
-                  style={{
-                    padding: "0.65rem 0.75rem",
-                    borderRadius: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    borderLeft:
-                      intel.type === "alert"
-                        ? "3px solid #f87171"
-                        : intel.type === "trend"
-                          ? `3px solid ${dark.accent}`
-                          : `3px solid ${dark.purple}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.82rem",
-                      fontWeight: 700,
-                      fontFamily: "var(--font-label)",
-                      color: dark.text,
-                      marginBottom: 4,
-                      lineHeight: 1.35,
-                    }}
-                  >
-                    {intel.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.72rem",
-                      color: dark.textMuted,
-                      lineHeight: 1.4,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {intel.summary}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: "0.62rem",
-                      color: dark.textDim,
-                      fontFamily: "var(--font-label)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    <Globe size={10} /> {intel.source}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Market Share Trends */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.22 }}
-            style={glassCard}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1.05rem",
-                color: dark.text,
-                marginBottom: 14,
-              }}
-            >
-              Market Share Trends
-            </div>
-
-            {/* Simple sparkline chart */}
-            <svg viewBox="0 0 300 100" style={{ width: "100%", height: 100 }}>
-              <defs>
-                <linearGradient
-                  id="chartGrad"
-                  x1="0%"
-                  y1="0%"
-                  x2="0%"
-                  y2="100%"
-                >
-                  <stop offset="0%" stopColor={dark.accent} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={dark.accent} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              {/* Area fill */}
-              <path
-                d={`M0,${100 - marketShareData[0].value * 3.5} ${marketShareData
-                  .map(
-                    (d, i) =>
-                      `L${(i * 300) / (marketShareData.length - 1)},${100 - d.value * 3.5}`,
-                  )
-                  .join(" ")} L300,100 L0,100 Z`}
-                fill="url(#chartGrad)"
-              />
-              {/* Line */}
-              <polyline
-                points={marketShareData
-                  .map(
-                    (d, i) =>
-                      `${(i * 300) / (marketShareData.length - 1)},${100 - d.value * 3.5}`,
-                  )
-                  .join(" ")}
-                fill="none"
-                stroke={dark.accent}
-                strokeWidth={2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Data points */}
-              {marketShareData.map((d, i) => (
-                <circle
-                  key={i}
-                  cx={(i * 300) / (marketShareData.length - 1)}
-                  cy={100 - d.value * 3.5}
-                  r={3}
-                  fill={dark.accent}
-                />
-              ))}
-            </svg>
-
-            {/* X axis labels */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginTop: 4,
-                fontSize: "0.62rem",
-                color: dark.textDim,
-                fontFamily: "var(--font-label)",
-                fontWeight: 600,
-              }}
-            >
-              {marketShareData.map((d) => (
-                <span key={d.month}>{d.month}</span>
-              ))}
-            </div>
-          </motion.div>
-        </div>
       </div>
 
       {/* Value Driver Templates & Agent Selection — full-width below main grid */}
