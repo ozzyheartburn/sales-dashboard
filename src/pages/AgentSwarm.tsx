@@ -379,119 +379,6 @@ export function AgentSwarm() {
             </div>
           </motion.div>
 
-          {/* Select Agents Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.07 }}
-            style={glassCard}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-headline)",
-                  fontWeight: 700,
-                  fontSize: "1.05rem",
-                  color: dark.text,
-                }}
-              >
-                Select Agents
-              </div>
-              <span
-                style={{
-                  fontSize: "0.65rem",
-                  fontWeight: 700,
-                  fontFamily: "var(--font-label)",
-                  padding: "0.15rem 0.6rem",
-                  borderRadius: 9999,
-                  background: dark.accentGlow,
-                  color: dark.accentLight,
-                }}
-              >
-                {activeCount} Active
-              </span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {agents.map((agent) => (
-                <div
-                  key={agent.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "0.6rem 0.65rem",
-                    borderRadius: 10,
-                    background: agent.enabled
-                      ? "rgba(20,184,166,0.06)"
-                      : "rgba(255,255,255,0.02)",
-                    border: agent.enabled
-                      ? "1px solid rgba(20,184,166,0.2)"
-                      : `1px solid ${dark.cardBorder}`,
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {/* Agent logo with tooltip on hover */}
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      background: agent.enabled
-                        ? dark.gradient
-                        : "rgba(255,255,255,0.06)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: agent.enabled ? "#fff" : dark.textDim,
-                      flexShrink: 0,
-                      position: "relative",
-                    }}
-                    title={agent.description}
-                  >
-                    {agent.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: "0.82rem",
-                        fontWeight: 700,
-                        fontFamily: "var(--font-label)",
-                        color: dark.text,
-                      }}
-                    >
-                      {agent.name}
-                    </div>
-                  </div>
-                  <ToggleSwitch
-                    enabled={agent.enabled}
-                    onToggle={() => toggleAgent(agent.id)}
-                  />
-                  <button
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: dark.textDim,
-                      padding: 2,
-                      display: "flex",
-                    }}
-                    title={agent.description}
-                  >
-                    <Info size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
           {/* Instructions / Signals Card */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -1017,6 +904,136 @@ export function AgentSwarm() {
           </motion.div>
         </div>
       </div>
+
+      {/* Select Agents — full-width below main grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.2 }}
+        style={{ ...glassCard, marginTop: 24 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 14,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-headline)",
+              fontWeight: 700,
+              fontSize: "1.05rem",
+              color: dark.text,
+            }}
+          >
+            Select Agents
+          </div>
+          <span
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              fontFamily: "var(--font-label)",
+              padding: "0.15rem 0.6rem",
+              borderRadius: 9999,
+              background: dark.accentGlow,
+              color: dark.accentLight,
+            }}
+          >
+            {activeCount} Active
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: 10,
+          }}
+        >
+          {agents.map((agent) => (
+            <div
+              key={agent.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "0.6rem 0.65rem",
+                borderRadius: 10,
+                background: agent.enabled
+                  ? "rgba(20,184,166,0.06)"
+                  : "rgba(255,255,255,0.02)",
+                border: agent.enabled
+                  ? "1px solid rgba(20,184,166,0.2)"
+                  : `1px solid ${dark.cardBorder}`,
+                transition: "all 0.2s",
+              }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: agent.enabled
+                    ? dark.gradient
+                    : "rgba(255,255,255,0.06)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: agent.enabled ? "#fff" : dark.textDim,
+                  flexShrink: 0,
+                }}
+                title={agent.description}
+              >
+                {agent.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    color: dark.text,
+                  }}
+                >
+                  {agent.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.65rem",
+                    color: dark.textMuted,
+                    lineHeight: 1.3,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical" as const,
+                    overflow: "hidden",
+                  }}
+                >
+                  {agent.description}
+                </div>
+              </div>
+              <ToggleSwitch
+                enabled={agent.enabled}
+                onToggle={() => toggleAgent(agent.id)}
+              />
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: dark.textDim,
+                  padding: 2,
+                  display: "flex",
+                }}
+                title={agent.description}
+              >
+                <Info size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 }

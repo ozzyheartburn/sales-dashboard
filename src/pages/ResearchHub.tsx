@@ -18,6 +18,20 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from "recharts";
 import { AgentSwarm } from "./AgentSwarm";
 
 interface Account {
@@ -205,167 +219,243 @@ export function ResearchHub() {
       {/* --- ANALYTICS VIEWS --- */}
       <div style={{ display: "flex", gap: 24, marginBottom: 40 }}>
         {/* Quantitative Metrics */}
-        <div style={{ flex: 1, ...glassCard }}>
-          <div
-            style={{
-              fontFamily: "var(--font-headline)",
-              fontWeight: 700,
-              fontSize: "1.15rem",
-              color: "#fff",
-              marginBottom: 10,
-            }}
-          >
-            Quantitative Metrics
-          </div>
-          {/* Filters */}
-          <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
-            <select
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 8,
-                padding: "0.4rem 0.8rem",
-                fontFamily: "var(--font-label)",
-                fontWeight: 600,
-              }}
-            >
-              <option>Last 30 days</option>
-              <option>Last 90 days</option>
-              <option>Last 12 months</option>
-            </select>
-            <select
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 8,
-                padding: "0.4rem 0.8rem",
-                fontFamily: "var(--font-label)",
-                fontWeight: 600,
-              }}
-            >
-              <option>All Accounts</option>
-              <option>Top Priority</option>
-              <option>Medium Priority</option>
-            </select>
-          </div>
-          {/* KPIs */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div
-              style={{ color: "#fff", fontSize: "1.05rem", fontWeight: 700 }}
-            >
-              7.2{" "}
-              <span
-                style={{
-                  color: "#2dd4bf",
-                  fontWeight: 600,
-                  fontSize: "0.92rem",
-                }}
-              >
-                research processes/week
-              </span>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{
+            flex: 1,
+            borderRadius: "1rem",
+            padding: "1.25rem",
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "#1a1a2e" }}>
+              Quantitative Metrics
             </div>
-            <div
-              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
-            >
-              Contacts/account (avg): CXO{" "}
-              <b style={{ color: "#14b8a6" }}>2.1</b>, VP/Dir{" "}
-              <b style={{ color: "#4e45e4" }}>3.4</b>, End User{" "}
-              <b style={{ color: "#8720de" }}>4.7</b>, Detractor{" "}
-              <b style={{ color: "#ef4444" }}>1.2</b>, High Value{" "}
-              <b style={{ color: "#f59e0b" }}>1.0</b>
-            </div>
-            <div
-              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
-            >
-              Sales touches to 1st meeting:{" "}
-              <b style={{ color: "#14b8a6" }}>5.8/account</b>,{" "}
-              <b style={{ color: "#4e45e4" }}>3.2/contact</b>
-            </div>
-            <div
-              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
-            >
-              Net new meetings via Deep Research:{" "}
-              <b style={{ color: "#2dd4bf" }}>2.3/week</b>,{" "}
-              <b style={{ color: "#8720de" }}>8.9/month</b>,{" "}
-              <b style={{ color: "#f59e0b" }}>27/quarter</b>
-            </div>
-            <div
-              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
-            >
-              SQOs from meetings: <b style={{ color: "#22c55e" }}>1.1/week</b>,{" "}
-              <b style={{ color: "#4e45e4" }}>4.2/month</b>,{" "}
-              <b style={{ color: "#8720de" }}>13/quarter</b>
-            </div>
-            <div
-              style={{ color: "#fff", fontSize: "0.98rem", fontWeight: 600 }}
-            >
-              Pipeline deal size: <b style={{ color: "#2dd4bf" }}>$42.5k avg</b>
-              , <b style={{ color: "#14b8a6" }}>$120k max</b>,{" "}
-              <b style={{ color: "#ef4444" }}>$8.2k min</b>
+            <div style={{ display: "flex", gap: 8 }}>
+              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                <option>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>Last 12 months</option>
+              </select>
+              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                <option>All Accounts</option>
+                <option>Top Priority</option>
+                <option>Medium Priority</option>
+              </select>
             </div>
           </div>
-        </div>
+          {/* KPI row */}
+          <div style={{ display: "flex", gap: 16, marginBottom: 18 }}>
+            {[
+              { label: "Research/wk", value: "7.2", color: "#124af1" },
+              { label: "Meetings/wk", value: "2.3", color: "#22c55e" },
+              { label: "SQOs/mo", value: "4.2", color: "#8720de" },
+              { label: "Avg Deal", value: "$42.5k", color: "#f59e0b" },
+            ].map((kpi) => (
+              <div key={kpi.label} style={{ flex: 1, background: "#f8f9fc", borderRadius: 10, padding: "0.6rem 0.75rem", textAlign: "center" }}>
+                <div style={{ fontSize: "1.2rem", fontWeight: 800, color: kpi.color, fontFamily: "var(--font-headline)" }}>{kpi.value}</div>
+                <div style={{ fontSize: "0.65rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginTop: 2 }}>{kpi.label}</div>
+              </div>
+            ))}
+          </div>
+          {/* Meetings & SQOs Bar Chart */}
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6 }}>Meetings & SQOs (last 6 months)</div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={[
+              { month: "Oct", meetings: 6, sqos: 2 },
+              { month: "Nov", meetings: 8, sqos: 3 },
+              { month: "Dec", meetings: 7, sqos: 3 },
+              { month: "Jan", meetings: 10, sqos: 4 },
+              { month: "Feb", meetings: 9, sqos: 5 },
+              { month: "Mar", meetings: 11, sqos: 5 },
+            ]} barGap={2} barCategoryGap="20%">
+              <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194", fontFamily: "var(--font-label)" }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+              <Bar dataKey="meetings" fill="#124af1" radius={[4, 4, 0, 0]} name="Meetings" />
+              <Bar dataKey="sqos" fill="#8720de" radius={[4, 4, 0, 0]} name="SQOs" />
+            </BarChart>
+          </ResponsiveContainer>
+          {/* Pipeline Trend */}
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 14 }}>Pipeline Value ($k)</div>
+          <ResponsiveContainer width="100%" height={120}>
+            <AreaChart data={[
+              { month: "Oct", value: 85 },
+              { month: "Nov", value: 110 },
+              { month: "Dec", value: 95 },
+              { month: "Jan", value: 140 },
+              { month: "Feb", value: 168 },
+              { month: "Mar", value: 195 },
+            ]}>
+              <defs>
+                <linearGradient id="pipelineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#124af1" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#124af1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+              <Area type="monotone" dataKey="value" stroke="#124af1" strokeWidth={2.5} fill="url(#pipelineGrad)" name="Pipeline ($k)" />
+            </AreaChart>
+          </ResponsiveContainer>
+          {/* Contacts breakdown */}
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 14 }}>Contacts per Account (avg)</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { label: "CXO", value: 2.1, color: "#14b8a6" },
+              { label: "VP/Dir", value: 3.4, color: "#4e45e4" },
+              { label: "End User", value: 4.7, color: "#8720de" },
+              { label: "Detractor", value: 1.2, color: "#ef4444" },
+              { label: "High Value", value: 1.0, color: "#f59e0b" },
+            ].map((c) => (
+              <div key={c.label} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ height: 48, display: "flex", alignItems: "flex-end", justifyContent: "center", marginBottom: 4 }}>
+                  <div style={{ width: 24, borderRadius: "4px 4px 0 0", background: c.color, height: `${(c.value / 5) * 48}px`, transition: "height 0.3s" }} />
+                </div>
+                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: c.color }}>{c.value}</div>
+                <div style={{ fontSize: "0.58rem", color: "#6b7194", fontFamily: "var(--font-label)", fontWeight: 600 }}>{c.label}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Qualitative Metrics */}
-        <div style={{ flex: 1, ...glassCard }}>
-          <div
-            style={{
-              fontFamily: "var(--font-headline)",
-              fontWeight: 700,
-              fontSize: "1.15rem",
-              color: "#fff",
-              marginBottom: 10,
-            }}
-          >
-            Qualitative Metrics
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.07 }}
+          style={{
+            flex: 1,
+            borderRadius: "1rem",
+            padding: "1.25rem",
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "#1a1a2e" }}>
+              Qualitative Metrics
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                <option>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>Last 12 months</option>
+              </select>
+              <select style={{ background: "#f3f4f6", color: "#374151", border: "1px solid #e5e7eb", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                <option>All Accounts</option>
+                <option>Top Priority</option>
+                <option>Medium Priority</option>
+              </select>
+            </div>
           </div>
-          {/* Filters */}
-          <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
-            <select
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 8,
-                padding: "0.4rem 0.8rem",
-                fontFamily: "var(--font-label)",
-                fontWeight: 600,
-              }}
-            >
-              <option>Last 30 days</option>
-              <option>Last 90 days</option>
-              <option>Last 12 months</option>
-            </select>
-            <select
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 8,
-                padding: "0.4rem 0.8rem",
-                fontFamily: "var(--font-label)",
-                fontWeight: 600,
-              }}
-            >
-              <option>All Accounts</option>
-              <option>Top Priority</option>
-              <option>Medium Priority</option>
-            </select>
+          {/* Champion Sentiment Donut */}
+          <div style={{ display: "flex", gap: 24, marginBottom: 18 }}>
+            <div style={{ flex: "0 0 140px" }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 4 }}>Champion Sentiment</div>
+              <ResponsiveContainer width={140} height={140}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Positive", value: 58 },
+                      { name: "Neutral", value: 27 },
+                      { name: "Negative", value: 15 },
+                    ]}
+                    cx="50%" cy="50%" innerRadius={36} outerRadius={60}
+                    paddingAngle={3} dataKey="value" strokeWidth={0}
+                  >
+                    <Cell fill="#22c55e" />
+                    <Cell fill="#f59e0b" />
+                    <Cell fill="#ef4444" />
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 2 }}>
+                {[{ color: "#22c55e", label: "Pos" }, { color: "#f59e0b", label: "Neut" }, { color: "#ef4444", label: "Neg" }].map((l) => (
+                  <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "0.58rem", color: "#6b7194", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: l.color }} />{l.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Win/Loss Themes */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 8 }}>Win / Loss Themes</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  { theme: "Discovery relevance", wins: 14, losses: 2, color: "#22c55e" },
+                  { theme: "Personalization depth", wins: 11, losses: 4, color: "#124af1" },
+                  { theme: "Integration complexity", wins: 3, losses: 9, color: "#ef4444" },
+                  { theme: "Time-to-value", wins: 8, losses: 5, color: "#f59e0b" },
+                  { theme: "Pricing / ROI clarity", wins: 10, losses: 3, color: "#8720de" },
+                ].map((t) => (
+                  <div key={t.theme}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", fontFamily: "var(--font-label)", fontWeight: 600, color: "#374151", marginBottom: 2 }}>
+                      <span>{t.theme}</span>
+                      <span style={{ color: "#6b7194" }}>{t.wins}W / {t.losses}L</span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 3, background: "#f3f4f6", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: 3, background: t.color, width: `${(t.wins / (t.wins + t.losses)) * 100}%`, transition: "width 0.4s" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-          {/* Placeholder for qualitative metrics */}
-          <div
-            style={{
-              color: "#fff",
-              fontSize: "0.98rem",
-              fontWeight: 600,
-              opacity: 0.7,
-            }}
-          >
-            Coming soon: champion sentiment, win/loss themes, buyer journey
-            insights, and more.
+          {/* Buyer Journey Insights */}
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6 }}>Buyer Journey Stage Distribution</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={[
+              { stage: "Awareness", count: 18 },
+              { stage: "Interest", count: 14 },
+              { stage: "Evaluate", count: 9 },
+              { stage: "Commit", count: 6 },
+              { stage: "Closed", count: 4 },
+            ]} layout="vertical" barCategoryGap="18%">
+              <CartesianGrid stroke="rgba(167,176,222,0.15)" horizontal={false} />
+              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#6b7194" }} />
+              <YAxis type="category" dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#374151", fontWeight: 600 }} width={70} />
+              <Tooltip contentStyle={{ borderRadius: 12, border: "none", background: "#fff", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", fontSize: "0.8rem" }} />
+              <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Accounts">
+                {[
+                  { stage: "Awareness", count: 18 },
+                  { stage: "Interest", count: 14 },
+                  { stage: "Evaluate", count: 9 },
+                  { stage: "Commit", count: 6 },
+                  { stage: "Closed", count: 4 },
+                ].map((_, i) => (
+                  <Cell key={i} fill={["#124af1", "#4e45e4", "#8720de", "#06b6d4", "#22c55e"][i]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          {/* Key Themes */}
+          <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#6b7194", fontFamily: "var(--font-label)", marginBottom: 6, marginTop: 12 }}>Top Pain Points (across accounts)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {[
+              { label: "Search relevance", count: 12 },
+              { label: "Conversion rate", count: 10 },
+              { label: "Personalization gaps", count: 9 },
+              { label: "Legacy tech debt", count: 7 },
+              { label: "Manual merchandising", count: 6 },
+              { label: "Data silos", count: 5 },
+            ].map((p) => (
+              <span key={p.label} style={{ fontSize: "0.65rem", fontWeight: 600, fontFamily: "var(--font-label)", padding: "0.2rem 0.6rem", borderRadius: 9999, background: "#f3f4f6", color: "#374151", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                {p.label} <span style={{ color: "#8720de", fontWeight: 700 }}>{p.count}</span>
+              </span>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* --- MODAL --- */}
@@ -748,7 +838,9 @@ export function ResearchHub() {
               style={{
                 borderRadius: "1rem",
                 padding: "1.25rem",
-                backgroundColor: "var(--surface-container-lowest)",
+                backgroundColor: "#ffffff",
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
                 display: "flex",
                 flexDirection: "column",
                 gap: 10,
@@ -758,13 +850,13 @@ export function ResearchHub() {
             >
               {/* Header: Name + Website */}
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Building2 size={20} color="var(--primary)" />
+                <Building2 size={20} color="#124af1" />
                 <span
                   style={{
                     fontFamily: "var(--font-headline)",
                     fontWeight: 700,
                     fontSize: "1.08rem",
-                    color: "var(--on-background)",
+                    color: "#1a1a2e",
                   }}
                 >
                   {acc.companyName}
@@ -776,7 +868,7 @@ export function ResearchHub() {
                       alignItems: "center",
                       gap: 4,
                       fontSize: "0.82rem",
-                      color: "var(--on-surface-variant)",
+                      color: "#6b7194",
                     }}
                   >
                     <Globe size={12} /> {acc.website}
@@ -819,7 +911,7 @@ export function ResearchHub() {
                   <span
                     style={{
                       fontSize: "0.88rem",
-                      color: "var(--primary)",
+                      color: "#124af1",
                       fontWeight: 700,
                       fontFamily: "var(--font-label)",
                     }}
@@ -831,7 +923,7 @@ export function ResearchHub() {
                   <span
                     style={{
                       fontSize: "0.72rem",
-                      color: "var(--on-surface-variant)",
+                      color: "#6b7194",
                       display: "flex",
                       alignItems: "center",
                       gap: 4,
@@ -849,7 +941,7 @@ export function ResearchHub() {
                 <div
                   style={{
                     fontSize: "0.84rem",
-                    color: "var(--on-surface-variant)",
+                    color: "#6b7194",
                     lineHeight: 1.45,
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
@@ -916,11 +1008,11 @@ export function ResearchHub() {
                     borderTop: "1px solid rgba(107,113,148,0.1)",
                   }}
                 >
-                  <Sparkles size={13} color="var(--tertiary)" />
+                  <Sparkles size={13} color="#8720de" />
                   <span
                     style={{
                       fontSize: "0.75rem",
-                      color: "var(--on-surface-variant)",
+                      color: "#6b7194",
                       fontFamily: "var(--font-label)",
                       fontWeight: 600,
                     }}
