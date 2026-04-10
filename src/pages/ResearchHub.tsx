@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
   Building2,
@@ -16,7 +16,9 @@ import {
   BarChart3,
   Trophy,
   Users,
+  X,
 } from "lucide-react";
+import { AgentSwarm } from "./AgentSwarm";
 
 interface Account {
   _id: string;
@@ -53,6 +55,7 @@ export function ResearchHub() {
   const [pollingAccount, setPollingAccount] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activePanel, setActivePanel] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`)
@@ -321,6 +324,7 @@ export function ResearchHub() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: i * 0.07 }}
             className="luminous-shadow"
+            onClick={() => setActivePanel(widget.name)}
             style={{
               borderRadius: "1rem",
               padding: "1.25rem",
@@ -328,7 +332,10 @@ export function ResearchHub() {
               display: "flex",
               gap: 14,
               alignItems: "flex-start",
+              cursor: "pointer",
+              transition: "transform 0.15s, box-shadow 0.15s",
             }}
+            whileHover={{ scale: 1.02 }}
           >
             <div
               style={{
@@ -376,6 +383,7 @@ export function ResearchHub() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 3 * 0.07 }}
           className="luminous-shadow"
+          onClick={() => setActivePanel("Research Insights & Workflows")}
           style={{
             borderRadius: "1rem",
             padding: "1.25rem",
@@ -383,7 +391,10 @@ export function ResearchHub() {
             display: "flex",
             gap: 14,
             alignItems: "flex-start",
+            cursor: "pointer",
+            transition: "transform 0.15s, box-shadow 0.15s",
           }}
+          whileHover={{ scale: 1.02 }}
         >
           <div
             style={{
@@ -749,6 +760,126 @@ export function ResearchHub() {
           ))}
         </div>
       )}
+
+      {/* Full-page overlay panel for sub-pages */}
+      <AnimatePresence>
+        {activePanel && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 220,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "var(--background)",
+              zIndex: 900,
+              overflow: "auto",
+            }}
+          >
+            {/* Panel header with close */}
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "1rem 1.5rem",
+                backgroundColor: "var(--background)",
+                borderBottom: "1px solid rgba(167,176,222,0.08)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => setActivePanel(null)}
+                  style={{
+                    background: "var(--surface-container-low)",
+                    border: "none",
+                    borderRadius: 8,
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "var(--on-surface-variant)",
+                  }}
+                >
+                  <X size={16} />
+                </button>
+                <span
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1.1rem",
+                    color: "var(--on-background)",
+                  }}
+                >
+                  {activePanel}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--on-surface-variant)",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
+                Research Hub / {activePanel}
+              </span>
+            </div>
+
+            {/* Panel content */}
+            <div>
+              {activePanel === "Agent Swarm" && <AgentSwarm />}
+              {activePanel === "Territory Neural Network" && (
+                <ComingSoonPanel name="Territory Neural Network" />
+              )}
+              {activePanel === "Champion's League" && (
+                <ComingSoonPanel name="Champion's League" />
+              )}
+              {activePanel === "Research Insights & Workflows" && (
+                <ComingSoonPanel name="Research Insights & Workflows" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ComingSoonPanel({ name }: { name: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "60vh",
+        gap: 16,
+        color: "var(--on-surface-variant)",
+      }}
+    >
+      <Sparkles size={40} color="var(--tertiary)" />
+      <div
+        style={{
+          fontFamily: "var(--font-headline)",
+          fontWeight: 700,
+          fontSize: "1.3rem",
+          color: "var(--on-background)",
+        }}
+      >
+        {name}
+      </div>
+      <div style={{ fontSize: "0.92rem" }}>Coming soon</div>
     </div>
   );
 }

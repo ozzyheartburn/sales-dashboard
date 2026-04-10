@@ -9,13 +9,11 @@ import {
   Settings,
   Sparkles,
   ChevronRight,
-  Cpu,
 } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Territory Overview", path: "/dashboard" },
   { icon: Search, label: "Research Hub", path: "/dashboard/research-hub" },
-  { icon: Cpu, label: "Agent Swarm", path: "/dashboard/agent-swarm" },
   { icon: Target, label: "War Room", path: "/dashboard/war-room" },
   {
     icon: BarChart3,

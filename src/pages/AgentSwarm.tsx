@@ -37,35 +37,40 @@ const defaultAgents: Agent[] = [
   {
     id: "tech-scout",
     name: "Tech Scout",
-    description: "Monitors technology stack changes, new tool adoption, and digital transformation signals",
+    description:
+      "Monitors technology stack changes, new tool adoption, and digital transformation signals",
     icon: <Cpu size={18} />,
     enabled: true,
   },
   {
     id: "regulatory-monitor",
     name: "Regulatory Monitor",
-    description: "Tracks regulatory changes, compliance requirements, and policy shifts in target markets",
+    description:
+      "Tracks regulatory changes, compliance requirements, and policy shifts in target markets",
     icon: <Shield size={18} />,
     enabled: true,
   },
   {
     id: "industry-monitor",
     name: "Trend & Industry Monitor",
-    description: "Identifies emerging industry trends, market shifts, and competitive landscape changes",
+    description:
+      "Identifies emerging industry trends, market shifts, and competitive landscape changes",
     icon: <TrendingUp size={18} />,
     enabled: false,
   },
   {
     id: "trend-forecaster",
     name: "Trend Forecaster",
-    description: "Predicts market movements and buying intent signals using AI-powered forecasting",
+    description:
+      "Predicts market movements and buying intent signals using AI-powered forecasting",
     icon: <BarChart3 size={18} />,
     enabled: false,
   },
   {
     id: "social-listener",
     name: "Social Listener",
-    description: "Monitors social media, forums, and communities for brand mentions and sentiment shifts",
+    description:
+      "Monitors social media, forums, and communities for brand mentions and sentiment shifts",
     icon: <Eye size={18} />,
     enabled: false,
   },
@@ -75,21 +80,24 @@ const competitiveIntel: IntelCard[] = [
   {
     id: "1",
     title: "ESG Monitoring Inc. Launches New AI-Powered Compliance Tool",
-    summary: "Direct competitor released new product targeting Nordic enterprise segment.",
+    summary:
+      "Direct competitor released new product targeting Nordic enterprise segment.",
     source: "TechCrunch",
     type: "alert",
   },
   {
     id: "2",
     title: "Global Ecommerce SaaS Market Expected to Reach $45B by 2028",
-    summary: "Market growth accelerating in Nordic and DACH regions with 23% YoY increase.",
+    summary:
+      "Market growth accelerating in Nordic and DACH regions with 23% YoY increase.",
     source: "Gartner",
     type: "insight",
   },
   {
     id: "3",
     title: "AI & Analytics Sector Seeing Record PE Investment",
-    summary: "Private equity firms invested $12.4B in AI analytics companies in Q1 2026.",
+    summary:
+      "Private equity firms invested $12.4B in AI analytics companies in Q1 2026.",
     source: "PitchBook",
     type: "insight",
   },
@@ -111,11 +119,33 @@ const marketShareData = [
   { month: "Mar", value: 24 },
 ];
 
+// Dark glassmorphic theme tokens
+const dark = {
+  bg: "#0a0e1a",
+  card: "rgba(255,255,255,0.04)",
+  cardBorder: "rgba(255,255,255,0.08)",
+  cardHover: "rgba(255,255,255,0.06)",
+  text: "rgba(255,255,255,0.92)",
+  textMuted: "rgba(255,255,255,0.5)",
+  textDim: "rgba(255,255,255,0.35)",
+  accent: "#14b8a6",
+  accentLight: "#2dd4bf",
+  accentGlow: "rgba(20,184,166,0.15)",
+  purple: "#8720de",
+  purpleGlow: "rgba(135,32,222,0.2)",
+  gradient: "linear-gradient(135deg, #8720de, #14b8a6)",
+  inputBg: "rgba(255,255,255,0.03)",
+  inputBorder: "rgba(255,255,255,0.1)",
+  blur: "blur(24px)",
+};
+
 export function AgentSwarm() {
   const [agents, setAgents] = useState<Agent[]>(defaultAgents);
   const [searchQuery, setSearchQuery] = useState("");
   const [customInstructions, setCustomInstructions] = useState("");
-  const [activeTab, setActiveTab] = useState<"instructions" | "dependencies" | "signals">("instructions");
+  const [activeTab, setActiveTab] = useState<
+    "instructions" | "dependencies" | "signals"
+  >("instructions");
 
   const toggleAgent = (id: string) => {
     setAgents((prev) =>
@@ -125,6 +155,15 @@ export function AgentSwarm() {
 
   const activeCount = agents.filter((a) => a.enabled).length;
 
+  const glassCard: React.CSSProperties = {
+    borderRadius: "1rem",
+    padding: "1.25rem",
+    backgroundColor: dark.card,
+    backdropFilter: dark.blur,
+    WebkitBackdropFilter: dark.blur,
+    border: `1px solid ${dark.cardBorder}`,
+  };
+
   return (
     <div
       style={{
@@ -132,7 +171,7 @@ export function AgentSwarm() {
         maxWidth: 1440,
         margin: "0 auto",
         minHeight: "100vh",
-        backgroundColor: "var(--background)",
+        backgroundColor: dark.bg,
         fontFamily: "var(--font-body)",
       }}
     >
@@ -143,7 +182,7 @@ export function AgentSwarm() {
             fontFamily: "var(--font-headline)",
             fontWeight: 800,
             fontSize: "2rem",
-            color: "var(--on-background)",
+            color: dark.text,
           }}
         >
           Agent Swarm
@@ -151,7 +190,7 @@ export function AgentSwarm() {
         <div
           style={{
             fontSize: "0.95rem",
-            color: "var(--on-surface-variant)",
+            color: dark.textMuted,
             marginBottom: 24,
           }}
         >
@@ -176,19 +215,14 @@ export function AgentSwarm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-            }}
+            style={glassCard}
           >
             <div
               style={{
                 fontFamily: "var(--font-headline)",
                 fontWeight: 700,
                 fontSize: "1.05rem",
-                color: "var(--on-background)",
+                color: dark.text,
                 marginBottom: 14,
               }}
             >
@@ -203,7 +237,7 @@ export function AgentSwarm() {
                   position: "absolute",
                   left: 10,
                   top: 10,
-                  color: "var(--on-surface-variant)",
+                  color: dark.textDim,
                 }}
               />
               <input
@@ -215,10 +249,10 @@ export function AgentSwarm() {
                   width: "100%",
                   padding: "0.55rem 0.6rem 0.55rem 2rem",
                   borderRadius: 8,
-                  border: "1px solid rgba(167,176,222,0.2)",
+                  border: `1px solid ${dark.inputBorder}`,
                   fontSize: "0.85rem",
-                  background: "var(--surface-container-low)",
-                  color: "var(--on-surface)",
+                  background: dark.inputBg,
+                  color: dark.text,
                   fontFamily: "var(--font-body)",
                 }}
               />
@@ -229,7 +263,7 @@ export function AgentSwarm() {
               <div
                 style={{
                   fontSize: "0.7rem",
-                  color: "var(--on-surface-variant)",
+                  color: dark.textDim,
                   fontFamily: "var(--font-label)",
                   fontWeight: 600,
                   marginBottom: 6,
@@ -250,8 +284,8 @@ export function AgentSwarm() {
                         fontFamily: "var(--font-label)",
                         padding: "0.2rem 0.6rem",
                         borderRadius: 9999,
-                        background: "rgba(18,74,241,0.1)",
-                        color: "var(--primary)",
+                        background: dark.accentGlow,
+                        color: dark.accentLight,
                       }}
                     >
                       {tag}
@@ -268,13 +302,13 @@ export function AgentSwarm() {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "0.5rem 0",
-                borderTop: "1px solid rgba(167,176,222,0.08)",
+                borderTop: `1px solid ${dark.cardBorder}`,
               }}
             >
               <span
                 style={{
                   fontSize: "0.8rem",
-                  color: "var(--on-surface)",
+                  color: dark.text,
                   fontWeight: 600,
                 }}
               >
@@ -289,12 +323,7 @@ export function AgentSwarm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.07 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-            }}
+            style={glassCard}
           >
             <div
               style={{
@@ -309,7 +338,7 @@ export function AgentSwarm() {
                   fontFamily: "var(--font-headline)",
                   fontWeight: 700,
                   fontSize: "1.05rem",
-                  color: "var(--on-background)",
+                  color: dark.text,
                 }}
               >
                 Select Agents
@@ -321,8 +350,8 @@ export function AgentSwarm() {
                   fontFamily: "var(--font-label)",
                   padding: "0.15rem 0.6rem",
                   borderRadius: 9999,
-                  background: "rgba(18,74,241,0.1)",
-                  color: "var(--primary)",
+                  background: dark.accentGlow,
+                  color: dark.accentLight,
                 }}
               >
                 {activeCount} Active
@@ -340,11 +369,11 @@ export function AgentSwarm() {
                     padding: "0.6rem 0.65rem",
                     borderRadius: 10,
                     background: agent.enabled
-                      ? "rgba(18,74,241,0.06)"
-                      : "var(--surface-container-low)",
+                      ? "rgba(20,184,166,0.06)"
+                      : "rgba(255,255,255,0.02)",
                     border: agent.enabled
-                      ? "1px solid rgba(18,74,241,0.15)"
-                      : "1px solid rgba(167,176,222,0.08)",
+                      ? "1px solid rgba(20,184,166,0.2)"
+                      : `1px solid ${dark.cardBorder}`,
                     transition: "all 0.2s",
                   }}
                 >
@@ -354,12 +383,12 @@ export function AgentSwarm() {
                       height: 32,
                       borderRadius: 8,
                       background: agent.enabled
-                        ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
-                        : "rgba(167,176,222,0.1)",
+                        ? dark.gradient
+                        : "rgba(255,255,255,0.06)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: agent.enabled ? "#fff" : "var(--on-surface-variant)",
+                      color: agent.enabled ? "#fff" : dark.textDim,
                       flexShrink: 0,
                     }}
                   >
@@ -371,7 +400,7 @@ export function AgentSwarm() {
                         fontSize: "0.82rem",
                         fontWeight: 700,
                         fontFamily: "var(--font-label)",
-                        color: "var(--on-background)",
+                        color: dark.text,
                       }}
                     >
                       {agent.name}
@@ -386,7 +415,7 @@ export function AgentSwarm() {
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      color: "var(--on-surface-variant)",
+                      color: dark.textDim,
                       padding: 2,
                       display: "flex",
                     }}
@@ -404,12 +433,7 @@ export function AgentSwarm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.14 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-            }}
+            style={glassCard}
           >
             {/* Tabs */}
             <div
@@ -417,7 +441,7 @@ export function AgentSwarm() {
                 display: "flex",
                 gap: 0,
                 marginBottom: 12,
-                borderBottom: "1px solid rgba(167,176,222,0.1)",
+                borderBottom: `1px solid ${dark.cardBorder}`,
               }}
             >
               {(
@@ -439,11 +463,11 @@ export function AgentSwarm() {
                     fontFamily: "var(--font-label)",
                     color:
                       activeTab === tab.key
-                        ? "var(--primary)"
-                        : "var(--on-surface-variant)",
+                        ? dark.accentLight
+                        : dark.textDim,
                     borderBottom:
                       activeTab === tab.key
-                        ? "2px solid var(--primary)"
+                        ? `2px solid ${dark.accent}`
                         : "2px solid transparent",
                     cursor: "pointer",
                     transition: "all 0.15s",
@@ -464,9 +488,9 @@ export function AgentSwarm() {
                   minHeight: 80,
                   padding: "0.6rem",
                   borderRadius: 8,
-                  border: "1px solid rgba(167,176,222,0.15)",
-                  background: "var(--surface-container-low)",
-                  color: "var(--on-surface)",
+                  border: `1px solid ${dark.inputBorder}`,
+                  background: dark.inputBg,
+                  color: dark.text,
                   fontSize: "0.82rem",
                   fontFamily: "var(--font-body)",
                   resize: "vertical",
@@ -478,7 +502,7 @@ export function AgentSwarm() {
               <div
                 style={{
                   fontSize: "0.82rem",
-                  color: "var(--on-surface-variant)",
+                  color: dark.textDim,
                   padding: "0.5rem 0",
                 }}
               >
@@ -488,37 +512,39 @@ export function AgentSwarm() {
 
             {activeTab === "signals" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {["Revenue Decline > 10%", "Leadership Change", "New Funding Round"].map(
-                  (signal) => (
-                    <div
-                      key={signal}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "0.4rem 0.6rem",
-                        borderRadius: 8,
-                        background: "var(--surface-container-low)",
-                        fontSize: "0.78rem",
-                        color: "var(--on-surface)",
-                      }}
-                    >
-                      <Sparkles size={12} color="var(--tertiary)" />
-                      {signal}
-                    </div>
-                  ),
-                )}
+                {[
+                  "Revenue Decline > 10%",
+                  "Leadership Change",
+                  "New Funding Round",
+                ].map((signal) => (
+                  <div
+                    key={signal}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "0.4rem 0.6rem",
+                      borderRadius: 8,
+                      background: "rgba(255,255,255,0.03)",
+                      fontSize: "0.78rem",
+                      color: dark.text,
+                    }}
+                  >
+                    <Sparkles size={12} color={dark.accent} />
+                    {signal}
+                  </div>
+                ))}
                 <button
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                     background: "none",
-                    border: "1px dashed rgba(167,176,222,0.2)",
+                    border: `1px dashed ${dark.cardBorder}`,
                     borderRadius: 8,
                     padding: "0.4rem 0.6rem",
                     fontSize: "0.78rem",
-                    color: "var(--on-surface-variant)",
+                    color: dark.textDim,
                     cursor: "pointer",
                     fontFamily: "var(--font-label)",
                     fontWeight: 600,
@@ -537,8 +563,7 @@ export function AgentSwarm() {
                 padding: "0.7rem",
                 borderRadius: 10,
                 border: "none",
-                background:
-                  "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                background: dark.gradient,
                 color: "#fff",
                 fontFamily: "var(--font-label)",
                 fontWeight: 700,
@@ -548,7 +573,7 @@ export function AgentSwarm() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                boxShadow: "0 2px 12px rgba(135,32,222,0.15)",
+                boxShadow: `0 2px 16px ${dark.purpleGlow}`,
               }}
             >
               <Play size={16} /> Run Swarm
@@ -561,11 +586,8 @@ export function AgentSwarm() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="luminous-shadow"
           style={{
-            borderRadius: "1rem",
-            padding: "1.25rem",
-            backgroundColor: "var(--surface-container-lowest)",
+            ...glassCard,
             minHeight: 500,
             display: "flex",
             flexDirection: "column",
@@ -575,18 +597,18 @@ export function AgentSwarm() {
             overflow: "hidden",
           }}
         >
-          {/* Background grid effect */}
+          {/* Background glow effect */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "radial-gradient(circle at 50% 50%, rgba(135,32,222,0.04) 0%, transparent 70%)",
+                "radial-gradient(circle at 50% 50%, rgba(135,32,222,0.08) 0%, rgba(20,184,166,0.04) 40%, transparent 70%)",
               pointerEvents: "none",
             }}
           />
 
-          {/* Central Hub */}
+          {/* Central Hub — gradient ring */}
           <div
             style={{
               position: "relative",
@@ -594,13 +616,15 @@ export function AgentSwarm() {
               height: 200,
               borderRadius: "50%",
               background:
-                "linear-gradient(135deg, rgba(135,32,222,0.15), rgba(78,69,228,0.15))",
-              border: "2px solid rgba(135,32,222,0.25)",
+                "linear-gradient(135deg, rgba(135,32,222,0.25), rgba(20,184,166,0.25))",
+              border: "2px solid rgba(20,184,166,0.3)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexDirection: "column",
               zIndex: 1,
+              boxShadow:
+                "0 0 40px rgba(135,32,222,0.15), 0 0 80px rgba(20,184,166,0.08)",
             }}
           >
             <div
@@ -609,8 +633,8 @@ export function AgentSwarm() {
                 height: 140,
                 borderRadius: "50%",
                 background:
-                  "linear-gradient(135deg, rgba(135,32,222,0.2), rgba(78,69,228,0.25))",
-                border: "1px solid rgba(135,32,222,0.3)",
+                  "linear-gradient(135deg, rgba(135,32,222,0.3), rgba(20,184,166,0.2))",
+                border: "1px solid rgba(20,184,166,0.25)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -622,7 +646,7 @@ export function AgentSwarm() {
                   fontFamily: "var(--font-headline)",
                   fontWeight: 800,
                   fontSize: "1.1rem",
-                  color: "var(--on-background)",
+                  color: dark.text,
                   textAlign: "center",
                   lineHeight: 1.2,
                 }}
@@ -654,19 +678,19 @@ export function AgentSwarm() {
                   height: 44,
                   borderRadius: 12,
                   background: agent.enabled
-                    ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
-                    : "rgba(167,176,222,0.1)",
+                    ? dark.gradient
+                    : "rgba(255,255,255,0.05)",
                   border: agent.enabled
-                    ? "2px solid rgba(135,32,222,0.4)"
-                    : "1px solid rgba(167,176,222,0.15)",
+                    ? "2px solid rgba(20,184,166,0.4)"
+                    : `1px solid ${dark.cardBorder}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: agent.enabled ? "#fff" : "var(--on-surface-variant)",
+                  color: agent.enabled ? "#fff" : dark.textDim,
                   cursor: "pointer",
                   zIndex: 2,
                   boxShadow: agent.enabled
-                    ? "0 2px 12px rgba(135,32,222,0.2)"
+                    ? `0 2px 16px ${dark.purpleGlow}`
                     : "none",
                 }}
                 title={agent.name}
@@ -692,8 +716,10 @@ export function AgentSwarm() {
               if (!agent.enabled) return null;
               const angle = (i * 360) / agents.length - 90;
               const radius = 180;
-              const x = 50 + (Math.cos((angle * Math.PI) / 180) * radius * 100) / 600;
-              const y = 50 + (Math.sin((angle * Math.PI) / 180) * radius * 100) / 500;
+              const x =
+                50 + (Math.cos((angle * Math.PI) / 180) * radius * 100) / 600;
+              const y =
+                50 + (Math.sin((angle * Math.PI) / 180) * radius * 100) / 500;
               return (
                 <line
                   key={agent.id}
@@ -701,7 +727,7 @@ export function AgentSwarm() {
                   y1="50%"
                   x2={`${x}%`}
                   y2={`${y}%`}
-                  stroke="rgba(135,32,222,0.2)"
+                  stroke="rgba(20,184,166,0.2)"
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                 />
@@ -720,13 +746,13 @@ export function AgentSwarm() {
               justifyContent: "center",
               gap: 24,
               fontSize: "0.72rem",
-              color: "var(--on-surface-variant)",
+              color: dark.textDim,
               fontFamily: "var(--font-label)",
               fontWeight: 600,
             }}
           >
             <span>
-              <span style={{ color: "var(--primary)", fontWeight: 700 }}>
+              <span style={{ color: dark.accentLight, fontWeight: 700 }}>
                 {activeCount}
               </span>{" "}
               Agents Active
@@ -736,7 +762,7 @@ export function AgentSwarm() {
               Signals Configured
             </span>
             <span>
-              <span style={{ color: "var(--tertiary)", fontWeight: 700 }}>
+              <span style={{ color: dark.accentLight, fontWeight: 700 }}>
                 Live
               </span>{" "}
               Status
@@ -750,12 +776,7 @@ export function AgentSwarm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.15 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-            }}
+            style={glassCard}
           >
             <div
               style={{
@@ -770,7 +791,7 @@ export function AgentSwarm() {
                   fontFamily: "var(--font-headline)",
                   fontWeight: 700,
                   fontSize: "1.05rem",
-                  color: "var(--on-background)",
+                  color: dark.text,
                 }}
               >
                 Competitive Comps
@@ -782,8 +803,8 @@ export function AgentSwarm() {
                   fontFamily: "var(--font-label)",
                   padding: "0.15rem 0.6rem",
                   borderRadius: 9999,
-                  background: "rgba(239,68,68,0.1)",
-                  color: "var(--error)",
+                  background: "rgba(239,68,68,0.15)",
+                  color: "#f87171",
                 }}
               >
                 Latest Intelligence
@@ -797,13 +818,13 @@ export function AgentSwarm() {
                   style={{
                     padding: "0.65rem 0.75rem",
                     borderRadius: 10,
-                    background: "var(--surface-container-low)",
+                    background: "rgba(255,255,255,0.03)",
                     borderLeft:
                       intel.type === "alert"
-                        ? "3px solid var(--error)"
+                        ? "3px solid #f87171"
                         : intel.type === "trend"
-                          ? "3px solid var(--tertiary)"
-                          : "3px solid var(--primary)",
+                          ? `3px solid ${dark.accent}`
+                          : `3px solid ${dark.purple}`,
                   }}
                 >
                   <div
@@ -811,7 +832,7 @@ export function AgentSwarm() {
                       fontSize: "0.82rem",
                       fontWeight: 700,
                       fontFamily: "var(--font-label)",
-                      color: "var(--on-background)",
+                      color: dark.text,
                       marginBottom: 4,
                       lineHeight: 1.35,
                     }}
@@ -821,7 +842,7 @@ export function AgentSwarm() {
                   <div
                     style={{
                       fontSize: "0.72rem",
-                      color: "var(--on-surface-variant)",
+                      color: dark.textMuted,
                       lineHeight: 1.4,
                       marginBottom: 4,
                     }}
@@ -834,7 +855,7 @@ export function AgentSwarm() {
                       alignItems: "center",
                       gap: 4,
                       fontSize: "0.62rem",
-                      color: "var(--on-surface-variant)",
+                      color: dark.textDim,
                       fontFamily: "var(--font-label)",
                       fontWeight: 600,
                     }}
@@ -851,19 +872,14 @@ export function AgentSwarm() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.22 }}
-            className="luminous-shadow"
-            style={{
-              borderRadius: "1rem",
-              padding: "1.25rem",
-              backgroundColor: "var(--surface-container-lowest)",
-            }}
+            style={glassCard}
           >
             <div
               style={{
                 fontFamily: "var(--font-headline)",
                 fontWeight: 700,
                 fontSize: "1.05rem",
-                color: "var(--on-background)",
+                color: dark.text,
                 marginBottom: 14,
               }}
             >
@@ -871,10 +887,7 @@ export function AgentSwarm() {
             </div>
 
             {/* Simple sparkline chart */}
-            <svg
-              viewBox="0 0 300 100"
-              style={{ width: "100%", height: 100 }}
-            >
+            <svg viewBox="0 0 300 100" style={{ width: "100%", height: 100 }}>
               <defs>
                 <linearGradient
                   id="chartGrad"
@@ -885,12 +898,12 @@ export function AgentSwarm() {
                 >
                   <stop
                     offset="0%"
-                    stopColor="var(--primary)"
+                    stopColor={dark.accent}
                     stopOpacity={0.3}
                   />
                   <stop
                     offset="100%"
-                    stopColor="var(--primary)"
+                    stopColor={dark.accent}
                     stopOpacity={0}
                   />
                 </linearGradient>
@@ -914,7 +927,7 @@ export function AgentSwarm() {
                   )
                   .join(" ")}
                 fill="none"
-                stroke="var(--primary)"
+                stroke={dark.accent}
                 strokeWidth={2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -926,7 +939,7 @@ export function AgentSwarm() {
                   cx={(i * 300) / (marketShareData.length - 1)}
                   cy={100 - d.value * 3.5}
                   r={3}
-                  fill="var(--primary)"
+                  fill={dark.accent}
                 />
               ))}
             </svg>
@@ -938,7 +951,7 @@ export function AgentSwarm() {
                 justifyContent: "space-between",
                 marginTop: 4,
                 fontSize: "0.62rem",
-                color: "var(--on-surface-variant)",
+                color: dark.textDim,
                 fontFamily: "var(--font-label)",
                 fontWeight: 600,
               }}
@@ -970,8 +983,8 @@ function ToggleSwitch({
         borderRadius: 10,
         border: "none",
         background: enabled
-          ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
-          : "rgba(167,176,222,0.2)",
+          ? "linear-gradient(135deg, #8720de, #14b8a6)"
+          : "rgba(255,255,255,0.1)",
         position: "relative",
         cursor: "pointer",
         transition: "background 0.2s",
