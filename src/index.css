@@ -46,6 +46,26 @@
   --space-8: 2rem;
 }
 
+/* DARK MODE OVERRIDES */
+body.dark,
+.dark {
+  --background: #0a0e1a;
+  --surface-container-lowest: #181c2a;
+  --surface-container-low: #23273a;
+  --surface-container: #23273a;
+  --surface-container-high: #23273a;
+  --on-background: #fff;
+  --on-surface: #e6e8f3;
+  --on-surface-variant: #a7b0de;
+  --primary: #124af1;
+  --primary-dim: #0d38c4;
+  --secondary-brand: #4e45e4;
+  --tertiary: #8720de;
+  --on-primary: #fff;
+  --on-error: #fff;
+  --error: #ef4444;
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

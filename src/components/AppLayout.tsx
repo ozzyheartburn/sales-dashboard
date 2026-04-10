@@ -28,9 +28,15 @@ export function AppLayout() {
   const location = useLocation();
 
   return (
-    <div className="app-layout">
+    <div className="app-layout dark">
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside
+        className="sidebar"
+        style={{
+          background: "var(--surface-container-lowest)",
+          borderRight: "1px solid rgba(167,176,222,0.10)",
+        }}
+      >
         {/* Logo */}
         <div
           style={{
@@ -176,7 +182,10 @@ export function AppLayout() {
       </aside>
 
       {/* Main */}
-      <main className="main-content">
+      <main
+        className="main-content"
+        style={{ background: "var(--background)", color: "var(--on-surface)" }}
+      >
         <Outlet />
       </main>
     </div>
