@@ -423,7 +423,9 @@ export function ResearchHub() {
                 <Target size={10} /> {accounts.length} Active Workflows
               </span>
               <span style={kpiBadgeStyle("#22c55e")}>
-                <Users size={10} /> {pollingAccount ? accounts.length + 1 : accounts.length} Contacts Identified
+                <Users size={10} />{" "}
+                {pollingAccount ? accounts.length + 1 : accounts.length}{" "}
+                Contacts Identified
               </span>
             </div>
             <div
@@ -437,9 +439,17 @@ export function ResearchHub() {
                 fontWeight: 600,
               }}
             >
-              <span>Research → Meeting <strong style={{ color: "var(--primary)" }}>34%</strong></span>
-              <span>Meeting → Opp <strong style={{ color: "#22c55e" }}>66%</strong></span>
-              <span>S2 → S4 <strong style={{ color: "var(--tertiary)" }}>42%</strong></span>
+              <span>
+                Research → Meeting{" "}
+                <strong style={{ color: "var(--primary)" }}>34%</strong>
+              </span>
+              <span>
+                Meeting → Opp <strong style={{ color: "#22c55e" }}>66%</strong>
+              </span>
+              <span>
+                S2 → S4{" "}
+                <strong style={{ color: "var(--tertiary)" }}>42%</strong>
+              </span>
             </div>
           </div>
         </motion.div>
