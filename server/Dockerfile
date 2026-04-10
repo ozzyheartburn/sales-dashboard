@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY index.js ./
+COPY index.js agent-prompts.js normalize-schema.js transform-fields.js ./
 
 EXPOSE 4000
 

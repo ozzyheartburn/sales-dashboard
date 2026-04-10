@@ -37,7 +37,12 @@ export function AppLayout() {
   const [aiQuery, setAiQuery] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
   const [aiSources, setAiSources] = useState<
-    { companyName: string; website: string; rrfScore?: number; priority?: string }[]
+    {
+      companyName: string;
+      website: string;
+      rrfScore?: number;
+      priority?: string;
+    }[]
   >([]);
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -243,7 +248,8 @@ export function AppLayout() {
             borderRadius: "50%",
             border: "none",
             cursor: "pointer",
-            background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+            background:
+              "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
             boxShadow: "0 4px 24px rgba(135, 32, 222, 0.4)",
             display: "flex",
             alignItems: "center",
@@ -285,7 +291,8 @@ export function AppLayout() {
                 justifyContent: "space-between",
                 padding: "16px 20px",
                 borderBottom: "1px solid rgba(167,176,222,0.10)",
-                background: "linear-gradient(135deg, rgba(135,32,222,0.08), rgba(78,69,228,0.08))",
+                background:
+                  "linear-gradient(135deg, rgba(135,32,222,0.08), rgba(78,69,228,0.08))",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -319,12 +326,32 @@ export function AppLayout() {
             </div>
 
             {/* Chat Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: 20,
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
               {!aiAnswer && !aiLoading && (
                 <div style={{ textAlign: "center", paddingTop: 48 }}>
-                  <Brain size={40} color="var(--on-surface-variant)" style={{ opacity: 0.3, marginBottom: 12 }} />
-                  <p style={{ fontSize: "0.85rem", color: "var(--on-surface-variant)", fontFamily: "var(--font-body)" }}>
-                    Ask anything about your accounts, research, or market intelligence.
+                  <Brain
+                    size={40}
+                    color="var(--on-surface-variant)"
+                    style={{ opacity: 0.3, marginBottom: 12 }}
+                  />
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--on-surface-variant)",
+                      fontFamily: "var(--font-body)",
+                    }}
+                  >
+                    Ask anything about your accounts, research, or market
+                    intelligence.
                   </p>
                 </div>
               )}
@@ -333,17 +360,36 @@ export function AppLayout() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: 16 }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: 16,
+                  }}
                 >
-                  <Loader2 size={18} color="var(--tertiary)" className="spin" style={{ animation: "spin 1s linear infinite" }} />
-                  <span style={{ fontSize: "0.82rem", color: "var(--on-surface-variant)", fontFamily: "var(--font-body)" }}>
+                  <Loader2
+                    size={18}
+                    color="var(--tertiary)"
+                    className="spin"
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--on-surface-variant)",
+                      fontFamily: "var(--font-body)",
+                    }}
+                  >
                     Searching intelligence database...
                   </span>
                 </motion.div>
               )}
 
               {aiAnswer && (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
                   {/* Answer */}
                   <div
                     style={{
@@ -383,7 +429,13 @@ export function AppLayout() {
                       >
                         Sources
                       </p>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
                         {aiSources.map((src, i) => (
                           <div
                             key={i}
@@ -423,10 +475,17 @@ export function AppLayout() {
                             </div>
                             {src.website && (
                               <a
-                                href={src.website.startsWith("http") ? src.website : `https://${src.website}`}
+                                href={
+                                  src.website.startsWith("http")
+                                    ? src.website
+                                    : `https://${src.website}`
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{ color: "var(--primary)", display: "flex" }}
+                                style={{
+                                  color: "var(--primary)",
+                                  display: "flex",
+                                }}
                               >
                                 <ExternalLink size={14} />
                               </a>
@@ -480,7 +539,8 @@ export function AppLayout() {
                     height: 36,
                     borderRadius: 10,
                     border: "none",
-                    cursor: aiLoading || !aiQuery.trim() ? "default" : "pointer",
+                    cursor:
+                      aiLoading || !aiQuery.trim() ? "default" : "pointer",
                     background:
                       aiLoading || !aiQuery.trim()
                         ? "rgba(167,176,222,0.08)"

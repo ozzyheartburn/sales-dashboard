@@ -86,12 +86,26 @@ echo "  ✓ Execution role: $ROLE_ARN"
 
 # ─── Step 5: Check for MONGODB_URI ─────────────────────────────────────────
 if [ -f .env ]; then
-  source .env
+  while IFS='=' read -r key value; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+    # Remove surrounding quotes if present
+    value="${value%\"}"
+    value="${value#\"}"
+    value="${value%\'}"
+    value="${value#\'}"
+    export "$key=$value"
+  done < .env
 fi
 if [ -z "$MONGODB_URI" ]; then
   echo ""
   echo "❌ MONGODB_URI not set. Export it or add to server/.env"
   echo "   export MONGODB_URI='mongodb+srv://...'"
+  exit 1
+fi
+if [ -z "$OPENAI_API_KEY" ]; then
+  echo ""
+  echo "❌ OPENAI_API_KEY not set. Export it or add to server/.env"
   exit 1
 fi
 
@@ -112,6 +126,7 @@ TASK_DEF=$(cat <<EOF
     "portMappings": [{"containerPort": $PORT, "protocol": "tcp"}],
     "environment": [
       {"name": "MONGODB_URI", "value": "$MONGODB_URI"},
+      {"name": "OPENAI_API_KEY", "value": "$OPENAI_API_KEY"},
       {"name": "PORT", "value": "$PORT"}
     ],
     "logConfiguration": {
