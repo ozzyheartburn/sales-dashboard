@@ -49,6 +49,7 @@ export function ResearchHub() {
   const [accountName, setAccountName] = useState("");
   const [website, setWebsite] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pollingAccount, setPollingAccount] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const deepInsights = 7;
@@ -71,7 +72,7 @@ export function ResearchHub() {
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Send to backend — it calls n8n and saves to MongoDB
+      // Fire-and-forget: backend triggers n8n asynchronously
       const res = await fetch(`${API_URL}/api/research`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,18 +84,11 @@ export function ResearchHub() {
 
       if (!res.ok) {
         const err = await res.json();
-        console.error("Research failed:", err);
+        console.error("Research initiation failed:", err);
+      } else {
+        // Start polling for completion
+        setPollingAccount(accountName);
       }
-
-      // 2. Refresh the accounts list
-      const accountsRes = await fetch(`${API_URL}/api/accounts`);
-      const accounts: Account[] = await accountsRes.json();
-      const sorted = accounts
-        .filter((a) => a.companyName)
-        .sort(
-          (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
-        );
-      setAccounts(sorted);
     } catch (err) {
       console.error("Research workflow error:", err);
     }
@@ -103,6 +97,36 @@ export function ResearchHub() {
     setAccountName("");
     setWebsite("");
   };
+
+  // Poll for research completion when pollingAccount is set
+  useEffect(() => {
+    if (!pollingAccount) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/api/research/status/${encodeURIComponent(pollingAccount)}`,
+        );
+        const data = await res.json();
+        if (data.status === "completed") {
+          setPollingAccount(null);
+          // Refresh accounts list
+          const accountsRes = await fetch(`${API_URL}/api/accounts`);
+          const freshAccounts: Account[] = await accountsRes.json();
+          const sorted = freshAccounts
+            .filter((a) => a.companyName)
+            .sort(
+              (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+            );
+          setAccounts(sorted);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 10000); // poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [pollingAccount]);
 
   return (
     <div
@@ -353,6 +377,33 @@ export function ResearchHub() {
           </motion.div>
         ))}
       </div>
+
+      {/* Polling banner */}
+      {pollingAccount && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+            color: "#fff",
+            borderRadius: 12,
+            padding: "0.85rem 1.25rem",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontFamily: "var(--font-label)",
+            fontWeight: 600,
+            fontSize: "0.92rem",
+          }}
+        >
+          <Sparkles size={18} className="spin" />
+          AI research in progress for &ldquo;{pollingAccount}&rdquo; &mdash;
+          this may take a few minutes. The page will update automatically.
+        </motion.div>
+      )}
+
       <div
         style={{
           marginBottom: 24,
