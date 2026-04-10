@@ -42,7 +42,9 @@ interface Account {
   timestamp: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com";
 
 export function ResearchHub() {
   const [showModal, setShowModal] = useState(false);

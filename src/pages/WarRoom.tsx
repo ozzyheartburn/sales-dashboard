@@ -493,7 +493,9 @@ function buildPyramidRows(account: Account | null): PyramidRow[] {
   });
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function WarRoom() {
