@@ -23,14 +23,15 @@ import {
   Users,
   Sparkles,
   Send,
-  ChevronDown,
-  ChevronRight,
   AlertTriangle,
-  CheckCircle,
   MessageSquare,
   Layers,
   GitBranch,
   Brain,
+  FileText,
+  TrendingUp,
+  Briefcase,
+  UsersRound,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -55,42 +56,191 @@ interface ChatMessage {
   content: string;
 }
 
-// ─── Value Pyramid Data ───────────────────────────────────────────────────────
-const valuePyramidLevels = [
+// ─── Value Pyramid Data (Figma design) ────────────────────────────────────────
+interface PyramidCard {
+  title: string;
+  description: string;
+  badge?: string;
+  badgeColor?: string;
+}
+
+interface PyramidRow {
+  label: string;
+  color: string;
+  gradient?: string;
+  cards: PyramidCard[];
+}
+
+const defaultPyramidRows: PyramidRow[] = [
   {
-    level: "Strategic",
-    color: "var(--tertiary)",
-    description: "Board-level business outcomes & market positioning",
-    items: ["Revenue growth acceleration", "Market share expansion", "Competitive differentiation"],
+    label: "Strategic Context",
+    color: "#124af1",
+    cards: [
+      {
+        title: "Market Positioning",
+        description:
+          "Pivot from Infrastructure to AI-First Platform leadership by FY26.",
+      },
+      {
+        title: "Competitive Landscape",
+        description:
+          "Facing aggressive pricing from challenger start-ups in EU market.",
+      },
+      {
+        title: "Global Expansion",
+        description:
+          "Expanding APAC operations with 3 new data centers in Singapore.",
+      },
+    ],
   },
   {
-    level: "Operational",
-    color: "var(--secondary-brand)",
-    description: "Process improvements & efficiency gains",
-    items: ["Conversion rate optimization", "Search relevance improvement", "Merchandising automation"],
+    label: "Procurement & Priorities",
+    color: "#4e45e4",
+    cards: [
+      {
+        title: "OpEx Reduction",
+        description:
+          "Mandate to cut cloud costs by 15% across all business units.",
+      },
+      {
+        title: "Vendor Consolidation",
+        description:
+          "Reducing SaaS vendors from 450 to under 200 primary partners.",
+      },
+      {
+        title: "Sustainability Goals",
+        description:
+          "Net-zero data processing goal by 2030 (Tier 1 requirement).",
+      },
+    ],
   },
   {
-    level: "Tactical",
-    color: "var(--primary)",
-    description: "Day-to-day capabilities & feature needs",
-    items: ["KPI-native product discovery", "Personalization at scale", "Real-time analytics dashboard"],
+    label: "Active Initiatives",
+    color: "#22c55e",
+    cards: [
+      {
+        title: "Project Sentinel",
+        description:
+          "Next-gen security layer integration across legacy infrastructure.",
+      },
+      {
+        title: "Hybrid Work ROI",
+        description:
+          "Implementing collaboration tools to measure employee productivity.",
+      },
+      {
+        title: "Data Democracy",
+        description:
+          "Internal initiative to enable self-serve analytics for non-tech teams.",
+      },
+    ],
+  },
+  {
+    label: "Challenges & Friction",
+    color: "#ef4444",
+    cards: [
+      {
+        title: "Legacy Debt",
+        description:
+          "15-year old core database systems causing latency issues.",
+      },
+      {
+        title: "Talent Retention",
+        description:
+          "Losing top cloud architects to competitors (22% churn rate).",
+      },
+      {
+        title: "Compliance Bottleneck",
+        description:
+          "Legal review cycles adding 4 months to any new tech onboarding.",
+      },
+    ],
+  },
+  {
+    label: "Opportunity Frame",
+    color: "#8720de",
+    gradient: "linear-gradient(135deg, #8720de, #4e45e4)",
+    cards: [
+      {
+        title: "Core Upsell",
+        description: "Migrate Project Sentinel to PG Enterprise Tier.",
+        badge: "Validated",
+        badgeColor: "#22c55e",
+      },
+      {
+        title: "Service Expansion",
+        description: "Managed Services for Legacy Data Modernization.",
+        badge: "In Progress",
+        badgeColor: "#124af1",
+      },
+      {
+        title: "Net New Footprint",
+        description: "AI Content Generation engine for Marketing APAC.",
+        badge: "Discovery",
+        badgeColor: "#8720de",
+      },
+    ],
   },
 ];
 
 // ─── MEDDPICC Framework ───────────────────────────────────────────────────────
 const meddpiccItems = [
-  { key: "M", label: "Metrics", status: "identified", detail: "Revenue per visitor, conversion rate, AOV" },
-  { key: "E", label: "Economic Buyer", status: "gap", detail: "Not yet identified — AI scanning org data" },
-  { key: "D", label: "Decision Criteria", status: "identified", detail: "KPI-native, real-time, enterprise-scale" },
-  { key: "D", label: "Decision Process", status: "gap", detail: "Procurement flow unknown" },
-  { key: "P", label: "Paper Process", status: "gap", detail: "Legal/procurement timeline unclear" },
-  { key: "I", label: "Identified Pain", status: "identified", detail: "Search relevance, revenue leakage, manual merchandising" },
-  { key: "C", label: "Champion", status: "identified", detail: "Head of Product Discovery (likely)" },
-  { key: "C", label: "Competition", status: "partial", detail: "Algolia in use, limited KPI awareness" },
+  {
+    key: "M",
+    label: "Metrics",
+    status: "identified",
+    detail: "Revenue per visitor, conversion rate, AOV",
+  },
+  {
+    key: "E",
+    label: "Economic Buyer",
+    status: "gap",
+    detail: "Not yet identified — AI scanning org data",
+  },
+  {
+    key: "D",
+    label: "Decision Criteria",
+    status: "identified",
+    detail: "KPI-native, real-time, enterprise-scale",
+  },
+  {
+    key: "D",
+    label: "Decision Process",
+    status: "gap",
+    detail: "Procurement flow unknown",
+  },
+  {
+    key: "P",
+    label: "Paper Process",
+    status: "gap",
+    detail: "Legal/procurement timeline unclear",
+  },
+  {
+    key: "I",
+    label: "Identified Pain",
+    status: "identified",
+    detail: "Search relevance, revenue leakage, manual merchandising",
+  },
+  {
+    key: "C",
+    label: "Champion",
+    status: "identified",
+    detail: "Head of Product Discovery (likely)",
+  },
+  {
+    key: "C",
+    label: "Competition",
+    status: "partial",
+    detail: "Algolia in use, limited KPI awareness",
+  },
 ];
 
 // ─── Org Chart Custom Node ────────────────────────────────────────────────────
-function PersonaNode({ data }: { data: { label: string; role: string; type: string; notes: string } }) {
+function PersonaNode({
+  data,
+}: {
+  data: { label: string; role: string; type: string; notes: string };
+}) {
   const typeColors: Record<string, string> = {
     champion: "var(--tertiary)",
     "economic-buyer": "var(--error)",
@@ -118,11 +268,30 @@ function PersonaNode({ data }: { data: { label: string; role: string; type: stri
         boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
       }}
     >
-      <Handle type="target" position={Position.Top} style={{ background: "var(--primary)" }} />
-      <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "0.9rem", color: "var(--on-background)" }}>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "var(--primary)" }}
+      />
+      <div
+        style={{
+          fontFamily: "var(--font-headline)",
+          fontWeight: 700,
+          fontSize: "0.9rem",
+          color: "var(--on-background)",
+        }}
+      >
         {data.label}
       </div>
-      <div style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginTop: 2 }}>{data.role}</div>
+      <div
+        style={{
+          fontSize: "0.78rem",
+          color: "var(--on-surface-variant)",
+          marginTop: 2,
+        }}
+      >
+        {data.role}
+      </div>
       <span
         style={{
           display: "inline-block",
@@ -139,11 +308,22 @@ function PersonaNode({ data }: { data: { label: string; role: string; type: stri
         {typeLabels[data.type] || "Unknown"}
       </span>
       {data.notes && (
-        <div style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)", marginTop: 6, lineHeight: 1.3 }}>
+        <div
+          style={{
+            fontSize: "0.72rem",
+            color: "var(--on-surface-variant)",
+            marginTop: 6,
+            lineHeight: 1.3,
+          }}
+        >
           {data.notes}
         </div>
       )}
-      <Handle type="source" position={Position.Bottom} style={{ background: "var(--primary)" }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "var(--primary)" }}
+      />
     </div>
   );
 }
@@ -156,46 +336,103 @@ const defaultNodes: Node[] = [
     id: "1",
     type: "persona",
     position: { x: 250, y: 0 },
-    data: { label: "CTO / CPO", role: "C-Suite Technology", type: "economic-buyer", notes: "Final budget authority" },
+    data: {
+      label: "CTO / CPO",
+      role: "C-Suite Technology",
+      type: "economic-buyer",
+      notes: "Final budget authority",
+    },
   },
   {
     id: "2",
     type: "persona",
     position: { x: 80, y: 150 },
-    data: { label: "VP Product", role: "Product Leadership", type: "champion", notes: "Key advocate for discovery improvements" },
+    data: {
+      label: "VP Product",
+      role: "Product Leadership",
+      type: "champion",
+      notes: "Key advocate for discovery improvements",
+    },
   },
   {
     id: "3",
     type: "persona",
     position: { x: 420, y: 150 },
-    data: { label: "VP Engineering", role: "Engineering Leadership", type: "influencer", notes: "Technical evaluation owner" },
+    data: {
+      label: "VP Engineering",
+      role: "Engineering Leadership",
+      type: "influencer",
+      notes: "Technical evaluation owner",
+    },
   },
   {
     id: "4",
     type: "persona",
     position: { x: 0, y: 300 },
-    data: { label: "Head of Search", role: "Product Discovery", type: "champion", notes: "Day-to-day champion — owns search KPIs" },
+    data: {
+      label: "Head of Search",
+      role: "Product Discovery",
+      type: "champion",
+      notes: "Day-to-day champion — owns search KPIs",
+    },
   },
   {
     id: "5",
     type: "persona",
     position: { x: 250, y: 300 },
-    data: { label: "Sr. Engineer", role: "Platform Team", type: "influencer", notes: "Integration & API evaluation" },
+    data: {
+      label: "Sr. Engineer",
+      role: "Platform Team",
+      type: "influencer",
+      notes: "Integration & API evaluation",
+    },
   },
   {
     id: "6",
     type: "persona",
     position: { x: 480, y: 300 },
-    data: { label: "Procurement Lead", role: "Procurement", type: "unknown", notes: "" },
+    data: {
+      label: "Procurement Lead",
+      role: "Procurement",
+      type: "unknown",
+      notes: "",
+    },
   },
 ];
 
 const defaultEdges: Edge[] = [
-  { id: "e1-2", source: "1", target: "2", animated: true, style: { stroke: "var(--primary)" } },
-  { id: "e1-3", source: "1", target: "3", animated: true, style: { stroke: "var(--primary)" } },
-  { id: "e2-4", source: "2", target: "4", style: { stroke: "var(--secondary-brand)" } },
-  { id: "e3-5", source: "3", target: "5", style: { stroke: "var(--secondary-brand)" } },
-  { id: "e3-6", source: "3", target: "6", style: { stroke: "var(--on-surface-variant)", strokeDasharray: "5 5" } },
+  {
+    id: "e1-2",
+    source: "1",
+    target: "2",
+    animated: true,
+    style: { stroke: "var(--primary)" },
+  },
+  {
+    id: "e1-3",
+    source: "1",
+    target: "3",
+    animated: true,
+    style: { stroke: "var(--primary)" },
+  },
+  {
+    id: "e2-4",
+    source: "2",
+    target: "4",
+    style: { stroke: "var(--secondary-brand)" },
+  },
+  {
+    id: "e3-5",
+    source: "3",
+    target: "5",
+    style: { stroke: "var(--secondary-brand)" },
+  },
+  {
+    id: "e3-6",
+    source: "3",
+    target: "6",
+    style: { stroke: "var(--on-surface-variant)", strokeDasharray: "5 5" },
+  },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -205,18 +442,29 @@ export function WarRoom() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"pyramid" | "orgchart" | "ai">("pyramid");
+  const [activeTab, setActiveTab] = useState<"pyramid" | "orgchart" | "ai">(
+    "pyramid",
+  );
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: "Hello! I'm your AI research assistant. Select an account and ask me anything about their pains, initiatives, buying signals, or org structure." },
+    {
+      role: "assistant",
+      content:
+        "Hello! I'm your AI research assistant. Select an account and ask me anything about their pains, initiatives, buying signals, or org structure.",
+    },
   ]);
   const [chatInput, setChatInput] = useState("");
-  const [pyramidExpanded, setPyramidExpanded] = useState<Record<number, boolean>>({ 0: true, 1: true, 2: true });
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(defaultEdges);
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: "var(--primary)" } }, eds)),
+    (params: Connection) =>
+      setEdges((eds) =>
+        addEdge(
+          { ...params, animated: true, style: { stroke: "var(--primary)" } },
+          eds,
+        ),
+      ),
     [setEdges],
   );
 
@@ -224,7 +472,9 @@ export function WarRoom() {
     fetch(`${API_URL}/api/accounts`)
       .then((res) => res.json())
       .then((data: Account[]) => {
-        const sorted = [...data].sort((a, b) => (b.score || 0) - (a.score || 0));
+        const sorted = [...data].sort(
+          (a, b) => (b.score || 0) - (a.score || 0),
+        );
         setAccounts(sorted);
         if (sorted.length > 0) setSelectedAccount(sorted[0]);
         setLoading(false);
@@ -258,13 +508,24 @@ export function WarRoom() {
     fontWeight: 700,
     fontSize: "0.88rem",
     cursor: "pointer" as const,
-    background: activeTab === tab ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))" : "var(--surface-container-low)",
+    background:
+      activeTab === tab
+        ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
+        : "var(--surface-container-low)",
     color: activeTab === tab ? "#fff" : "var(--on-surface-variant)",
     transition: "all 140ms ease",
   });
 
   return (
-    <div style={{ display: "flex", height: "100%", minHeight: "100vh", backgroundColor: "var(--background)", fontFamily: "var(--font-body)" }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100%",
+        minHeight: "100vh",
+        backgroundColor: "var(--background)",
+        fontFamily: "var(--font-body)",
+      }}
+    >
       {/* ─── Account Sidebar ─────────────────────────────────────── */}
       <div
         style={{
@@ -276,16 +537,45 @@ export function WarRoom() {
           padding: "1.25rem 0",
         }}
       >
-        <div style={{ padding: "0 1rem 1rem", borderBottom: "1px solid rgba(107,113,148,0.1)" }}>
-          <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.15rem", color: "var(--on-background)", display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            padding: "0 1rem 1rem",
+            borderBottom: "1px solid rgba(107,113,148,0.1)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-headline)",
+              fontWeight: 800,
+              fontSize: "1.15rem",
+              color: "var(--on-background)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
             <Target size={18} color="var(--primary)" /> War Room
           </div>
-          <div style={{ fontSize: "0.82rem", color: "var(--on-surface-variant)", marginTop: 4 }}>
+          <div
+            style={{
+              fontSize: "0.82rem",
+              color: "var(--on-surface-variant)",
+              marginTop: 4,
+            }}
+          >
             {accounts.length} accounts · Sorted by signal score
           </div>
         </div>
         {loading ? (
-          <div style={{ padding: "2rem 1rem", color: "var(--on-surface-variant)", fontSize: "0.9rem" }}>Loading accounts...</div>
+          <div
+            style={{
+              padding: "2rem 1rem",
+              color: "var(--on-surface-variant)",
+              fontSize: "0.9rem",
+            }}
+          >
+            Loading accounts...
+          </div>
         ) : (
           accounts.map((acc) => (
             <button
@@ -298,23 +588,68 @@ export function WarRoom() {
                 width: "100%",
                 padding: "0.75rem 1rem",
                 border: "none",
-                background: selectedAccount?._id === acc._id ? "rgba(18,74,241,0.08)" : "transparent",
-                borderLeft: selectedAccount?._id === acc._id ? "3px solid var(--primary)" : "3px solid transparent",
+                background:
+                  selectedAccount?._id === acc._id
+                    ? "rgba(18,74,241,0.08)"
+                    : "transparent",
+                borderLeft:
+                  selectedAccount?._id === acc._id
+                    ? "3px solid var(--primary)"
+                    : "3px solid transparent",
                 cursor: "pointer",
                 transition: "all 100ms",
                 textAlign: "left",
               }}
             >
-              <Building2 size={16} color={selectedAccount?._id === acc._id ? "var(--primary)" : "var(--on-surface-variant)"} />
+              <Building2
+                size={16}
+                color={
+                  selectedAccount?._id === acc._id
+                    ? "var(--primary)"
+                    : "var(--on-surface-variant)"
+                }
+              />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-headline)", fontWeight: 600, fontSize: "0.85rem", color: "var(--on-background)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    color: "var(--on-background)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {acc.CompanyName}
                 </div>
-                <div style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)" }}>{acc.Website}</div>
+                <div
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--on-surface-variant)",
+                  }}
+                >
+                  {acc.Website}
+                </div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: 2,
+                }}
+              >
                 {acc.score != null && (
-                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)" }}>{acc.score}</span>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: "var(--primary)",
+                    }}
+                  >
+                    {acc.score}
+                  </span>
                 )}
                 {acc.priority && (
                   <span
@@ -324,7 +659,10 @@ export function WarRoom() {
                       fontFamily: "var(--font-label)",
                       padding: "0.1rem 0.4rem",
                       borderRadius: 4,
-                      background: acc.priority === "P1" ? "var(--error)" : "var(--secondary-brand)",
+                      background:
+                        acc.priority === "P1"
+                          ? "var(--error)"
+                          : "var(--secondary-brand)",
                       color: "#fff",
                     }}
                   >
@@ -338,24 +676,74 @@ export function WarRoom() {
       </div>
 
       {/* ─── Main Content ────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         {/* Header */}
-        <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid rgba(107,113,148,0.1)", background: "var(--surface-container-lowest)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div
+          style={{
+            padding: "1rem 1.5rem",
+            borderBottom: "1px solid rgba(107,113,148,0.1)",
+            background: "var(--surface-container-lowest)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <div>
-              <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.4rem", color: "var(--on-background)" }}>
+              <div
+                style={{
+                  fontFamily: "var(--font-headline)",
+                  fontWeight: 800,
+                  fontSize: "1.4rem",
+                  color: "var(--on-background)",
+                }}
+              >
                 {selectedAccount?.CompanyName || "Select an Account"}
               </div>
               {selectedAccount?.Website && (
-                <div style={{ fontSize: "0.85rem", color: "var(--on-surface-variant)", marginTop: 2 }}>{selectedAccount.Website}</div>
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--on-surface-variant)",
+                    marginTop: 2,
+                  }}
+                >
+                  {selectedAccount.Website}
+                </div>
               )}
             </div>
             {selectedAccount && (
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 {selectedAccount.score != null && (
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--primary)" }}>{selectedAccount.score}</div>
-                    <div style={{ fontSize: "0.68rem", color: "var(--on-surface-variant)", fontFamily: "var(--font-label)" }}>Signal Score</div>
+                    <div
+                      style={{
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        color: "var(--primary)",
+                      }}
+                    >
+                      {selectedAccount.score}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.68rem",
+                        color: "var(--on-surface-variant)",
+                        fontFamily: "var(--font-label)",
+                      }}
+                    >
+                      Signal Score
+                    </div>
                   </div>
                 )}
                 {selectedAccount.priority && (
@@ -366,7 +754,10 @@ export function WarRoom() {
                       fontFamily: "var(--font-label)",
                       padding: "0.2rem 0.7rem",
                       borderRadius: 4,
-                      background: selectedAccount.priority === "P1" ? "var(--error)" : "var(--secondary-brand)",
+                      background:
+                        selectedAccount.priority === "P1"
+                          ? "var(--error)"
+                          : "var(--secondary-brand)",
                       color: "#fff",
                     }}
                   >
@@ -379,12 +770,21 @@ export function WarRoom() {
 
           {/* Tab Navigation */}
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            <button style={tabStyle("pyramid")} onClick={() => setActiveTab("pyramid")}>
+            <button
+              style={tabStyle("pyramid")}
+              onClick={() => setActiveTab("pyramid")}
+            >
               <Layers size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
               Value Pyramid
             </button>
-            <button style={tabStyle("orgchart")} onClick={() => setActiveTab("orgchart")}>
-              <GitBranch size={14} style={{ marginRight: 6, verticalAlign: -2 }} />
+            <button
+              style={tabStyle("orgchart")}
+              onClick={() => setActiveTab("orgchart")}
+            >
+              <GitBranch
+                size={14}
+                style={{ marginRight: 6, verticalAlign: -2 }}
+              />
               Org Chart
             </button>
             <button style={tabStyle("ai")} onClick={() => setActiveTab("ai")}>
@@ -399,153 +799,243 @@ export function WarRoom() {
           {/* ── Value Pyramid Tab ───────────────────────────────── */}
           {activeTab === "pyramid" && (
             <div style={{ padding: "1.5rem", maxWidth: 1200, margin: "0 auto" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
-                {/* Pyramid */}
-                <div>
-                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "var(--on-background)", marginBottom: 16 }}>
-                    Value Pyramid
+              {/* ── Section Header ── */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, fontFamily: "var(--font-label)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--primary)" }}>
+                      Active Strategic Target
+                    </span>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
                   </div>
-                  {valuePyramidLevels.map((level, i) => (
-                    <motion.div
-                      key={level.level}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.08 }}
-                      className="luminous-shadow"
-                      style={{
-                        borderRadius: "1rem",
-                        padding: "1.25rem",
-                        backgroundColor: "var(--surface-container-lowest)",
-                        marginBottom: 12,
-                        borderLeft: `4px solid ${level.color}`,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setPyramidExpanded((prev) => ({ ...prev, [i]: !prev[i] }))}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          {pyramidExpanded[i] ? <ChevronDown size={16} color={level.color} /> : <ChevronRight size={16} color={level.color} />}
-                          <div>
-                            <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1rem", color: "var(--on-background)" }}>
-                              {level.level} Value
-                            </div>
-                            <div style={{ fontSize: "0.82rem", color: "var(--on-surface-variant)" }}>{level.description}</div>
-                          </div>
-                        </div>
-                      </div>
-                      {pyramidExpanded[i] && (
-                        <div style={{ marginTop: 12, paddingLeft: 26 }}>
-                          {level.items.map((item) => (
-                            <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: "0.88rem", color: "var(--on-surface)" }}>
-                              <CheckCircle size={14} color={level.color} />
-                              {item}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-
-                  {/* Account Context from Research */}
-                  {selectedAccount?.strategicContext && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3 }}
-                      className="luminous-shadow"
-                      style={{
-                        borderRadius: "1rem",
-                        padding: "1.25rem",
-                        backgroundColor: "var(--surface-container-lowest)",
-                        marginTop: 16,
-                      }}
-                    >
-                      <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "0.95rem", color: "var(--on-background)", marginBottom: 8 }}>
-                        <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2, color: "var(--tertiary)" }} />
-                        Strategic Context (from Research)
-                      </div>
-                      <div style={{ fontSize: "0.88rem", color: "var(--on-surface)", lineHeight: 1.5, maxHeight: 200, overflow: "auto" }}>
-                        {selectedAccount.strategicContext.slice(0, 600)}
-                        {selectedAccount.strategicContext.length > 600 && "..."}
-                      </div>
-                    </motion.div>
-                  )}
+                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.6rem", color: "var(--on-background)" }}>
+                    {selectedAccount?.CompanyName || "Select an Account"}
+                  </div>
                 </div>
+                <button
+                  style={{
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: 8,
+                    border: "1.5px solid var(--primary)",
+                    background: "transparent",
+                    color: "var(--primary)",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <FileText size={14} /> Export Blueprint
+                </button>
+                <button
+                  style={{
+                    padding: "0.5rem 1.2rem",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                    color: "#fff",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Sparkles size={14} /> Update AI Strategy
+                </button>
+              </div>
 
-                {/* MEDDPICC Sidebar */}
-                <div>
-                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.1rem", color: "var(--on-background)", marginBottom: 16 }}>
-                    MEDDPICC Analysis
-                  </div>
-                  <div className="luminous-shadow" style={{ borderRadius: "1rem", padding: "1rem", backgroundColor: "var(--surface-container-lowest)" }}>
-                    {meddpiccItems.map((item, i) => (
+              {/* ── Metric Cards Row ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+                {[
+                  { label: "Primary Industry", value: "Enterprise SaaS", icon: <Briefcase size={16} color="var(--on-surface-variant)" /> },
+                  { label: "Annual Revenue", value: "$14.2B USD", icon: <TrendingUp size={16} color="var(--on-surface-variant)" /> },
+                  { label: "Employee Count", value: "42,500+", icon: <UsersRound size={16} color="var(--on-surface-variant)" /> },
+                  { label: "Revenue Growth Target", value: "8.5% YoY", icon: <TrendingUp size={16} color="var(--on-surface-variant)" /> },
+                ].map((metric, i) => (
+                  <motion.div
+                    key={metric.label}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: i * 0.06 }}
+                    className="luminous-shadow"
+                    style={{
+                      borderRadius: "0.75rem",
+                      padding: "1rem 1.25rem",
+                      backgroundColor: "var(--surface-container-lowest)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 700, fontFamily: "var(--font-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--on-surface-variant)" }}>
+                        {metric.label}
+                      </span>
+                      {metric.icon}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-headline)", fontWeight: 800, fontSize: "1.15rem", color: "var(--on-background)" }}>
+                      {metric.value}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* ── Strategic Value Pyramid Heading ── */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 4, height: 28, borderRadius: 2, background: "var(--on-background)" }} />
+                <span style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1.2rem", color: "var(--on-background)" }}>
+                  Strategic Value Pyramid
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.6rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    padding: "0.2rem 0.6rem",
+                    borderRadius: 4,
+                    background: "rgba(18,74,241,0.08)",
+                    color: "var(--primary)",
+                  }}
+                >
+                  Dynamic Framework
+                </span>
+              </div>
+
+              {/* ── Pyramid Rows ── */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 32 }}>
+                {defaultPyramidRows.map((row, rowIdx) => (
+                  <motion.div
+                    key={row.label}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: rowIdx * 0.07 }}
+                    style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 14, alignItems: "stretch" }}
+                  >
+                    {/* Row Label */}
+                    <div
+                      style={{
+                        background: row.gradient || row.color,
+                        borderRadius: "0.75rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "1rem 0.75rem",
+                        minHeight: 90,
+                      }}
+                    >
+                      <span style={{ color: "#fff", fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "0.88rem", textAlign: "center", lineHeight: 1.3 }}>
+                        {row.label}
+                      </span>
+                    </div>
+
+                    {/* 3 Detail Cards */}
+                    {row.cards.map((card) => (
                       <div
-                        key={i}
+                        key={card.title}
+                        className="luminous-shadow"
                         style={{
+                          borderRadius: "0.75rem",
+                          padding: "1rem 1.1rem",
+                          backgroundColor: "var(--surface-container-lowest)",
                           display: "flex",
-                          alignItems: "flex-start",
-                          gap: 10,
-                          padding: "10px 0",
-                          borderBottom: i < meddpiccItems.length - 1 ? "1px solid rgba(107,113,148,0.1)" : "none",
+                          flexDirection: "column",
+                          gap: 6,
                         }}
                       >
-                        <div
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 8,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontFamily: "var(--font-label)",
-                            fontWeight: 800,
-                            fontSize: "0.75rem",
-                            color: "#fff",
-                            flexShrink: 0,
-                            background:
-                              item.status === "identified"
-                                ? "var(--primary)"
-                                : item.status === "partial"
-                                  ? "#f59e0b"
-                                  : "var(--error)",
-                          }}
-                        >
-                          {item.key}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: "0.82rem", fontWeight: 700, fontFamily: "var(--font-label)", color: "var(--on-background)" }}>
-                            {item.label}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: "0.62rem", fontWeight: 700, fontFamily: "var(--font-label)", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--on-surface-variant)" }}>
+                            {card.title}
+                          </span>
+                          {card.badge && (
                             <span
                               style={{
-                                marginLeft: 8,
-                                fontSize: "0.6rem",
-                                padding: "0.1rem 0.4rem",
+                                fontSize: "0.55rem",
+                                fontWeight: 700,
+                                fontFamily: "var(--font-label)",
+                                padding: "0.12rem 0.5rem",
                                 borderRadius: 9999,
-                                fontWeight: 600,
-                                background:
-                                  item.status === "identified"
-                                    ? "rgba(18,74,241,0.1)"
-                                    : item.status === "partial"
-                                      ? "rgba(245,158,11,0.1)"
-                                      : "rgba(211,47,47,0.1)",
-                                color:
-                                  item.status === "identified"
-                                    ? "var(--primary)"
-                                    : item.status === "partial"
-                                      ? "#f59e0b"
-                                      : "var(--error)",
+                                background: card.badgeColor ? `${card.badgeColor}18` : "rgba(18,74,241,0.08)",
+                                color: card.badgeColor || "var(--primary)",
                               }}
                             >
-                              {item.status === "identified" ? "Identified" : item.status === "partial" ? "Partial" : "Gap"}
+                              {card.badge}
                             </span>
-                          </div>
-                          <div style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginTop: 2, lineHeight: 1.3 }}>{item.detail}</div>
+                          )}
+                        </div>
+                        <div style={{ fontSize: "0.84rem", color: "var(--on-surface)", lineHeight: 1.45 }}>
+                          {card.description}
                         </div>
                       </div>
                     ))}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* ── Proprietary AI Insight Banner ── */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.4 }}
+                className="luminous-shadow"
+                style={{
+                  borderRadius: "1rem",
+                  padding: "1.5rem",
+                  backgroundColor: "var(--surface-container-lowest)",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Sparkles size={22} color="#fff" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1rem", color: "var(--on-background)", marginBottom: 6 }}>
+                    Proprietary AI Insight
+                  </div>
+                  <div style={{ fontSize: "0.86rem", color: "var(--on-surface)", lineHeight: 1.55 }}>
+                    {selectedAccount?.rationale
+                      ? selectedAccount.rationale.slice(0, 350) + (selectedAccount.rationale.length > 350 ? "..." : "")
+                      : 'Analysis of Global Tech Systems\' recent quarterly report suggests a 12% increase in R&D focus toward edge computing. There is a \u00A084% correlation\u00A0 between their "Sustainability Goal" and our new Carbon Tracker module. Recommendation: Pitch the Tracker as a value-add during the Q3 renewal cycle.'}
                   </div>
                 </div>
-              </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                  <button
+                    style={{
+                      padding: "0.5rem 1rem",
+                      borderRadius: 8,
+                      border: "none",
+                      background: "var(--error)",
+                      color: "#fff",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Action Suggestion
+                  </button>
+                  <span style={{ fontSize: "0.72rem", color: "var(--primary)", cursor: "pointer", fontFamily: "var(--font-label)", fontWeight: 600 }}>
+                    Dismiss Insight
+                  </span>
+                </div>
+              </motion.div>
             </div>
           )}
 
@@ -598,10 +1088,38 @@ export function WarRoom() {
                   color: "var(--on-surface-variant)",
                 }}
               >
-                <span><Crown size={11} color="var(--error)" style={{ verticalAlign: -1 }} /> Economic Buyer</span>
-                <span><UserCheck size={11} color="var(--tertiary)" style={{ verticalAlign: -1 }} /> Champion</span>
-                <span><Users size={11} color="var(--secondary-brand)" style={{ verticalAlign: -1 }} /> Influencer</span>
-                <span><AlertTriangle size={11} color="#f59e0b" style={{ verticalAlign: -1 }} /> Blocker</span>
+                <span>
+                  <Crown
+                    size={11}
+                    color="var(--error)"
+                    style={{ verticalAlign: -1 }}
+                  />{" "}
+                  Economic Buyer
+                </span>
+                <span>
+                  <UserCheck
+                    size={11}
+                    color="var(--tertiary)"
+                    style={{ verticalAlign: -1 }}
+                  />{" "}
+                  Champion
+                </span>
+                <span>
+                  <Users
+                    size={11}
+                    color="var(--secondary-brand)"
+                    style={{ verticalAlign: -1 }}
+                  />{" "}
+                  Influencer
+                </span>
+                <span>
+                  <AlertTriangle
+                    size={11}
+                    color="#f59e0b"
+                    style={{ verticalAlign: -1 }}
+                  />{" "}
+                  Blocker
+                </span>
               </div>
             </div>
           )}
@@ -610,7 +1128,9 @@ export function WarRoom() {
           {activeTab === "ai" && (
             <div style={{ display: "flex", height: "calc(100vh - 160px)" }}>
               {/* Chat Area */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <div
+                style={{ flex: 1, display: "flex", flexDirection: "column" }}
+              >
                 {/* Messages */}
                 <div style={{ flex: 1, overflow: "auto", padding: "1.5rem" }}>
                   {chatMessages.map((msg, i) => (
@@ -621,7 +1141,8 @@ export function WarRoom() {
                       transition={{ duration: 0.2 }}
                       style={{
                         display: "flex",
-                        justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                        justifyContent:
+                          msg.role === "user" ? "flex-end" : "flex-start",
                         marginBottom: 12,
                       }}
                     >
@@ -629,9 +1150,16 @@ export function WarRoom() {
                         style={{
                           maxWidth: "70%",
                           padding: "0.75rem 1rem",
-                          borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                          background: msg.role === "user" ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))" : "var(--surface-container-lowest)",
-                          color: msg.role === "user" ? "#fff" : "var(--on-surface)",
+                          borderRadius:
+                            msg.role === "user"
+                              ? "14px 14px 4px 14px"
+                              : "14px 14px 14px 4px",
+                          background:
+                            msg.role === "user"
+                              ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
+                              : "var(--surface-container-lowest)",
+                          color:
+                            msg.role === "user" ? "#fff" : "var(--on-surface)",
                           fontSize: "0.88rem",
                           lineHeight: 1.5,
                           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
@@ -657,7 +1185,11 @@ export function WarRoom() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
-                    placeholder={selectedAccount ? `Ask about ${selectedAccount.CompanyName}...` : "Select an account first..."}
+                    placeholder={
+                      selectedAccount
+                        ? `Ask about ${selectedAccount.CompanyName}...`
+                        : "Select an account first..."
+                    }
                     style={{
                       flex: 1,
                       padding: "0.7rem 1rem",
@@ -677,7 +1209,8 @@ export function WarRoom() {
                       height: 42,
                       borderRadius: 10,
                       border: "none",
-                      background: "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                      background:
+                        "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                       color: "#fff",
                       cursor: "pointer",
                       display: "flex",
@@ -700,52 +1233,181 @@ export function WarRoom() {
                   background: "var(--surface-container-lowest)",
                 }}
               >
-                <div style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: "1rem", color: "var(--on-background)", marginBottom: 16 }}>
-                  <Sparkles size={14} style={{ marginRight: 6, verticalAlign: -2, color: "var(--tertiary)" }} />
+                <div
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    color: "var(--on-background)",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Sparkles
+                    size={14}
+                    style={{
+                      marginRight: 6,
+                      verticalAlign: -2,
+                      color: "var(--tertiary)",
+                    }}
+                  />
                   AI Detections
                 </div>
 
                 {/* Champion Detection */}
-                <div className="luminous-shadow" style={{ borderRadius: 12, padding: "1rem", marginBottom: 12, backgroundColor: "var(--surface-container-low)" }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, fontFamily: "var(--font-label)", color: "var(--on-background)", marginBottom: 6 }}>
-                    <UserCheck size={13} color="var(--tertiary)" style={{ marginRight: 4, verticalAlign: -2 }} />
+                <div
+                  className="luminous-shadow"
+                  style={{
+                    borderRadius: 12,
+                    padding: "1rem",
+                    marginBottom: 12,
+                    backgroundColor: "var(--surface-container-low)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-label)",
+                      color: "var(--on-background)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <UserCheck
+                      size={13}
+                      color="var(--tertiary)"
+                      style={{ marginRight: 4, verticalAlign: -2 }}
+                    />
                     Champion Candidates
                   </div>
-                  <div style={{ fontSize: "0.82rem", color: "var(--on-surface)", lineHeight: 1.5 }}>
-                    AI has identified <b>Head of Product Discovery</b> and <b>VP Product</b> as likely champions based on their involvement in search & personalization initiatives.
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--on-surface)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    AI has identified <b>Head of Product Discovery</b> and{" "}
+                    <b>VP Product</b> as likely champions based on their
+                    involvement in search & personalization initiatives.
                   </div>
                 </div>
 
                 {/* Economic Buyer */}
-                <div className="luminous-shadow" style={{ borderRadius: 12, padding: "1rem", marginBottom: 12, backgroundColor: "var(--surface-container-low)" }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, fontFamily: "var(--font-label)", color: "var(--on-background)", marginBottom: 6 }}>
-                    <Crown size={13} color="var(--error)" style={{ marginRight: 4, verticalAlign: -2 }} />
+                <div
+                  className="luminous-shadow"
+                  style={{
+                    borderRadius: 12,
+                    padding: "1rem",
+                    marginBottom: 12,
+                    backgroundColor: "var(--surface-container-low)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-label)",
+                      color: "var(--on-background)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Crown
+                      size={13}
+                      color="var(--error)"
+                      style={{ marginRight: 4, verticalAlign: -2 }}
+                    />
                     Economic Buyer
                   </div>
-                  <div style={{ fontSize: "0.82rem", color: "var(--on-surface)", lineHeight: 1.5 }}>
-                    <span style={{ color: "var(--error)", fontWeight: 600 }}>Gap detected.</span> CTO/CPO identified as likely EB but no direct engagement yet. Recommend multi-threading through champion.
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--on-surface)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <span style={{ color: "var(--error)", fontWeight: 600 }}>
+                      Gap detected.
+                    </span>{" "}
+                    CTO/CPO identified as likely EB but no direct engagement
+                    yet. Recommend multi-threading through champion.
                   </div>
                 </div>
 
                 {/* MEDDPICC Gaps */}
-                <div className="luminous-shadow" style={{ borderRadius: 12, padding: "1rem", marginBottom: 12, backgroundColor: "var(--surface-container-low)" }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, fontFamily: "var(--font-label)", color: "var(--on-background)", marginBottom: 6 }}>
-                    <AlertTriangle size={13} color="#f59e0b" style={{ marginRight: 4, verticalAlign: -2 }} />
+                <div
+                  className="luminous-shadow"
+                  style={{
+                    borderRadius: 12,
+                    padding: "1rem",
+                    marginBottom: 12,
+                    backgroundColor: "var(--surface-container-low)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      fontFamily: "var(--font-label)",
+                      color: "var(--on-background)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <AlertTriangle
+                      size={13}
+                      color="#f59e0b"
+                      style={{ marginRight: 4, verticalAlign: -2 }}
+                    />
                     MEDDPICC Gaps
                   </div>
-                  <div style={{ fontSize: "0.82rem", color: "var(--on-surface)", lineHeight: 1.5 }}>
-                    3 gaps identified: <b>Economic Buyer</b>, <b>Decision Process</b>, <b>Paper Process</b>. Focus next steps on uncovering procurement timeline and budget authority.
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--on-surface)",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    3 gaps identified: <b>Economic Buyer</b>,{" "}
+                    <b>Decision Process</b>, <b>Paper Process</b>. Focus next
+                    steps on uncovering procurement timeline and budget
+                    authority.
                   </div>
                 </div>
 
                 {/* Key Challenges */}
                 {selectedAccount?.keyChallenges && (
-                  <div className="luminous-shadow" style={{ borderRadius: 12, padding: "1rem", backgroundColor: "var(--surface-container-low)" }}>
-                    <div style={{ fontSize: "0.82rem", fontWeight: 700, fontFamily: "var(--font-label)", color: "var(--on-background)", marginBottom: 6 }}>
-                      <MessageSquare size={13} color="var(--primary)" style={{ marginRight: 4, verticalAlign: -2 }} />
+                  <div
+                    className="luminous-shadow"
+                    style={{
+                      borderRadius: 12,
+                      padding: "1rem",
+                      backgroundColor: "var(--surface-container-low)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: 700,
+                        fontFamily: "var(--font-label)",
+                        color: "var(--on-background)",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <MessageSquare
+                        size={13}
+                        color="var(--primary)"
+                        style={{ marginRight: 4, verticalAlign: -2 }}
+                      />
                       Key Challenges
                     </div>
-                    <div style={{ fontSize: "0.82rem", color: "var(--on-surface)", lineHeight: 1.5, maxHeight: 150, overflow: "auto" }}>
+                    <div
+                      style={{
+                        fontSize: "0.82rem",
+                        color: "var(--on-surface)",
+                        lineHeight: 1.5,
+                        maxHeight: 150,
+                        overflow: "auto",
+                      }}
+                    >
                       {selectedAccount.keyChallenges.slice(0, 300)}
                       {selectedAccount.keyChallenges.length > 300 && "..."}
                     </div>
