@@ -369,6 +369,55 @@ export function ResearchHub() {
       </div>
 
       {/* --- WIDGETS --- */}
+      {/* (widgets grid remains unchanged) */}
+
+      {/* --- SEARCH + ACCOUNTS --- */}
+      <div
+        style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <div style={{ position: "relative", flex: 1 }}>
+          <Search
+            size={18}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: 13,
+              color: "rgba(255,255,255,0.5)",
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Search accounts..."
+            style={{
+              width: "100%",
+              padding: "0.7rem 0.7rem 0.7rem 2.2rem",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.12)",
+              fontSize: "1rem",
+              background: "rgba(255,255,255,0.03)",
+              color: "#fff",
+              fontFamily: "var(--font-body)",
+            }}
+          />
+        </div>
+        <div
+          style={{
+            fontSize: "0.95rem",
+            color: "rgba(255,255,255,0.7)",
+            fontFamily: "var(--font-label)",
+            fontWeight: 600,
+          }}
+        >
+          {accounts.length} Active Accounts
+        </div>
+      </div>
+
+      {/* --- WIDGETS --- */}
       {showModal && (
         <div
           style={{
