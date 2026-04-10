@@ -5,5 +5,13 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "css.validate": false,
   "editor.quickSuggestions": { "strings": true },
-  "github.copilot.enable": { "*": true }
+  "github.copilot.enable": {
+    "*": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "/^cd /Users/oskariali-melkkila/Desktop/sales-dashboard/server && node -e \"\nconst \\{ MongoClient, ServerApiVersion \\} = require\\('mongodb'\\);\nrequire\\('dotenv'\\)\\.config\\(\\);\nasync function run\\(\\) \\{\n  const client = new MongoClient\\(process\\.env\\.MONGODB_URI, \\{ serverApi: \\{ version: ServerApiVersion\\.v1 \\} \\}\\);\n  await client\\.connect\\(\\);\n  const docs = await client\\.db\\('PG_Machine'\\)\\.collection\\('PG_Machine'\\)\\.find\\(\\{\\}, \\{ projection: \\{ companyName: 1, website: 1, buyingSignalScore: 1, priority: 1 \\} \\}\\)\\.toArray\\(\\);\n  console\\.table\\(docs\\.map\\(d => \\(\\{ id: d\\._id\\.toString\\(\\), companyName: d\\.companyName \\|\\| '—', website: d\\.website \\|\\| '—', score: d\\.buyingSignalScore \\?\\? '—', priority: d\\.priority \\|\\| '—' \\}\\)\\)\\);\n  await client\\.close\\(\\);\n\\}\nrun\\(\\);\n\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
 }

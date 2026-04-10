@@ -280,7 +280,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Orchestration & Customization
+              Agent Orchestration
             </div>
             <div
               style={{
@@ -352,7 +352,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Deep Learning & Agentic Insights
+              Deep Learning & Insights
             </div>
             <div
               style={{
@@ -424,7 +424,7 @@ export function ResearchHub() {
                 color: "var(--on-background)",
               }}
             >
-              Active Researches
+              Active PG Machines
             </div>
             <div
               style={{

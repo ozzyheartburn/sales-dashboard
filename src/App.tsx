@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AppLayout } from './components/AppLayout'
-import { DashboardHome } from './pages/DashboardHome'
-import { ResearchHub } from './pages/ResearchHub'
-import { WarRoom } from './pages/WarRoom'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AppLayout } from "./components/AppLayout";
+import { DashboardHome } from "./pages/DashboardHome";
+import { ResearchHub } from "./pages/ResearchHub";
+import { WarRoom } from "./pages/WarRoom";
 
 export default function App() {
   return (
@@ -16,5 +16,5 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-  )
+  );
 }

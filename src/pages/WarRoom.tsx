@@ -43,11 +43,11 @@ interface Account {
   priority: string;
   rationale: string;
   insights: {
-    strategicContext: unknown[];
-    ecommercePriorities: unknown[];
-    activeInitiatives: unknown[];
-    keyChallenges: unknown[];
-    opportunityFrame: unknown[];
+    strategicContext: { title: string; description: string }[];
+    ecommercePriorities: { title: string; description: string }[];
+    activeInitiatives: { title: string; description: string }[];
+    keyChallenges: { title: string; description: string }[];
+    opportunityFrame: { title: string; description: string }[];
   };
   reports: {
     chatGptAnalysis: string;
@@ -103,7 +103,7 @@ const defaultPyramidRows: PyramidRow[] = [
     ],
   },
   {
-    label: "Procurement & Priorities",
+    label: "Ecommerce & Business Priorities",
     color: "#4e45e4",
     cards: [
       {
@@ -443,6 +443,55 @@ const defaultEdges: Edge[] = [
     style: { stroke: "var(--on-surface-variant)", strokeDasharray: "5 5" },
   },
 ];
+
+// ─── Build pyramid rows from account insight data ─────────────────────────────
+function buildPyramidRows(account: Account | null): PyramidRow[] {
+  if (!account?.insights) return defaultPyramidRows;
+
+  const insightMap: {
+    key: keyof Account["insights"];
+    label: string;
+    color: string;
+    gradient?: string;
+  }[] = [
+    { key: "strategicContext", label: "Strategic Context", color: "#124af1" },
+    {
+      key: "ecommercePriorities",
+      label: "Ecommerce & Business Priorities",
+      color: "#4e45e4",
+    },
+    { key: "activeInitiatives", label: "Active Initiatives", color: "#22c55e" },
+    { key: "keyChallenges", label: "Challenges & Friction", color: "#ef4444" },
+    {
+      key: "opportunityFrame",
+      label: "Opportunity Frame",
+      color: "#8720de",
+      gradient: "linear-gradient(135deg, #8720de, #4e45e4)",
+    },
+  ];
+
+  return insightMap.map((row, rowIdx) => {
+    const items = account.insights[row.key] as
+      | { title: string; description: string }[]
+      | undefined;
+
+    // If account has insight data for this row, use it (up to 3 cards)
+    if (items && Array.isArray(items) && items.length > 0) {
+      return {
+        label: row.label,
+        color: row.color,
+        gradient: row.gradient,
+        cards: items.slice(0, 3).map((item) => ({
+          title: item.title || "Untitled",
+          description: item.description || "",
+        })),
+      };
+    }
+
+    // Fall back to static defaults
+    return defaultPyramidRows[rowIdx];
+  });
+}
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -1040,7 +1089,7 @@ export function WarRoom() {
                   marginBottom: 32,
                 }}
               >
-                {defaultPyramidRows.map((row, rowIdx) => (
+                {buildPyramidRows(selectedAccount).map((row, rowIdx) => (
                   <motion.div
                     key={row.label}
                     initial={{ opacity: 0, y: 14 }}
@@ -1575,7 +1624,8 @@ export function WarRoom() {
                 </div>
 
                 {/* Key Challenges */}
-                {(selectedAccount?.insights?.keyChallenges?.length ?? 0) > 0 && (
+                {(selectedAccount?.insights?.keyChallenges?.length ?? 0) >
+                  0 && (
                   <div
                     className="luminous-shadow"
                     style={{
@@ -1609,8 +1659,11 @@ export function WarRoom() {
                         overflow: "auto",
                       }}
                     >
-                      {JSON.stringify(selectedAccount?.insights?.keyChallenges).slice(0, 300)}
-                      {JSON.stringify(selectedAccount?.insights?.keyChallenges).length > 300 && "..."}
+                      {JSON.stringify(
+                        selectedAccount?.insights?.keyChallenges,
+                      ).slice(0, 300)}
+                      {JSON.stringify(selectedAccount?.insights?.keyChallenges)
+                        .length > 300 && "..."}
                     </div>
                   </div>
                 )}

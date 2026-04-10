@@ -1,0 +1,164 @@
+PG MACHINE — Application Overview
+===================================
+
+1. WHAT IS PG MACHINE?
+----------------------
+PG Machine is a Nordic enterprise sales intelligence dashboard built for account
+executives selling to mid-market and enterprise ecommerce companies. It combines
+AI-powered account research, deal strategy visualization, and pipeline management
+into a single workspace designed around how modern AEs actually run their territory.
+
+The core idea: an AE pastes a target company's name and website, AI agents go deep
+on that account (financials, initiatives, challenges, buying signals), and the
+output lands in a structured research dossier the AE can immediately use to plan
+outreach, map stakeholders, and build a value case.
+
+
+2. ARCHITECTURE
+---------------
+Frontend:
+  - React 18 + TypeScript (strict mode)
+  - Vite for bundling and dev server
+  - React Router DOM v7 (SPA with sidebar layout)
+  - motion/react for animations
+  - Recharts for data visualization (pipeline charts, bar charts)
+  - @xyflow/react (React Flow v12) for org chart / stakeholder mapping
+  - Lucide React for icons
+  - Custom CSS design system with CSS variables (light mode, blue/purple palette)
+
+Backend:
+  - Node.js + Express (server/index.js, port 4000)
+  - MongoDB Atlas (cluster0.sdjbpja.mongodb.net)
+  - Database: PG_Machine, Collection: PG_Machine
+  - REST API: GET /api/accounts, GET /api/health, POST /api/research
+
+External Integrations:
+  - n8n (webhook-triggered AI research orchestration)
+  - Vercel (auto-deploy from GitHub on push to main)
+
+Project Structure:
+  /src
+    /pages
+      DashboardHome.tsx    — Territory overview, KPIs, pipeline, alerts
+      ResearchHub.tsx      — Account research initiation + results grid
+      WarRoom.tsx          — Deep account analysis (pyramid, org chart, AI chat)
+    /components
+      AppLayout.tsx        — Sidebar navigation shell
+  /server
+    index.js               — Express API + MongoDB connection
+    normalize-schema.js    — Schema migration utility
+    .env                   — MongoDB URI, port config
+
+
+3. KEY PAGES & FUNCTIONALITY
+-----------------------------
+
+DASHBOARD HOME (Territory Overview)
+  - Greeting header with AI insight banner (weekly summary)
+  - 5 KPI cards: active accounts, value pyramids completed, champion contacts,
+    opportunities created (with dollar value), qualification ratio
+  - Priority alerts: stakeholder gaps, exec hires, market opportunities, deal health
+  - Pipeline Health chart (Commit / Most Likely / Best Case by quarter)
+  - Pipeline Source chart (SDR / Partner / Event / Self-Sourced)
+  - Deal Action Queue: 6 prioritized tasks with P0/P1/P2 badges, status,
+    deal value, and owner
+  - AI Activity Feed: mixed human + AI actions with timestamps
+  - Quick Actions: MEDDIC updates, AI playbooks, stakeholder mapping, forecasting
+  - Currently uses static demo data
+
+RESEARCH HUB
+  - "Initiate Deep Research" button opens a modal where the AE enters an account
+    name and website URL
+  - Submits to n8n webhook which triggers an AI research workflow
+  - n8n orchestrates ChatGPT analysis + Perplexity research, then writes the
+    structured result back to MongoDB
+  - Accounts grid displays all researched accounts from the database, sorted by
+    buying signal score (highest first)
+  - Each account card shows: company name, website, score badge, priority level,
+    rationale summary, insight category pills (Strategic, Priorities, Initiatives,
+    Challenges, Opportunities), AI analysis indicator, and timestamp
+  - Three info widgets: Agent Orchestration, Deep Learning & Insights, Active PG Machines
+  - Filters out empty/incomplete account documents automatically
+
+WAR ROOM (Account Deep Dive)
+  - Left sidebar lists all accounts, sorted by buying signal score
+  - Selecting an account loads three tabs:
+
+  Tab 1 — Value Pyramid:
+    Five strategic layers, each with three insight cards:
+      1. Strategic Context (blue) — market positioning, competitive landscape
+      2. Procurement & Priorities (indigo) — budget drivers, vendor strategy
+      3. Active Initiatives (green) — ongoing projects, technology investments
+      4. Challenges & Friction (red) — blockers, unmet needs, risk factors
+      5. Opportunity Frame (purple gradient) — where our product fits, value hooks
+    Designed from Figma mockups. Each card has title + description pulled from
+    the account's insight data.
+
+  Tab 2 — Org Chart:
+    React Flow visualization of the buying committee / stakeholder network.
+    Custom node types color-coded by role:
+      - Champion (purple), Economic Buyer (red), Influencer (indigo),
+        Blocker (orange), Unknown (gray)
+    Interactive: pan, zoom, minimap, add nodes and edges.
+
+  Tab 3 — AI Chat:
+    Conversational interface for asking questions about the selected account.
+    v0.1 pulls from account rationale data. Planned: live Perplexity/Claude
+    API integration for real-time research Q&A.
+
+
+4. DATA MODEL (MongoDB Document Schema)
+-----------------------------------------
+Each account document in PG_Machine follows this canonical shape:
+
+  companyName         — string
+  website             — string (URL)
+  timestamp           — ISO datetime
+  buyingSignalScore   — number (1-10 scale)
+  priority            — "high" | "medium" | "low"
+  rationale           — string (targeting narrative)
+  insights:
+    strategicContext       — array of {title, description}
+    ecommercePriorities   — array of {title, description}
+    activeInitiatives     — array of {title, description}
+    keyChallenges         — array of {title, description}
+    opportunityFrame      — array of {title, description}
+  reports:
+    chatGptAnalysis       — string (full markdown analysis)
+    perplexityResearch    — string (web research output)
+  metadata:
+    citations             — array
+    searchResults         — array
+
+
+5. DATA FLOW
+------------
+  1. AE opens Research Hub → clicks "Initiate Deep Research"
+  2. Enters company name + website → POST to n8n webhook
+  3. n8n workflow runs AI agents (ChatGPT + Perplexity) against the target
+  4. Structured result written to MongoDB (PG_Machine collection)
+  5. Research Hub and War Room fetch GET /api/accounts to display results
+  6. AE uses War Room to analyze the account: read the value pyramid,
+     map the org chart, and ask follow-up questions via AI chat
+  7. Dashboard Home provides portfolio-level view of all active deals
+
+
+6. WHAT WE'RE BUILDING NEXT
+-----------------------------
+  - Live AI chat integration (Perplexity / Claude APIs) in War Room
+  - Analytics & Automation page (route exists, not yet implemented)
+  - Integrations page (route exists, not yet implemented)
+  - Dynamic data on Dashboard Home (currently static demo data)
+  - Org chart persistence (save/load stakeholder maps per account)
+  - MEDDPICC qualification scoring tied to account data
+  - Multi-user support and team collaboration features
+  - Enhanced n8n workflows with custom ICP signals and competitive intelligence
+  - Perplexity research field population (currently empty on most accounts)
+
+
+7. DEPLOYMENT
+-------------
+  - Frontend deployed to Vercel (auto-deploy on git push to main)
+  - Backend runs as a standalone Node.js server (port 4000)
+  - MongoDB Atlas handles all persistent data
+  - Environment variables stored in server/.env (MONGODB_URI, PORT)
