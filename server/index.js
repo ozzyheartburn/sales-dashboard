@@ -47,37 +47,72 @@ app.get("/api/accounts", async (req, res) => {
   }
 });
 // Save research result from n8n workflow into MongoDB
+// Initiate research: call n8n webhook, save result to MongoDB
 app.post("/api/research", async (req, res) => {
   try {
-    const doc = req.body;
-    if (!doc || !doc.companyName) {
-      return res.status(400).json({ error: "Missing companyName in payload" });
+    const { account_name, website_url } = req.body;
+    if (!account_name) {
+      return res.status(400).json({ error: "Missing account_name in payload" });
     }
 
+    console.log(`Research started for ${account_name}...`);
+
+    // 1. Call n8n webhook and wait for the structured result
+    const n8nUrl =
+      "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d";
+    const n8nRes = await fetch(n8nUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account_name, website_url }),
+    });
+
+    if (!n8nRes.ok) {
+      const errText = await n8nRes.text();
+      console.error(`n8n returned ${n8nRes.status}: ${errText}`);
+      return res.status(502).json({ error: "n8n workflow failed" });
+    }
+
+    const rawData = await n8nRes.json();
+    // n8n "All Incoming Items" returns an array — extract the first item
+    const researchData = Array.isArray(rawData) ? rawData[0] : rawData;
+
+    if (!researchData || !researchData.companyName) {
+      console.error(
+        "n8n response missing companyName:",
+        Object.keys(researchData || {}),
+      );
+      return res
+        .status(502)
+        .json({ error: "n8n response missing companyName" });
+    }
+
+    // 2. Save to MongoDB
     const database = await connectDB();
     const collection = database.collection("PG_Machine");
-
-    // Upsert: update if account exists, insert if new
     const result = await collection.updateOne(
-      { companyName: doc.companyName },
+      { companyName: researchData.companyName },
       {
-        $set: { ...doc, timestamp: doc.timestamp || new Date().toISOString() },
+        $set: {
+          ...researchData,
+          timestamp: researchData.timestamp || new Date().toISOString(),
+        },
       },
       { upsert: true },
     );
 
     console.log(
-      `Research saved for ${doc.companyName}:`,
+      `Research saved for ${researchData.companyName}:`,
       result.upsertedId ? "inserted" : "updated",
     );
+
     res.json({
       success: true,
-      companyName: doc.companyName,
+      companyName: researchData.companyName,
       upserted: !!result.upsertedId,
     });
   } catch (err) {
-    console.error("Error saving research:", err);
-    res.status(500).json({ error: "Failed to save research" });
+    console.error("Error in research workflow:", err);
+    res.status(500).json({ error: "Research workflow failed" });
   }
 });
 

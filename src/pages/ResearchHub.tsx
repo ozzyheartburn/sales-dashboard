@@ -73,31 +73,22 @@ export function ResearchHub() {
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Trigger n8n workflow and wait for the structured result
-      const n8nRes = await fetch(
-        "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            account_name: accountName,
-            website_url: website,
-          }),
-        },
-      );
-      const rawData = await n8nRes.json();
-
-      // n8n "All Incoming Items" returns an array — extract the first item
-      const researchData = Array.isArray(rawData) ? rawData[0] : rawData;
-
-      // 2. Save the result to MongoDB via our backend
-      await fetch(`${API_URL}/api/research`, {
+      // 1. Send to backend — it calls n8n and saves to MongoDB
+      const res = await fetch(`${API_URL}/api/research`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(researchData),
+        body: JSON.stringify({
+          account_name: accountName,
+          website_url: website,
+        }),
       });
 
-      // 3. Refresh the accounts list
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("Research failed:", err);
+      }
+
+      // 2. Refresh the accounts list
       const accountsRes = await fetch(`${API_URL}/api/accounts`);
       const accounts: Account[] = await accountsRes.json();
       const sorted = accounts
