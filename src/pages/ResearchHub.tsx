@@ -5,7 +5,6 @@ import {
   Building2,
   TrendingUp,
   Sparkles,
-  Lightbulb,
   Plus,
   Globe,
   Target,
@@ -15,6 +14,8 @@ import {
   Clock,
   Network,
   BarChart3,
+  Trophy,
+  Users,
 } from "lucide-react";
 
 interface Account {
@@ -52,8 +53,6 @@ export function ResearchHub() {
   const [pollingAccount, setPollingAccount] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const deepInsights = 7;
-  const researchToOpp = 66;
 
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`)
@@ -301,25 +300,19 @@ export function ResearchHub() {
             icon: <Sparkles size={22} color="#fff" />,
             name: "Agent Swarm",
             description:
-              "Deploy, orchestrate and customize your agent swarm with custom signals, ICP definitions, and market / competitive intelligence data",
+              "Deploy and customize your Agent Swarm with custom signals, ICP definitions, market research and competitive intelligence data",
           },
           {
             icon: <Network size={22} color="#fff" />,
             name: "Territory Neural Network",
             description:
-              "Dynamic territory management based on agentic automation & analytics",
+              "Dynamic and data-driven territory management based on webscale agentic automation and self-learning AI",
           },
           {
-            icon: <Lightbulb size={22} color="#fff" />,
-            name: "Deep Insights & Actions",
+            icon: <Trophy size={22} color="#fff" />,
+            name: "Champion's League",
             description:
-              "PG Machine has identified 7 new HVTs, 2 high urgency signals and 1 new market trend impacting your business",
-          },
-          {
-            icon: <BarChart3 size={22} color="#fff" />,
-            name: "Activity Dashboard & Overview",
-            description:
-              "Review, edit or pause your active research campaigns and agentic swarms with key metrics",
+              "360-view into Champion Building through deeply understanding what your champions care about, and how to uniquely position yourself in every situation to further build and test your champions",
           },
         ].map((widget, i) => (
           <motion.div
@@ -376,6 +369,80 @@ export function ResearchHub() {
             </div>
           </motion.div>
         ))}
+
+        {/* Dynamic Research Insights & Workflows widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 3 * 0.07 }}
+          className="luminous-shadow"
+          style={{
+            borderRadius: "1rem",
+            padding: "1.25rem",
+            backgroundColor: "var(--surface-container-lowest)",
+            display: "flex",
+            gap: 14,
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background:
+                "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <BarChart3 size={22} color="#fff" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontFamily: "var(--font-headline)",
+                fontWeight: 700,
+                fontSize: "1.05rem",
+                color: "var(--on-background)",
+                marginBottom: 8,
+              }}
+            >
+              Research Insights & Workflows
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 6,
+              }}
+            >
+              <span style={kpiBadgeStyle("var(--primary)")}>
+                <Target size={10} /> {accounts.length} Active Workflows
+              </span>
+              <span style={kpiBadgeStyle("#22c55e")}>
+                <Users size={10} /> {pollingAccount ? accounts.length + 1 : accounts.length} Contacts Identified
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                marginTop: 10,
+                fontSize: "0.72rem",
+                color: "var(--on-surface-variant)",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+              }}
+            >
+              <span>Research → Meeting <strong style={{ color: "var(--primary)" }}>34%</strong></span>
+              <span>Meeting → Opp <strong style={{ color: "#22c55e" }}>66%</strong></span>
+              <span>S2 → S4 <strong style={{ color: "var(--tertiary)" }}>42%</strong></span>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Polling banner */}
@@ -685,6 +752,21 @@ function insightPillStyle(color: string): React.CSSProperties {
     fontWeight: 700,
     fontFamily: "var(--font-label)",
     padding: "0.15rem 0.55rem",
+    borderRadius: 9999,
+    background: `${color}14`,
+    color,
+  };
+}
+
+function kpiBadgeStyle(color: string): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: "0.65rem",
+    fontWeight: 700,
+    fontFamily: "var(--font-label)",
+    padding: "0.15rem 0.6rem",
     borderRadius: 9999,
     background: `${color}14`,
     color,
