@@ -1144,6 +1144,17 @@ export function WarRoom() {
                     {row.cards.map((card, cardIdx) => {
                       const insightKey = `${rowIdx}-${cardIdx}`;
                       const isExpanded = expandedInsights.has(insightKey);
+                      // Split description into headline (first sentence) and rest
+                      const sentenceEnd =
+                        card.description.search(/(?<=[.!?])\s/);
+                      const headline =
+                        sentenceEnd > 0
+                          ? card.description.slice(0, sentenceEnd + 1).trim()
+                          : card.description;
+                      const rest =
+                        sentenceEnd > 0
+                          ? card.description.slice(sentenceEnd + 1).trim()
+                          : "";
                       return (
                         <div
                           key={card.title}
@@ -1161,87 +1172,85 @@ export function WarRoom() {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "space-between",
                               gap: 6,
                             }}
                           >
-                            <div
+                            <span
                               style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
+                                fontSize: "0.62rem",
+                                fontWeight: 700,
+                                fontFamily: "var(--font-label)",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.06em",
+                                color: "var(--on-surface-variant)",
                               }}
                             >
+                              {card.title}
+                            </span>
+                            {card.badge && (
                               <span
                                 style={{
-                                  fontSize: "0.62rem",
+                                  fontSize: "0.55rem",
                                   fontWeight: 700,
                                   fontFamily: "var(--font-label)",
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.06em",
-                                  color: "var(--on-surface-variant)",
+                                  padding: "0.12rem 0.5rem",
+                                  borderRadius: 9999,
+                                  background: card.badgeColor
+                                    ? `${card.badgeColor}18`
+                                    : "rgba(18,74,241,0.08)",
+                                  color: card.badgeColor || "var(--primary)",
                                 }}
                               >
-                                {card.title}
+                                {card.badge}
                               </span>
-                              {card.badge && (
-                                <span
+                            )}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: "0.84rem",
+                              color: "var(--on-surface)",
+                              lineHeight: 1.45,
+                              margin: 0,
+                            }}
+                          >
+                            {headline}
+                          </p>
+                          {rest && (
+                            <>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.2 }}
                                   style={{
-                                    fontSize: "0.55rem",
-                                    fontWeight: 700,
-                                    fontFamily: "var(--font-label)",
-                                    padding: "0.12rem 0.5rem",
-                                    borderRadius: 9999,
-                                    background: card.badgeColor
-                                      ? `${card.badgeColor}18`
-                                      : "rgba(18,74,241,0.08)",
-                                    color: card.badgeColor || "var(--primary)",
+                                    fontSize: "0.84rem",
+                                    color: "var(--on-surface)",
+                                    lineHeight: 1.45,
+                                    overflow: "hidden",
                                   }}
                                 >
-                                  {card.badge}
-                                </span>
+                                  {rest}
+                                </motion.div>
                               )}
-                            </div>
-                            <button
-                              onClick={() => toggleInsight(insightKey)}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "0.65rem",
-                                fontWeight: 600,
-                                fontFamily: "var(--font-label)",
-                                color: "var(--primary)",
-                                padding: "2px 6px",
-                                borderRadius: 6,
-                                transition: "background 0.15s",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background =
-                                  "rgba(18,74,241,0.08)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "none")
-                              }
-                            >
-                              {isExpanded ? "Collapse" : "Expand"}
-                            </button>
-                          </div>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              style={{
-                                fontSize: "0.84rem",
-                                color: "var(--on-surface)",
-                                lineHeight: 1.45,
-                                overflow: "hidden",
-                              }}
-                            >
-                              {card.description}
-                            </motion.div>
+                              <button
+                                onClick={() => toggleInsight(insightKey)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  fontSize: "0.65rem",
+                                  fontWeight: 600,
+                                  fontFamily: "var(--font-label)",
+                                  color: "var(--primary)",
+                                  padding: "2px 0",
+                                  textAlign: "left",
+                                  width: "fit-content",
+                                }}
+                              >
+                                {isExpanded ? "Collapse" : "Expand"}
+                              </button>
+                            </>
                           )}
                         </div>
                       );
