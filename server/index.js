@@ -4,6 +4,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const path = require("path");
 const OpenAI = require("openai");
+const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -55,7 +56,7 @@ const pendingResearch = new Map();
 // In-memory tracking of swarm jobs
 const pendingSwarm = new Map();
 
-// Run Agent Swarm: execute agents in parallel, synthesize buying signal brief
+// Run Agent Swarm: execute agents in parallel via GPT-4o, synthesize buying signal brief
 app.post("/api/swarm/run", async (req, res) => {
   try {
     const { account_name, agents, template, instructions } = req.body;
@@ -69,12 +70,13 @@ app.post("/api/swarm/run", async (req, res) => {
       `Swarm started for ${account_name} with ${agents.length} agents (template: ${template || "custom"})`,
     );
 
-    const jobId = `${account_name.toLowerCase()}-${Date.now()}`;
+    const jobId = `${account_name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
     pendingSwarm.set(jobId, {
       status: "running",
       startedAt: new Date().toISOString(),
       account_name,
       template,
+      progress: { completed: 0, total: agents.length },
     });
 
     // Fire-and-forget: run swarm asynchronously
@@ -88,53 +90,141 @@ app.post("/api/swarm/run", async (req, res) => {
           companyName: { $regex: new RegExp(`^${account_name}$`, "i") },
         });
 
-        // Build the buying signal brief from existing research data
-        const existingAnalysis =
-          account?.reports?.chatGptAnalysis || "No prior research available.";
-        const existingInsights = account?.insights || {};
+        if (!account) {
+          pendingSwarm.set(jobId, {
+            status: "failed",
+            error: `Account "${account_name}" not found in database`,
+            account_name,
+            template,
+          });
+          return;
+        }
 
-        const brief = {
-          template: template || "custom",
-          agentsUsed: agents,
-          executedAt: new Date().toISOString(),
-          instructions: instructions || null,
-          findings: {
-            agentCount: agents.length,
-            sourceData: existingAnalysis
-              ? "Based on existing deep research"
-              : "No prior data",
-            signals: [],
-          },
+        // Build account context for prompt builder
+        const accountContext = {
+          companyName: account.companyName,
+          website: account.website || "Unknown",
+          industry: account.industry || "Nordic ecommerce",
+          knownStack: account.techStack || "Unknown — research required",
+          notes: [
+            account.rationale,
+            account.reports?.chatGptAnalysis?.slice(0, 4000),
+            account.reports?.perplexityResearch?.slice(0, 4000),
+          ]
+            .filter(Boolean)
+            .join("\n\n") || "None",
         };
 
-        // Extract buying signals from existing data if available
-        if (account?.buyingSignalScore) {
-          brief.findings.signals.push({
-            type: "buying_signal_score",
-            value: account.buyingSignalScore,
-            source: "transform-fields",
-          });
-        }
-        if (account?.priority) {
-          brief.findings.signals.push({
-            type: "priority",
-            value: account.priority,
-            source: "transform-fields",
-          });
+        // Run all agents in parallel via GPT-4o
+        const agentResults = {};
+        const agentPromises = agents.map(async (agentId) => {
+          try {
+            const prompt = buildAgentPrompt(agentId, template || null, accountContext);
+
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o",
+              temperature: 0.3,
+              messages: [
+                { role: "system", content: prompt },
+                {
+                  role: "user",
+                  content: instructions
+                    ? `Analyse ${account.companyName}. Additional instructions: ${instructions}`
+                    : `Analyse ${account.companyName}. Return your findings in the JSON output format specified in your instructions.`,
+                },
+              ],
+            });
+
+            const raw = completion.choices[0]?.message?.content || "";
+
+            // Try to parse JSON from the response
+            let parsed = null;
+            try {
+              const jsonMatch = raw.match(/\{[\s\S]*\}/);
+              if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+            } catch (_) {
+              // Keep raw text if JSON parsing fails
+            }
+
+            agentResults[agentId] = {
+              output: parsed || raw,
+              rawText: raw,
+              model: "gpt-4o",
+              executedAt: new Date().toISOString(),
+            };
+
+            // Update progress
+            const job = pendingSwarm.get(jobId);
+            if (job?.progress) job.progress.completed++;
+
+            console.log(`  Agent ${agentId} completed for ${account.companyName}`);
+          } catch (agentErr) {
+            console.error(`  Agent ${agentId} failed for ${account.companyName}:`, agentErr.message);
+            agentResults[agentId] = {
+              error: agentErr.message,
+              executedAt: new Date().toISOString(),
+            };
+          }
+        });
+
+        await Promise.all(agentPromises);
+
+        // Run synthesis if a template is provided
+        let synthesisBrief = null;
+        if (template) {
+          try {
+            const agentOutputs = {};
+            for (const [id, result] of Object.entries(agentResults)) {
+              agentOutputs[id] = result.output || result.error;
+            }
+            const synthesisPrompt = buildSynthesisPrompt(template, accountContext, agentOutputs);
+
+            const synthCompletion = await openai.chat.completions.create({
+              model: "gpt-4o",
+              temperature: 0.3,
+              messages: [
+                { role: "system", content: synthesisPrompt },
+                { role: "user", content: "Generate the buying signal brief now." },
+              ],
+            });
+
+            synthesisBrief = synthCompletion.choices[0]?.message?.content || null;
+            console.log(`  Synthesis completed for ${account.companyName} (template: ${template})`);
+          } catch (synthErr) {
+            console.error(`  Synthesis failed for ${account.companyName}:`, synthErr.message);
+            synthesisBrief = `Synthesis failed: ${synthErr.message}`;
+          }
         }
 
-        // Store the buying signal brief on the account document
+        // Store results to MongoDB
+        const updateFields = {
+          "metadata.lastSwarmRun": new Date().toISOString(),
+        };
+
+        // Store individual agent results
+        for (const [agentId, result] of Object.entries(agentResults)) {
+          updateFields[`agentResults.${agentId}`] = result;
+        }
+
+        // Store synthesis brief
+        if (template && synthesisBrief) {
+          updateFields[`swarmBriefs.${template}`] = {
+            brief: synthesisBrief,
+            template,
+            agentsUsed: agents,
+            executedAt: new Date().toISOString(),
+          };
+          updateFields["swarmBriefs.latest"] = {
+            brief: synthesisBrief,
+            template,
+            agentsUsed: agents,
+            executedAt: new Date().toISOString(),
+          };
+        }
+
         await collection.updateOne(
-          {
-            companyName: { $regex: new RegExp(`^${account_name}$`, "i") },
-          },
-          {
-            $set: {
-              [`swarmBriefs.${template || "custom"}`]: brief,
-              "swarmBriefs.latest": brief,
-              "metadata.lastSwarmRun": new Date().toISOString(),
-            },
-          },
+          { companyName: { $regex: new RegExp(`^${account_name}$`, "i") } },
+          { $set: updateFields },
           { upsert: false },
         );
 
@@ -143,10 +233,12 @@ app.post("/api/swarm/run", async (req, res) => {
           completedAt: new Date().toISOString(),
           account_name,
           template,
+          agentCount: agents.length,
+          successCount: Object.values(agentResults).filter((r) => !r.error).length,
         });
 
         console.log(
-          `Swarm completed for ${account_name} — brief stored to MongoDB`,
+          `Swarm completed for ${account_name} — ${agents.length} agents, results stored to MongoDB`,
         );
       } catch (err) {
         console.error(`Swarm failed for ${account_name}:`, err.message);
@@ -162,12 +254,230 @@ app.post("/api/swarm/run", async (req, res) => {
     res.json({
       success: true,
       jobId,
-      message: `Swarm with ${agents.length} agents started for "${account_name}". Buying signal brief will be stored upon completion.`,
+      message: `Swarm with ${agents.length} agents started for "${account_name}". GPT-4o will analyse the account and store results upon completion.`,
     });
   } catch (err) {
     console.error("Error starting swarm:", err);
     res.status(500).json({ error: "Failed to start swarm" });
   }
+});
+
+// Run agents on ALL accounts (batch mode, sequential to avoid rate limits)
+app.post("/api/swarm/run-all", async (req, res) => {
+  try {
+    const { agents, template, instructions, concurrency = 2 } = req.body;
+    if (!agents || agents.length === 0) {
+      return res.status(400).json({ error: "Missing agents in payload" });
+    }
+
+    const safeConcurrency = Math.min(Math.max(parseInt(concurrency, 10) || 2, 1), 5);
+
+    const database = await connectDB();
+    const collection = database.collection("PG_Machine");
+    const accounts = await collection
+      .find({ companyName: { $ne: null } })
+      .project({ companyName: 1 })
+      .toArray();
+
+    if (accounts.length === 0) {
+      return res.status(404).json({ error: "No accounts found in database" });
+    }
+
+    const jobId = `batch-${Date.now()}`;
+    const accountNames = accounts.map((a) => a.companyName);
+
+    pendingSwarm.set(jobId, {
+      status: "running",
+      startedAt: new Date().toISOString(),
+      template,
+      agents,
+      progress: { completed: 0, failed: 0, total: accountNames.length },
+      results: {},
+    });
+
+    console.log(
+      `Batch swarm started: ${agents.length} agents × ${accountNames.length} accounts (concurrency: ${safeConcurrency})`,
+    );
+
+    // Fire-and-forget: process accounts with controlled concurrency
+    (async () => {
+      const queue = [...accountNames];
+
+      const worker = async () => {
+        while (queue.length > 0) {
+          const accountName = queue.shift();
+          if (!accountName) break;
+
+          const job = pendingSwarm.get(jobId);
+          if (!job) break; // job was cleared
+
+          try {
+            // Use internal fetch to reuse the /api/swarm/run logic
+            const account = await collection.findOne({
+              companyName: { $regex: new RegExp(`^${accountName}$`, "i") },
+            });
+
+            if (!account) {
+              job.results[accountName] = { status: "skipped", reason: "not found" };
+              job.progress.failed++;
+              continue;
+            }
+
+            const accountContext = {
+              companyName: account.companyName,
+              website: account.website || "Unknown",
+              industry: account.industry || "Nordic ecommerce",
+              knownStack: account.techStack || "Unknown — research required",
+              notes: [
+                account.rationale,
+                account.reports?.chatGptAnalysis?.slice(0, 4000),
+                account.reports?.perplexityResearch?.slice(0, 4000),
+              ]
+                .filter(Boolean)
+                .join("\n\n") || "None",
+            };
+
+            // Run agents in parallel for this account
+            const agentResults = {};
+            const agentPromises = agents.map(async (agentId) => {
+              try {
+                const prompt = buildAgentPrompt(agentId, template || null, accountContext);
+
+                const completion = await openai.chat.completions.create({
+                  model: "gpt-4o",
+                  temperature: 0.3,
+                  messages: [
+                    { role: "system", content: prompt },
+                    {
+                      role: "user",
+                      content: instructions
+                        ? `Analyse ${account.companyName}. Additional instructions: ${instructions}`
+                        : `Analyse ${account.companyName}. Return your findings in the JSON output format specified in your instructions.`,
+                    },
+                  ],
+                });
+
+                const raw = completion.choices[0]?.message?.content || "";
+                let parsed = null;
+                try {
+                  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+                } catch (_) {}
+
+                agentResults[agentId] = {
+                  output: parsed || raw,
+                  rawText: raw,
+                  model: "gpt-4o",
+                  executedAt: new Date().toISOString(),
+                };
+              } catch (agentErr) {
+                agentResults[agentId] = {
+                  error: agentErr.message,
+                  executedAt: new Date().toISOString(),
+                };
+              }
+            });
+
+            await Promise.all(agentPromises);
+
+            // Run synthesis if template provided
+            let synthesisBrief = null;
+            if (template) {
+              try {
+                const agentOutputs = {};
+                for (const [id, result] of Object.entries(agentResults)) {
+                  agentOutputs[id] = result.output || result.error;
+                }
+                const synthesisPrompt = buildSynthesisPrompt(template, accountContext, agentOutputs);
+                const synthCompletion = await openai.chat.completions.create({
+                  model: "gpt-4o",
+                  temperature: 0.3,
+                  messages: [
+                    { role: "system", content: synthesisPrompt },
+                    { role: "user", content: "Generate the buying signal brief now." },
+                  ],
+                });
+                synthesisBrief = synthCompletion.choices[0]?.message?.content || null;
+              } catch (synthErr) {
+                synthesisBrief = `Synthesis failed: ${synthErr.message}`;
+              }
+            }
+
+            // Store results to MongoDB
+            const updateFields = {
+              "metadata.lastSwarmRun": new Date().toISOString(),
+            };
+            for (const [agentId, result] of Object.entries(agentResults)) {
+              updateFields[`agentResults.${agentId}`] = result;
+            }
+            if (template && synthesisBrief) {
+              updateFields[`swarmBriefs.${template}`] = {
+                brief: synthesisBrief,
+                template,
+                agentsUsed: agents,
+                executedAt: new Date().toISOString(),
+              };
+              updateFields["swarmBriefs.latest"] = {
+                brief: synthesisBrief,
+                template,
+                agentsUsed: agents,
+                executedAt: new Date().toISOString(),
+              };
+            }
+
+            await collection.updateOne(
+              { companyName: account.companyName },
+              { $set: updateFields },
+            );
+
+            job.results[accountName] = { status: "completed", agents: Object.keys(agentResults) };
+            job.progress.completed++;
+            console.log(
+              `  Batch [${job.progress.completed + job.progress.failed}/${job.progress.total}] ${accountName} — done`,
+            );
+          } catch (accErr) {
+            console.error(`  Batch failed for ${accountName}:`, accErr.message);
+            job.results[accountName] = { status: "failed", error: accErr.message };
+            job.progress.failed++;
+          }
+        }
+      };
+
+      // Launch workers
+      const workers = Array.from({ length: safeConcurrency }, () => worker());
+      await Promise.all(workers);
+
+      const job = pendingSwarm.get(jobId);
+      if (job) {
+        job.status = "completed";
+        job.completedAt = new Date().toISOString();
+        console.log(
+          `Batch swarm completed: ${job.progress.completed} succeeded, ${job.progress.failed} failed out of ${job.progress.total}`,
+        );
+      }
+    })();
+
+    res.json({
+      success: true,
+      jobId,
+      accountCount: accountNames.length,
+      agents,
+      template: template || null,
+      message: `Batch swarm started: ${agents.length} agent(s) × ${accountNames.length} accounts. Use GET /api/swarm/status/${jobId} to track progress.`,
+    });
+  } catch (err) {
+    console.error("Error starting batch swarm:", err);
+    res.status(500).json({ error: "Failed to start batch swarm" });
+  }
+});
+
+// Check swarm job status
+app.get("/api/swarm/status/:jobId", (req, res) => {
+  const job = pendingSwarm.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: "Job not found" });
+  }
+  res.json(job);
 });
 
 // Initiate research: fire-and-forget to n8n, return immediately
