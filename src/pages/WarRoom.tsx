@@ -1137,45 +1137,32 @@ export function WarRoom() {
                       return (
                         <div
                           key={card.title}
-                          className="luminous-shadow"
                           style={{
                             borderRadius: "0.75rem",
-                            padding: "1rem 1.1rem",
-                            backgroundColor: "var(--surface-container-lowest)",
+                            padding: "1.25rem 1.1rem",
+                            backgroundColor: "#1e2230",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 8,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 16,
+                            minHeight: 160,
                           }}
                         >
                           <span
                             style={{
-                              fontSize: "1rem",
-                              fontWeight: 800,
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
                               fontFamily: "var(--font-headline)",
-                              color: "var(--on-background)",
-                              lineHeight: 1.3,
+                              color: "rgba(167,176,222,0.7)",
+                              lineHeight: 1.45,
+                              textTransform: "uppercase",
+                              textAlign: "center",
+                              letterSpacing: "0.03em",
                             }}
                           >
                             {card.title}
                           </span>
-                          {card.badge && (
-                            <span
-                              style={{
-                                fontSize: "0.55rem",
-                                fontWeight: 700,
-                                fontFamily: "var(--font-label)",
-                                padding: "0.12rem 0.5rem",
-                                borderRadius: 9999,
-                                background: card.badgeColor
-                                  ? `${card.badgeColor}18`
-                                  : "rgba(18,74,241,0.08)",
-                                color: card.badgeColor || "var(--primary)",
-                                alignSelf: "flex-start",
-                              }}
-                            >
-                              {card.badge}
-                            </span>
-                          )}
                           {card.description && (
                             <button
                               onClick={() =>
@@ -1185,20 +1172,19 @@ export function WarRoom() {
                                 })
                               }
                               style={{
-                                background: "none",
+                                background: "rgba(167,176,222,0.12)",
                                 border: "none",
                                 cursor: "pointer",
                                 fontSize: "0.68rem",
                                 fontWeight: 600,
                                 fontFamily: "var(--font-label)",
-                                color: "var(--primary)",
-                                padding: "2px 0",
-                                textAlign: "left",
-                                width: "fit-content",
+                                color: "rgba(167,176,222,0.6)",
+                                padding: "0.35rem 1.4rem",
+                                borderRadius: 9999,
                                 marginTop: "auto",
                               }}
                             >
-                              More Details
+                              expand
                             </button>
                           )}
                         </div>

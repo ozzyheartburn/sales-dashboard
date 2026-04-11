@@ -252,6 +252,56 @@ app.post("/api/research/save", async (req, res) => {
       result.upsertedId ? "inserted" : "updated",
     );
 
+    // Auto-generate vector embedding for the new document
+    try {
+      const parts = [];
+      if (companyName) parts.push(`Company: ${companyName}`);
+      if (researchData.website) parts.push(`Website: ${researchData.website}`);
+      if (researchData.rationale)
+        parts.push(`Rationale: ${researchData.rationale}`);
+      if (researchData.reports?.chatGptAnalysis) {
+        parts.push(
+          `ChatGPT Analysis:\n${researchData.reports.chatGptAnalysis}`,
+        );
+      }
+      if (researchData.reports?.perplexityResearch) {
+        parts.push(
+          `Perplexity Research:\n${researchData.reports.perplexityResearch}`,
+        );
+      }
+      if (researchData.insights) {
+        for (const [category, items] of Object.entries(researchData.insights)) {
+          if (Array.isArray(items) && items.length > 0) {
+            const summaries = items
+              .map((item) => `${item.title}: ${item.description}`)
+              .join("\n");
+            parts.push(`${category}:\n${summaries}`);
+          }
+        }
+      }
+      const textForEmbedding = parts.join("\n\n").slice(0, 30000);
+
+      if (textForEmbedding.length > 50) {
+        const embeddingResponse = await openai.embeddings.create({
+          model: "text-embedding-3-small",
+          input: textForEmbedding,
+        });
+        await collection.updateOne(
+          { companyName },
+          {
+            $set: {
+              embedding: embeddingResponse.data[0].embedding,
+              embeddingModel: "text-embedding-3-small",
+              embeddedAt: new Date().toISOString(),
+            },
+          },
+        );
+        console.log(`Embedding generated for ${companyName}`);
+      }
+    } catch (embErr) {
+      console.error(`Embedding failed for ${companyName}:`, embErr.message);
+    }
+
     // Update pending status
     pendingResearch.set(companyName.toLowerCase(), {
       status: "completed",
