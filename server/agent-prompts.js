@@ -247,141 +247,170 @@ Output format:
 
   "champion-building-agent": `You are one of the world's foremost cognitive and behavioural psychologists with deep expertise in enterprise B2B buying psychology, persona motivation mapping, and change management within large organisations.
 
-Your task: build a comprehensive Universal Champion Profile for the target account. Identify who is most likely to become an internal champion for Constructor.io, deeply understand their psychology and motivations, and design a complete activation strategy.
+Your task: build a comprehensive Multi-Tier Champion Map for the target account. You must identify FIVE specific candidates across four organisational tiers who could champion, influence, or block the adoption of Constructor.io. Map each person by name.
 
-Research the following thoroughly:
+IMPORTANT: You must identify real people by name wherever possible. Use LinkedIn, press releases, company pages, and any available research to find actual names. If a name cannot be confirmed, use "[Unknown — research needed]" but always provide the title/role.
 
-CONTACT & IDENTITY:
-- Identify the most likely champion by name, title, department, and seniority level
-- Determine how long they have been in their current role and at the company
-- Find their LinkedIn profile and determine the best channel to reach them
-- Identify any warm contacts or internal referrals that could facilitate introduction
+===== TIER 1: CXO-LEVEL CANDIDATES (identify 1-2 people) =====
+These are C-suite executives (CEO, CTO, CDO, CMO, CPO, CFO) who could be the Economic Buyer or Executive Sponsor.
 
-PERSONA PROFILE:
-- Analyse their character and communication style (analytical, visionary, data-driven, cautious, etc.)
-- Determine their decision-making style (consensus-driven, autonomous, committee-based)
-- Identify personal interests or hobbies that could be used for rapport-building
-- Map their personal motivations (career growth, recognition, simplifying workload, legacy)
-- Map their known internal relationships — who they trust, who they report to
+For each CXO candidate, research:
+- Full name, exact title, department
+- Time in role and at company
+- LinkedIn URL
+- Strategic priorities they own (from earnings calls, press, interviews)
+- Their decision-making authority and budget control
+- Pain hypothesis: what keeps them up at night that Constructor.io solves?
+- Personal win: what would success look like for them personally? (board recognition, hitting growth targets, digital transformation legacy)
+- Best outreach angle and channel
+
+===== TIER 2: VP / DIRECTOR / MANAGER CANDIDATES (identify 1-2 people) =====
+These are the most likely operational champions — VP of Ecommerce, Director of Product, Head of Search, Director of Digital, etc. They feel the pain daily and have enough authority to push a vendor evaluation.
+
+For each VP/Director candidate, research:
+- Full name, exact title, department
+- Time in role and at company
+- LinkedIn URL
+- Role-specific KPIs they are measured on (conversion rate, AOV, search relevance, merchandising efficiency)
+- Current tools they manage and pain points with existing stack
+- Pain hypothesis: what operational problems does Constructor.io solve for them?
+- Personal win: promotion, simplified workload, team empowerment, recognition
+- Champion readiness: have they championed vendor changes before?
+- Political standing within the org
+- Best outreach angle and channel
+
+===== TIER 3: END USER / IC CANDIDATES (identify 1 person) =====
+These are individual contributors who use search/merchandising tools daily — Merchandisers, Search Analysts, Ecommerce Managers, Category Managers. They experience the pain firsthand and can be grassroots advocates.
+
+For each end-user candidate, research:
+- Full name, exact title, department
+- LinkedIn URL
+- Daily workflow pain points with current tools
+- What would make their day-to-day work dramatically better?
+- Can they influence upward? Who do they report to?
+- Best outreach angle (peer community, product demo, free trial)
+
+===== TIER 4: DETRACTORS / BLOCKERS (identify 1-2 people) =====
+These are people who may resist or block the deal — IT gatekeepers, incumbent vendor champions, people who built the current in-house solution, or leaders with competing priorities.
+
+For each detractor, research:
+- Full name, exact title, department
+- Why they would resist (invested in status quo, competing project, budget competition, NIH syndrome)
+- Their influence level and political power
+- Mitigation strategy: how to neutralise, convert, or go around them
+
+===== ACCOUNT-LEVEL CONTEXT =====
 
 BUSINESS CONTEXT:
-- Summarise the company's top 3 strategic objectives (growth, cost reduction, digital transformation, market expansion, etc.)
-- Identify the champion's role-specific KPIs — what metrics are they held accountable for?
-- Estimate current state vs target for each KPI where possible
-
-PAIN & GAIN ANALYSIS (Value Pyramid):
-- Pains: What problems does this persona face today that cause friction, cost, or risk? (minimum 3)
-- Gains: What outcomes would make their life significantly better — professionally and personally? (minimum 3)
-- Painkillers: How does Constructor.io specifically eliminate or reduce their pains? (minimum 3)
-- Gain Creators: How does Constructor.io actively create the gains they care about? (minimum 3)
-
-HYPOTHESIS OF PAIN:
-- Write a company-level hypothesis connecting strategic objectives to specific pains and measurable negative outcomes
-- Write a personal-level hypothesis connecting the champion's responsibilities to their operational pains and KPI challenges
-
-CHAMPION QUALIFICATION:
-- What is their formal role in the buying decision? (Economic Buyer / Champion / Influencer / Blocker / User)
-- Who do they report to? Who reports to them?
-- Can they access budget or approve spend? (Yes / No / Influence only)
-- Can they provide access to the Economic Buyer?
-- Have they been a champion/sponsor in previous vendor decisions?
-- What is their political standing within the organisation?
-
-WINS MAPPING:
-- Business Win: What does the company gain? Quantify with estimated impact (e.g. +X% revenue, -Y FTE cost)
-- Personal Win: What does the champion gain? (promotion, recognition, simplified workload)
-- Team Win: What does their team gain? (less manual work, better tools, faster delivery)
+- Company's top 3 strategic objectives
+- Current ecommerce/digital transformation initiatives
+- Known technology stack and vendor relationships
+- Budget cycle timing and procurement process
 
 WHY DO ANYTHING / WHY NOW / WHY US:
-- Why do anything: What is the cost of inaction? What pain persists without change?
-- Why now: What creates urgency? (budget cycle, strategic deadline, competitive pressure, contract renewal)
-- Why us: What makes Constructor.io uniquely suited vs alternatives for this persona's pain?
-
-OUTREACH MESSAGE:
-- Draft a personalised VITO-style opening message referencing their specific situation, a relevant customer proof point, and a clear call to action
+- Why do anything: cost of inaction, pain that persists without change
+- Why now: urgency drivers (budget cycle, contract renewal, competitive pressure, strategic deadline)
+- Why us: Constructor.io's unique differentiation for this account
 
 CHAMPION BUILDING ACTION PLAN:
-- Step 1: Validate hypothesis & confirm personal win (discovery call)
-- Step 2: Map the decision-making unit (ask for introductions)
-- Step 3: Build champion & provide internal ammunition (tailored materials, ROI data)
-- Step 4: Progress toward proof/pilot (align on evaluation criteria)
-- Step 5: Identify & access Economic Buyer (request executive alignment meeting)
-- Assess current champion status: Identify → Build → Test → Use → Confirmed
-
-BLOCKERS & RISKS:
-- Identify potential blockers — who benefits from the status quo and might resist change?
-- Assess organisational risks that could derail champion activation
+- Step 1: Validate hypothesis with Tier 2 champion (discovery call)
+- Step 2: Map the full decision-making unit via Tier 2 introductions
+- Step 3: Arm champion with internal ammunition (ROI data, case studies)
+- Step 4: Engage Tier 3 end-users for grassroots validation
+- Step 5: Access Tier 1 Economic Buyer for executive alignment
+- Neutralise Tier 4 detractors in parallel
 
 Output format:
 {
-  "contact_identity": {
-    "full_name": "",
-    "title_role": "",
-    "department": "",
-    "company": "",
-    "seniority_level": "C-Suite | VP | Director | Manager | IC",
-    "time_in_role": "",
-    "time_at_company": "",
-    "linkedin_url": "",
-    "best_channel": "Email | LinkedIn | Phone | Via internal referral",
-    "warm_contact": ""
-  },
-  "persona_profile": {
-    "communication_style": "",
-    "decision_making_style": "consensus-driven | autonomous | committee-based",
-    "personal_interests": "",
-    "motivations": ["motivation 1", "motivation 2"],
-    "known_relationships": {"reports_to": "", "trusted_allies": [], "key_reports": []}
-  },
+  "champion_cxo_candidates": [
+    {
+      "full_name": "",
+      "title_role": "",
+      "department": "",
+      "seniority_level": "C-Suite",
+      "time_in_role": "",
+      "time_at_company": "",
+      "linkedin_url": "",
+      "strategic_priorities": ["priority 1", "priority 2"],
+      "decision_authority": "budget owner | budget influencer | approval required",
+      "pain_hypothesis": "",
+      "personal_win": "",
+      "outreach_angle": "",
+      "best_channel": "Email | LinkedIn | Phone | Via internal referral",
+      "champion_readiness": "high | medium | low | unknown"
+    }
+  ],
+  "champion_vp_director_candidates": [
+    {
+      "full_name": "",
+      "title_role": "",
+      "department": "",
+      "seniority_level": "VP | Director | Manager",
+      "time_in_role": "",
+      "time_at_company": "",
+      "linkedin_url": "",
+      "role_kpis": [{"kpi": "", "current_state": "", "target": ""}],
+      "current_tools": ["tool 1", "tool 2"],
+      "pain_hypothesis": "",
+      "personal_win": "",
+      "prior_champion_track_record": "",
+      "political_standing": "strong | moderate | weak | unknown",
+      "outreach_angle": "",
+      "best_channel": "Email | LinkedIn | Phone | Via internal referral",
+      "champion_readiness": "high | medium | low | unknown"
+    }
+  ],
+  "champion_enduser_candidates": [
+    {
+      "full_name": "",
+      "title_role": "",
+      "department": "",
+      "seniority_level": "IC | Analyst | Specialist",
+      "linkedin_url": "",
+      "daily_pain_points": ["pain 1", "pain 2"],
+      "ideal_outcome": "",
+      "upward_influence": "strong | moderate | limited",
+      "reports_to": "",
+      "outreach_angle": "",
+      "best_channel": "Email | LinkedIn | Community | Demo",
+      "champion_readiness": "high | medium | low | unknown"
+    }
+  ],
+  "detractors": [
+    {
+      "full_name": "",
+      "title_role": "",
+      "department": "",
+      "reason_for_resistance": "",
+      "influence_level": "high | medium | low",
+      "political_power": "strong | moderate | weak",
+      "mitigation_strategy": ""
+    }
+  ],
   "business_context": {
     "strategic_objectives": ["objective 1", "objective 2", "objective 3"],
-    "role_kpis": [{"kpi": "", "current_state": "", "target": ""}]
-  },
-  "pain_gain_analysis": {
-    "pains": ["pain 1", "pain 2", "pain 3"],
-    "gains": ["gain 1", "gain 2", "gain 3"],
-    "painkillers": ["painkiller 1", "painkiller 2", "painkiller 3"],
-    "gain_creators": ["gain creator 1", "gain creator 2", "gain creator 3"]
-  },
-  "hypothesis_of_pain": {
-    "company_level": "",
-    "personal_level": ""
-  },
-  "champion_qualification": {
-    "role_in_decision": "Economic Buyer | Champion | Influencer | Blocker | User",
-    "reports_to": "",
-    "direct_reports": [],
-    "budget_access": "yes | no | influence only",
-    "can_access_economic_buyer": "yes | no | potentially",
-    "prior_champion_track_record": "",
-    "political_standing": "strong | moderate | weak | unknown"
-  },
-  "wins_mapping": {
-    "business_win": {"description": "", "quantified_impact": ""},
-    "personal_win": {"description": "", "quantified_impact": ""},
-    "team_win": {"description": "", "quantified_impact": ""}
+    "current_initiatives": ["initiative 1", "initiative 2"],
+    "known_stack": ["tool 1", "tool 2"],
+    "budget_cycle": ""
   },
   "why_framework": {
     "why_do_anything": "",
     "why_now": "",
     "why_us": ""
   },
-  "outreach_message": {
-    "subject_line": "",
-    "message_body": ""
-  },
   "action_plan": {
     "steps": [
-      {"step": 1, "objective": "Validate hypothesis & confirm personal win", "action": "", "expected_outcome": ""},
-      {"step": 2, "objective": "Map decision-making unit", "action": "", "expected_outcome": ""},
-      {"step": 3, "objective": "Build champion & provide ammunition", "action": "", "expected_outcome": ""},
-      {"step": 4, "objective": "Progress toward proof/pilot", "action": "", "expected_outcome": ""},
-      {"step": 5, "objective": "Access Economic Buyer", "action": "", "expected_outcome": ""}
+      {"step": 1, "objective": "Validate hypothesis with Tier 2 champion", "action": "", "target_person": ""},
+      {"step": 2, "objective": "Map decision-making unit", "action": "", "target_person": ""},
+      {"step": 3, "objective": "Arm champion with ammunition", "action": "", "target_person": ""},
+      {"step": 4, "objective": "Grassroots validation with end-users", "action": "", "target_person": ""},
+      {"step": 5, "objective": "Access Economic Buyer", "action": "", "target_person": ""}
     ],
+    "detractor_neutralisation": [{"target": "", "approach": ""}],
     "champion_status": "identify | build | test | use | confirmed"
   },
-  "blockers": [{"name": "", "role": "", "reason": "", "mitigation": ""}],
-  "champion_readiness": "high | medium | low | unknown",
+  "overall_readiness": "high | medium | low | unknown",
+  "primary_champion_recommendation": "",
   "open_questions": ["question 1", "question 2"],
   "key_findings": ["finding 1", "finding 2"],
   "sources": ["source 1", "source 2"]
@@ -409,7 +438,7 @@ Output format:
   "recommended_qualification_questions": ["question 1", "question 2"],
   "key_findings": ["finding 1", "finding 2"],
   "sources": ["source 1", "source 2"]
-}`
+}`,
 };
 
 // ---------------------------------------------------------------------------
@@ -437,7 +466,7 @@ Narrow your research to financial stress signals that create change urgency.
 - Are there financial triggers that would make the CFO or CEO mandate efficiency improvements NOW?
 - Look for earnings calls or investor communications where leadership has committed to digital improvement
 - Identify whether financial pressure is creating a burning platform for technology transformation
-PRIORITY OUTPUT: urgency tier (acute / building / latent) with specific financial evidence`
+PRIORITY OUTPUT: urgency tier (acute / building / latent) with specific financial evidence`,
   },
 
   "tech-stack-agent": {
@@ -459,7 +488,7 @@ Narrow your research to integration complexity and switching cost.
 - Is the current stack creating technical debt or engineering maintenance burden?
 - Are there scalability risks with the current solution (e.g. Black Friday performance, catalog growth)?
 - Does their architecture (headless, composable, API-first) make Constructor integration easier or harder?
-PRIORITY OUTPUT: switching complexity score and technical risk profile`
+PRIORITY OUTPUT: switching complexity score and technical risk profile`,
   },
 
   "hiring-agent": {
@@ -480,7 +509,7 @@ Narrow your research to engineering team capability and vendor dependency signal
 - Are they hiring for roles that would be unnecessary if they used Constructor? (e.g. search relevance engineer)
 - Any roles that suggest the current vendor is failing and they need engineers to compensate?
 - Do they have dedicated ML/AI talent for search, or is this a gap they are trying to fill?
-PRIORITY OUTPUT: team capability gap and whether Constructor reduces engineering burden`
+PRIORITY OUTPUT: team capability gap and whether Constructor reduces engineering burden`,
   },
 
   "initiative-agent": {
@@ -501,7 +530,7 @@ Narrow your research to initiatives that affect integration complexity.
 - Composable commerce or headless migrations are a natural Constructor entry point — is one planned?
 - Are there active API or data infrastructure projects that Constructor would need to integrate with?
 - Identify any technology lock-in risks from the current initiative roadmap
-PRIORITY OUTPUT: integration opportunity score and recommended timing relative to active initiatives`
+PRIORITY OUTPUT: integration opportunity score and recommended timing relative to active initiatives`,
   },
 
   "category-complexity-agent": {
@@ -522,7 +551,7 @@ Narrow your research to complexity as a technical fit signal.
 - Multi-market, multi-language catalogs with shared inventory are a known weakness of legacy search
 - High assortment churn (fashion, electronics) requires ML-native ranking — can their current stack handle this?
 - Deep category hierarchies (beauty: concern → ingredient → brand → format) need semantic understanding
-PRIORITY OUTPUT: complexity-to-capability gap score and specific technical fit rationale`
+PRIORITY OUTPUT: complexity-to-capability gap score and specific technical fit rationale`,
   },
 
   "competitor-agent": {
@@ -543,7 +572,7 @@ Narrow your research to competitive pressure as a transformation trigger.
 - Have any competitors recently announced or implemented major discovery platform upgrades?
 - Is there an industry benchmark or analyst report that puts the target below average on digital CX?
 - Frame competitive pressure as a burning platform — what happens if they do nothing for 12 months?
-PRIORITY OUTPUT: competitive urgency assessment and the cost of falling further behind`
+PRIORITY OUTPUT: competitive urgency assessment and the cost of falling further behind`,
   },
 
   "sentiment-agent": {
@@ -555,7 +584,7 @@ Narrow your research to discovery-specific customer pain evidence.
 - Find the most quotable, specific customer complaints — these are proof points for the AE
 - Identify if discovery complaints are trending (getting worse over time) or stable
 - Surface any 1-star reviews where discovery failure was the primary reason for dissatisfaction
-PRIORITY OUTPUT: top 3 most impactful customer quotes about discovery failure + discovery complaint rate`
+PRIORITY OUTPUT: top 3 most impactful customer quotes about discovery failure + discovery complaint rate`,
   },
 
   "leadership-agent": {
@@ -577,7 +606,7 @@ Narrow your research to building a champion activation profile.
 - What does their career history tell us about how they buy and implement technology?
 - Who do they report to and what are that person's stated priorities?
 - What would make this person look like a hero to their CEO/board if Constructor delivers?
-PRIORITY OUTPUT: champion profile with personal motivation map and recommended activation approach`
+PRIORITY OUTPUT: champion profile with personal motivation map and recommended activation approach`,
   },
 
   "earnings-call-agent": {
@@ -598,7 +627,7 @@ Narrow your research to executive statements about transformation urgency and di
 - Any earnings calls where analysts challenged management on lagging digital metrics?
 - Board or investor pressure signals — has an activist investor or PE board pushed for digital improvement?
 - Statements that indicate a timeline or deadline for digital transformation milestones
-PRIORITY OUTPUT: executive commitment quotes + urgency evidence that positions this as a NOW decision`
+PRIORITY OUTPUT: executive commitment quotes + urgency evidence that positions this as a NOW decision`,
   },
 
   "vendor-tenure-agent": {
@@ -618,7 +647,7 @@ Narrow your research to switching cost and vendor lock-in depth.
 - Are there data portability risks — can they migrate their behavioural training data to Constructor?
 - Any known technical dependencies that would make migration complex (custom integrations, proprietary APIs)?
 - Is the current vendor's contract structured to penalise early exit?
-PRIORITY OUTPUT: switching complexity score (low / medium / high) with specific lock-in evidence`
+PRIORITY OUTPUT: switching complexity score (low / medium / high) with specific lock-in evidence`,
   },
 
   "champion-building-agent": {
@@ -630,7 +659,7 @@ You are the primary agent for this template. Go deep on champion identification 
 - What objections will the champion face internally and how can the AE help them overcome those?
 - Design a champion enablement strategy: what content, proof points, and narratives does this person need to become an internal advocate?
 - Identify the champion's "hero story" — what does winning look like for them personally and professionally?
-PRIORITY OUTPUT: champion activation playbook with specific talking points tailored to this individual's psychology`
+PRIORITY OUTPUT: champion activation playbook with specific talking points tailored to this individual's psychology`,
   },
 
   "risk-flagger-agent": {
@@ -651,8 +680,8 @@ Focus exclusively on technical and organisational risks that could derail implem
 - Is there an internal engineering team capable of implementing, or is there a skills gap?
 - Are there security, data residency, or compliance requirements (GDPR, SOC2) that Constructor must satisfy?
 - Is there a competing internal project that would consume the engineering bandwidth needed for integration?
-PRIORITY OUTPUT: implementation risk score and top 3 technical deal risks with mitigation recommendations`
-  }
+PRIORITY OUTPUT: implementation risk score and top 3 technical deal risks with mitigation recommendations`,
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -725,7 +754,7 @@ Brief structure:
 4. CHAMPION ENABLEMENT — what content and narratives the champion needs to sell internally
 5. RECOMMENDED QUALIFICATION QUESTIONS — what the AE must learn in the next conversation
 
-Tone: coaching-style, psychologically astute, deal-stage-aware. This brief is for the AE's eyes only.`
+Tone: coaching-style, psychologically astute, deal-stage-aware. This brief is for the AE's eyes only.`,
 };
 
 // ---------------------------------------------------------------------------
@@ -774,7 +803,10 @@ function buildSynthesisPrompt(templateId, accountContext, agentOutputs) {
   if (!synthesis) throw new Error(`Unknown template: ${templateId}`);
 
   const outputsBlock = Object.entries(agentOutputs)
-    .map(([agentId, output]) => `### ${agentId}\n${JSON.stringify(output, null, 2)}`)
+    .map(
+      ([agentId, output]) =>
+        `### ${agentId}\n${JSON.stringify(output, null, 2)}`,
+    )
     .join("\n\n");
 
   return `${synthesis}
@@ -810,37 +842,62 @@ module.exports = {
     "lower-tco": {
       id: "lower-tco",
       label: "Lower TCO / Higher ROI",
-      description: "CFO-ready ROI brief quantifying revenue opportunity and cost of inaction",
-      agents: ["financial-agent", "earnings-call-agent", "category-complexity-agent"],
-      primaryBuyer: "CFO / Finance"
+      description:
+        "CFO-ready ROI brief quantifying revenue opportunity and cost of inaction",
+      agents: [
+        "financial-agent",
+        "earnings-call-agent",
+        "category-complexity-agent",
+      ],
+      primaryBuyer: "CFO / Finance",
     },
     "customer-experience": {
       id: "customer-experience",
       label: "Improved Customer Experience",
-      description: "CX evidence brief surfacing discovery failure through reviews and competitive gaps",
+      description:
+        "CX evidence brief surfacing discovery failure through reviews and competitive gaps",
       agents: ["sentiment-agent", "competitor-agent", "tech-stack-agent"],
-      primaryBuyer: "CPO / CX Leader"
+      primaryBuyer: "CPO / CX Leader",
     },
     "business-transformation": {
       id: "business-transformation",
       label: "Business Transformation & Urgency",
-      description: "Urgency brief stacking trigger events that indicate the account must act now",
-      agents: ["initiative-agent", "hiring-agent", "vendor-tenure-agent", "leadership-agent", "financial-agent"],
-      primaryBuyer: "CEO / CDO / Board"
+      description:
+        "Urgency brief stacking trigger events that indicate the account must act now",
+      agents: [
+        "initiative-agent",
+        "hiring-agent",
+        "vendor-tenure-agent",
+        "leadership-agent",
+        "financial-agent",
+      ],
+      primaryBuyer: "CEO / CDO / Board",
     },
     "risk-technical": {
       id: "risk-technical",
       label: "Reduce Risk & Improve Technical Fit",
-      description: "Technical evaluation brief assessing switching complexity and integration fit",
-      agents: ["vendor-tenure-agent", "category-complexity-agent", "hiring-agent", "initiative-agent", "tech-stack-agent"],
-      primaryBuyer: "CTO / VP Engineering"
+      description:
+        "Technical evaluation brief assessing switching complexity and integration fit",
+      agents: [
+        "vendor-tenure-agent",
+        "category-complexity-agent",
+        "hiring-agent",
+        "initiative-agent",
+        "tech-stack-agent",
+      ],
+      primaryBuyer: "CTO / VP Engineering",
     },
     "champion-deal": {
       id: "champion-deal",
       label: "Champion & Deal Strategy",
-      description: "Deal strategy brief with champion profile, buying committee map, and risk assessment",
-      agents: ["champion-building-agent", "risk-flagger-agent", "leadership-agent"],
-      primaryBuyer: "AE internal use"
-    }
-  }
+      description:
+        "Deal strategy brief with champion profile, buying committee map, and risk assessment",
+      agents: [
+        "champion-building-agent",
+        "risk-flagger-agent",
+        "leadership-agent",
+      ],
+      primaryBuyer: "AE internal use",
+    },
+  },
 };
