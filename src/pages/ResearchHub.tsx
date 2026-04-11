@@ -17,6 +17,14 @@ import {
   Trophy,
   Users,
   X,
+  ChevronRight,
+  Shield,
+  Crown,
+  UserCheck,
+  UserX,
+  Star,
+  Brain,
+  FileText,
 } from "lucide-react";
 import {
   BarChart,
@@ -33,6 +41,21 @@ import {
   Area,
 } from "recharts";
 import { AgentSwarm } from "./AgentSwarm";
+
+interface ChampionCandidate {
+  full_name?: string;
+  title_role?: string;
+  department?: string;
+  seniority_level?: string;
+  linkedin_url?: string;
+  pain_hypothesis?: string;
+  personal_win?: string;
+  outreach_angle?: string;
+  best_channel?: string;
+  champion_readiness?: string;
+  reason_for_resistance?: string;
+  [key: string]: unknown;
+}
 
 interface Account {
   _id: string;
@@ -55,8 +78,24 @@ interface Account {
   metadata: {
     citations: unknown[];
     searchResults: unknown[];
+    lastSwarmRun?: string;
   };
   timestamp: string;
+  champion_cxo_candidates?: ChampionCandidate[];
+  champion_vp_director_candidates?: ChampionCandidate[];
+  champion_enduser_candidates?: ChampionCandidate[];
+  detractors?: ChampionCandidate[];
+  primary_champion_recommendation?: string;
+  champion_overall_readiness?: string;
+  agentResults?: Record<
+    string,
+    { output?: unknown; rawText?: string; error?: string; executedAt?: string }
+  >;
+  swarmBriefs?: Record<
+    string,
+    { brief?: string; template?: string; executedAt?: string }
+  >;
+  [key: string]: unknown;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "";
@@ -70,6 +109,7 @@ export function ResearchHub() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`)
@@ -1303,6 +1343,10 @@ export function ResearchHub() {
               {/* Reports indicator */}
               {acc.reports?.chatGptAnalysis && (
                 <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAccount(acc);
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1310,25 +1354,144 @@ export function ResearchHub() {
                     marginTop: "auto",
                     paddingTop: 6,
                     borderTop: "1px solid rgba(107,113,148,0.1)",
+                    cursor: "pointer",
+                    borderRadius: 8,
+                    padding: "6px 8px",
+                    transition: "background 0.15s",
                   }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "rgba(135,32,222,0.06)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   <Sparkles size={13} color="#8720de" />
                   <span
                     style={{
                       fontSize: "0.75rem",
-                      color: "#6b7194",
+                      color: "#8720de",
                       fontFamily: "var(--font-label)",
                       fontWeight: 600,
                     }}
                   >
                     AI Analysis Available
                   </span>
+                  <ChevronRight
+                    size={12}
+                    color="#8720de"
+                    style={{ marginLeft: "auto" }}
+                  />
                 </div>
               )}
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* Research Report Slide-out Panel */}
+      <AnimatePresence>
+        {selectedAccount && (
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 40 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 220,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "var(--background)",
+              zIndex: 950,
+              overflow: "auto",
+            }}
+          >
+            {/* Panel header */}
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "1rem 1.5rem",
+                backgroundColor: "var(--background)",
+                borderBottom: "1px solid rgba(167,176,222,0.08)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => setSelectedAccount(null)}
+                  style={{
+                    background: "var(--surface-container-low)",
+                    border: "none",
+                    borderRadius: 8,
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "var(--on-surface-variant)",
+                  }}
+                >
+                  <X size={16} />
+                </button>
+                <Building2 size={20} color="var(--primary)" />
+                <span
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1.1rem",
+                    color: "var(--on-background)",
+                  }}
+                >
+                  {selectedAccount.companyName}
+                </span>
+                {selectedAccount.priority && (
+                  <span
+                    style={{
+                      fontSize: "0.62rem",
+                      borderRadius: 4,
+                      background:
+                        selectedAccount.priority === "high"
+                          ? "var(--error)"
+                          : selectedAccount.priority === "medium"
+                            ? "#f59e0b"
+                            : "var(--secondary-brand)",
+                      color: "#fff",
+                      padding: "0.15rem 0.6rem",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {selectedAccount.priority}
+                  </span>
+                )}
+              </div>
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--on-surface-variant)",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                }}
+              >
+                Research Hub / {selectedAccount.companyName}
+              </span>
+            </div>
+
+            {/* Panel content */}
+            <div style={{ padding: "1.5rem", maxWidth: 900, margin: "0 auto" }}>
+              <ResearchReportContent account={selectedAccount} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Full-page overlay panel for sub-pages */}
       <AnimatePresence>
@@ -1420,6 +1583,652 @@ export function ResearchHub() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── Research Report Content ─── */
+function ResearchReportContent({ account }: { account: Account }) {
+  const sectionCard: React.CSSProperties = {
+    borderRadius: "1rem",
+    padding: "1.25rem",
+    backgroundColor: "var(--surface-container-lowest)",
+    border: "1px solid rgba(167,176,222,0.10)",
+    marginBottom: 16,
+  };
+
+  const sectionTitle = (
+    icon: React.ReactNode,
+    title: string,
+  ): React.ReactNode => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 12,
+        fontFamily: "var(--font-headline)",
+        fontWeight: 700,
+        fontSize: "0.95rem",
+        color: "var(--on-background)",
+      }}
+    >
+      {icon}
+      {title}
+    </div>
+  );
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "0.7rem",
+    fontFamily: "var(--font-label)",
+    fontWeight: 600,
+    color: "var(--on-surface-variant)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: 4,
+  };
+
+  const valueStyle: React.CSSProperties = {
+    fontSize: "0.88rem",
+    color: "var(--on-surface)",
+    lineHeight: 1.5,
+  };
+
+  const renderInsightList = (items: unknown[], color: string) => {
+    if (!Array.isArray(items) || items.length === 0) return null;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {items.map((item: any, i: number) => (
+          <div
+            key={i}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              background: `${color}08`,
+              borderLeft: `3px solid ${color}`,
+            }}
+          >
+            {item.title && (
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "0.84rem",
+                  color: "var(--on-surface)",
+                  marginBottom: 2,
+                }}
+              >
+                {item.title}
+              </div>
+            )}
+            {item.description && (
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--on-surface-variant)",
+                  lineHeight: 1.45,
+                }}
+              >
+                {item.description}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderChampionCards = (
+    candidates: ChampionCandidate[] | undefined,
+    icon: React.ReactNode,
+    tierLabel: string,
+    accentColor: string,
+  ) => {
+    if (!candidates || candidates.length === 0) return null;
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 8,
+            fontSize: "0.8rem",
+            fontFamily: "var(--font-label)",
+            fontWeight: 700,
+            color: accentColor,
+          }}
+        >
+          {icon}
+          {tierLabel}
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 10,
+          }}
+        >
+          {candidates.map((c, i) => (
+            <div
+              key={i}
+              style={{
+                borderRadius: 12,
+                padding: "12px 14px",
+                background: `${accentColor}06`,
+                border: `1px solid ${accentColor}20`,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: "0.88rem",
+                  color: "var(--on-surface)",
+                  marginBottom: 2,
+                }}
+              >
+                {c.full_name || "Unknown"}
+              </div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--on-surface-variant)",
+                  marginBottom: 6,
+                }}
+              >
+                {c.title_role || ""}
+                {c.department ? ` · ${c.department}` : ""}
+              </div>
+              {c.pain_hypothesis && (
+                <div
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "var(--on-surface)",
+                    marginBottom: 4,
+                  }}
+                >
+                  <span style={labelStyle}>Pain Hypothesis</span>
+                  <div style={valueStyle}>{c.pain_hypothesis}</div>
+                </div>
+              )}
+              {c.reason_for_resistance && (
+                <div
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "var(--on-surface)",
+                    marginBottom: 4,
+                  }}
+                >
+                  <span style={labelStyle}>Resistance</span>
+                  <div style={valueStyle}>{c.reason_for_resistance}</div>
+                </div>
+              )}
+              {c.outreach_angle && (
+                <div style={{ fontSize: "0.78rem", marginBottom: 4 }}>
+                  <span style={labelStyle}>Outreach Angle</span>
+                  <div style={valueStyle}>{c.outreach_angle}</div>
+                </div>
+              )}
+              {c.champion_readiness && (
+                <span
+                  style={{
+                    display: "inline-block",
+                    fontSize: "0.62rem",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 700,
+                    padding: "0.15rem 0.6rem",
+                    borderRadius: 9999,
+                    background: `${accentColor}14`,
+                    color: accentColor,
+                    marginTop: 4,
+                  }}
+                >
+                  Readiness: {c.champion_readiness}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Company Overview */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0 }}
+        style={sectionCard}
+      >
+        {sectionTitle(
+          <Building2 size={18} color="var(--primary)" />,
+          "Company Overview",
+        )}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 16,
+          }}
+        >
+          <div>
+            <div style={labelStyle}>Website</div>
+            <div style={valueStyle}>{account.website || "—"}</div>
+          </div>
+          <div>
+            <div style={labelStyle}>Buying Signal Score</div>
+            <div
+              style={{
+                ...valueStyle,
+                fontWeight: 700,
+                color: "var(--primary)",
+                fontSize: "1.1rem",
+              }}
+            >
+              {account.buyingSignalScore != null
+                ? `${account.buyingSignalScore}/10`
+                : "—"}
+            </div>
+          </div>
+          <div>
+            <div style={labelStyle}>Last Updated</div>
+            <div style={valueStyle}>
+              {account.timestamp
+                ? new Date(account.timestamp).toLocaleDateString()
+                : "—"}
+            </div>
+          </div>
+        </div>
+        {account.rationale && (
+          <div style={{ marginTop: 14 }}>
+            <div style={labelStyle}>Rationale</div>
+            <div style={{ ...valueStyle, lineHeight: 1.6 }}>
+              {account.rationale}
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Strategic Insights */}
+      {account.insights && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.07 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Brain size={18} color="#8720de" />,
+            "Strategic Insights",
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {account.insights.strategicContext?.length > 0 && (
+              <div>
+                <div
+                  style={{ ...labelStyle, color: "#124af1", marginBottom: 6 }}
+                >
+                  Strategic Context
+                </div>
+                {renderInsightList(
+                  account.insights.strategicContext,
+                  "#124af1",
+                )}
+              </div>
+            )}
+            {account.insights.ecommercePriorities?.length > 0 && (
+              <div>
+                <div
+                  style={{ ...labelStyle, color: "#4e45e4", marginBottom: 6 }}
+                >
+                  E-commerce Priorities
+                </div>
+                {renderInsightList(
+                  account.insights.ecommercePriorities,
+                  "#4e45e4",
+                )}
+              </div>
+            )}
+            {account.insights.activeInitiatives?.length > 0 && (
+              <div>
+                <div
+                  style={{ ...labelStyle, color: "#22c55e", marginBottom: 6 }}
+                >
+                  Active Initiatives
+                </div>
+                {renderInsightList(
+                  account.insights.activeInitiatives,
+                  "#22c55e",
+                )}
+              </div>
+            )}
+            {account.insights.keyChallenges?.length > 0 && (
+              <div>
+                <div
+                  style={{ ...labelStyle, color: "#ef4444", marginBottom: 6 }}
+                >
+                  Key Challenges
+                </div>
+                {renderInsightList(account.insights.keyChallenges, "#ef4444")}
+              </div>
+            )}
+            {account.insights.opportunityFrame?.length > 0 && (
+              <div>
+                <div
+                  style={{ ...labelStyle, color: "#8720de", marginBottom: 6 }}
+                >
+                  Opportunity Frame
+                </div>
+                {renderInsightList(
+                  account.insights.opportunityFrame,
+                  "#8720de",
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Champion Mapping */}
+      {(account.champion_cxo_candidates?.length ||
+        account.champion_vp_director_candidates?.length ||
+        account.champion_enduser_candidates?.length ||
+        account.detractors?.length) && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.14 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Shield size={18} color="#124af1" />,
+            "Champion Mapping",
+          )}
+          {account.primary_champion_recommendation && (
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                background:
+                  "linear-gradient(135deg, rgba(135,32,222,0.08), rgba(78,69,228,0.08))",
+                marginBottom: 16,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <Star
+                size={16}
+                color="#8720de"
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
+              <div>
+                <div style={labelStyle}>Primary Champion Recommendation</div>
+                <div style={valueStyle}>
+                  {account.primary_champion_recommendation}
+                </div>
+              </div>
+            </div>
+          )}
+          {account.champion_overall_readiness && (
+            <div style={{ marginBottom: 14 }}>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
+                  padding: "0.15rem 0.6rem",
+                  borderRadius: 9999,
+                  background: "rgba(18,74,241,0.10)",
+                  color: "#124af1",
+                }}
+              >
+                Overall Readiness: {account.champion_overall_readiness}
+              </span>
+            </div>
+          )}
+          {renderChampionCards(
+            account.champion_cxo_candidates,
+            <Crown size={14} />,
+            "CXO Candidates",
+            "#8720de",
+          )}
+          {renderChampionCards(
+            account.champion_vp_director_candidates,
+            <UserCheck size={14} />,
+            "VP / Director Candidates",
+            "#124af1",
+          )}
+          {renderChampionCards(
+            account.champion_enduser_candidates,
+            <Users size={14} />,
+            "End-User Champions",
+            "#22c55e",
+          )}
+          {renderChampionCards(
+            account.detractors,
+            <UserX size={14} />,
+            "Detractors",
+            "#ef4444",
+          )}
+        </motion.div>
+      )}
+
+      {/* Agent Results */}
+      {account.agentResults && Object.keys(account.agentResults).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.21 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Sparkles size={18} color="#8720de" />,
+            "Agent Results",
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {Object.entries(account.agentResults).map(([agentId, result]) => (
+              <details
+                key={agentId}
+                style={{
+                  borderRadius: 10,
+                  border: "1px solid rgba(167,176,222,0.12)",
+                  overflow: "hidden",
+                }}
+              >
+                <summary
+                  style={{
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    fontSize: "0.84rem",
+                    color: "var(--on-surface)",
+                    background: "var(--surface-container-low)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <FileText size={14} color="var(--primary)" />
+                  {agentId}
+                  {result.executedAt && (
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: "0.68rem",
+                        color: "var(--on-surface-variant)",
+                      }}
+                    >
+                      {new Date(result.executedAt).toLocaleString()}
+                    </span>
+                  )}
+                </summary>
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    fontSize: "0.82rem",
+                    color: "var(--on-surface)",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {result.error ? (
+                    <span style={{ color: "var(--error)" }}>
+                      Error: {result.error}
+                    </span>
+                  ) : typeof result.output === "object" ? (
+                    <pre
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        fontFamily: "var(--font-body)",
+                        fontSize: "0.8rem",
+                        margin: 0,
+                        maxHeight: 400,
+                        overflow: "auto",
+                      }}
+                    >
+                      {JSON.stringify(result.output, null, 2)}
+                    </pre>
+                  ) : (
+                    <div style={{ whiteSpace: "pre-wrap" }}>
+                      {result.rawText || String(result.output)}
+                    </div>
+                  )}
+                </div>
+              </details>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Swarm Briefs */}
+      {account.swarmBriefs && Object.keys(account.swarmBriefs).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.28 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Target size={18} color="#06b6d4" />,
+            "Swarm Synthesis Briefs",
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {Object.entries(account.swarmBriefs).map(([key, brief]) => (
+              <div
+                key={key}
+                style={{
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  background: "rgba(6,182,212,0.04)",
+                  border: "1px solid rgba(6,182,212,0.12)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "0.82rem",
+                      fontFamily: "var(--font-label)",
+                      color: "var(--on-surface)",
+                    }}
+                  >
+                    {key}
+                  </span>
+                  {brief.executedAt && (
+                    <span
+                      style={{
+                        fontSize: "0.68rem",
+                        color: "var(--on-surface-variant)",
+                      }}
+                    >
+                      {new Date(brief.executedAt).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "var(--on-surface)",
+                    lineHeight: 1.55,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {brief.brief}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Metadata */}
+      {account.metadata && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.35 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Clock size={18} color="var(--on-surface-variant)" />,
+            "Metadata",
+          )}
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            {account.metadata.lastSwarmRun && (
+              <div>
+                <div style={labelStyle}>Last Swarm Run</div>
+                <div style={valueStyle}>
+                  {new Date(account.metadata.lastSwarmRun).toLocaleString()}
+                </div>
+              </div>
+            )}
+            {account.timestamp && (
+              <div>
+                <div style={labelStyle}>Record Timestamp</div>
+                <div style={valueStyle}>
+                  {new Date(account.timestamp).toLocaleString()}
+                </div>
+              </div>
+            )}
+            {account.metadata.citations?.length > 0 && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={labelStyle}>
+                  Citations ({account.metadata.citations.length})
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  {(account.metadata.citations as any[])
+                    .slice(0, 10)
+                    .map((c: any, i: number) => (
+                      <div
+                        key={i}
+                        style={{
+                          fontSize: "0.78rem",
+                          color: "var(--on-surface-variant)",
+                        }}
+                      >
+                        {typeof c === "string"
+                          ? c
+                          : c.title || c.url || JSON.stringify(c)}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
