@@ -231,37 +231,65 @@ app.post("/api/swarm/run", async (req, res) => {
 
         // Extract champion tier fields to distinct top-level fields
         const championResult = agentResults["champion-building-agent"];
-        if (championResult?.output && typeof championResult.output === "object") {
+        if (
+          championResult?.output &&
+          typeof championResult.output === "object"
+        ) {
           const o = championResult.output;
-          if (o.champion_cxo_candidates) updateFields.champion_cxo_candidates = o.champion_cxo_candidates;
-          if (o.champion_vp_director_candidates) updateFields.champion_vp_director_candidates = o.champion_vp_director_candidates;
-          if (o.champion_enduser_candidates) updateFields.champion_enduser_candidates = o.champion_enduser_candidates;
+          if (o.champion_cxo_candidates)
+            updateFields.champion_cxo_candidates = o.champion_cxo_candidates;
+          if (o.champion_vp_director_candidates)
+            updateFields.champion_vp_director_candidates =
+              o.champion_vp_director_candidates;
+          if (o.champion_enduser_candidates)
+            updateFields.champion_enduser_candidates =
+              o.champion_enduser_candidates;
           if (o.detractors) updateFields.detractors = o.detractors;
-          if (o.primary_champion_recommendation) updateFields.primary_champion_recommendation = o.primary_champion_recommendation;
-          if (o.overall_readiness) updateFields.champion_overall_readiness = o.overall_readiness;
+          if (o.primary_champion_recommendation)
+            updateFields.primary_champion_recommendation =
+              o.primary_champion_recommendation;
+          if (o.overall_readiness)
+            updateFields.champion_overall_readiness = o.overall_readiness;
 
           // Build champion text for vector embedding
           const champParts = [`Champion Map for ${account.companyName}`];
           const addCandidates = (label, arr) => {
             if (Array.isArray(arr) && arr.length > 0) {
-              champParts.push(`${label}: ${arr.map(c => `${c.full_name} (${c.title_role}) — ${c.pain_hypothesis || c.reason_for_resistance || ""}`).join("; ")}`);
+              champParts.push(
+                `${label}: ${arr.map((c) => `${c.full_name} (${c.title_role}) — ${c.pain_hypothesis || c.reason_for_resistance || ""}`).join("; ")}`,
+              );
             }
           };
           addCandidates("CXO Candidates", o.champion_cxo_candidates);
-          addCandidates("VP/Director Candidates", o.champion_vp_director_candidates);
+          addCandidates(
+            "VP/Director Candidates",
+            o.champion_vp_director_candidates,
+          );
           addCandidates("End-User Candidates", o.champion_enduser_candidates);
           addCandidates("Detractors", o.detractors);
-          if (o.why_framework) champParts.push(`Why now: ${o.why_framework.why_now || ""} | Why us: ${o.why_framework.why_us || ""}`);
-          if (o.primary_champion_recommendation) champParts.push(`Primary champion: ${o.primary_champion_recommendation}`);
+          if (o.why_framework)
+            champParts.push(
+              `Why now: ${o.why_framework.why_now || ""} | Why us: ${o.why_framework.why_us || ""}`,
+            );
+          if (o.primary_champion_recommendation)
+            champParts.push(
+              `Primary champion: ${o.primary_champion_recommendation}`,
+            );
           const champText = champParts.join("\n");
 
           // Generate embedding for champion data
           try {
-            const embResp = await openai.embeddings.create({ model: "text-embedding-3-small", input: champText.slice(0, 30000) });
+            const embResp = await openai.embeddings.create({
+              model: "text-embedding-3-small",
+              input: champText.slice(0, 30000),
+            });
             updateFields.championEmbedding = embResp.data[0].embedding;
             updateFields.championEmbeddedAt = new Date().toISOString();
           } catch (embErr) {
-            console.error(`Champion embedding failed for ${account.companyName}:`, embErr.message);
+            console.error(
+              `Champion embedding failed for ${account.companyName}:`,
+              embErr.message,
+            );
           }
         }
 
@@ -492,36 +520,68 @@ app.post("/api/swarm/run-all", async (req, res) => {
 
             // Extract champion tier fields to distinct top-level fields
             const championResult = agentResults["champion-building-agent"];
-            if (championResult?.output && typeof championResult.output === "object") {
+            if (
+              championResult?.output &&
+              typeof championResult.output === "object"
+            ) {
               const o = championResult.output;
-              if (o.champion_cxo_candidates) updateFields.champion_cxo_candidates = o.champion_cxo_candidates;
-              if (o.champion_vp_director_candidates) updateFields.champion_vp_director_candidates = o.champion_vp_director_candidates;
-              if (o.champion_enduser_candidates) updateFields.champion_enduser_candidates = o.champion_enduser_candidates;
+              if (o.champion_cxo_candidates)
+                updateFields.champion_cxo_candidates =
+                  o.champion_cxo_candidates;
+              if (o.champion_vp_director_candidates)
+                updateFields.champion_vp_director_candidates =
+                  o.champion_vp_director_candidates;
+              if (o.champion_enduser_candidates)
+                updateFields.champion_enduser_candidates =
+                  o.champion_enduser_candidates;
               if (o.detractors) updateFields.detractors = o.detractors;
-              if (o.primary_champion_recommendation) updateFields.primary_champion_recommendation = o.primary_champion_recommendation;
-              if (o.overall_readiness) updateFields.champion_overall_readiness = o.overall_readiness;
+              if (o.primary_champion_recommendation)
+                updateFields.primary_champion_recommendation =
+                  o.primary_champion_recommendation;
+              if (o.overall_readiness)
+                updateFields.champion_overall_readiness = o.overall_readiness;
 
               // Build champion text for vector embedding
               const champParts = [`Champion Map for ${account.companyName}`];
               const addCandidates = (label, arr) => {
                 if (Array.isArray(arr) && arr.length > 0) {
-                  champParts.push(`${label}: ${arr.map(c => `${c.full_name} (${c.title_role}) — ${c.pain_hypothesis || c.reason_for_resistance || ""}`).join("; ")}`);
+                  champParts.push(
+                    `${label}: ${arr.map((c) => `${c.full_name} (${c.title_role}) — ${c.pain_hypothesis || c.reason_for_resistance || ""}`).join("; ")}`,
+                  );
                 }
               };
               addCandidates("CXO Candidates", o.champion_cxo_candidates);
-              addCandidates("VP/Director Candidates", o.champion_vp_director_candidates);
-              addCandidates("End-User Candidates", o.champion_enduser_candidates);
+              addCandidates(
+                "VP/Director Candidates",
+                o.champion_vp_director_candidates,
+              );
+              addCandidates(
+                "End-User Candidates",
+                o.champion_enduser_candidates,
+              );
               addCandidates("Detractors", o.detractors);
-              if (o.why_framework) champParts.push(`Why now: ${o.why_framework.why_now || ""} | Why us: ${o.why_framework.why_us || ""}`);
-              if (o.primary_champion_recommendation) champParts.push(`Primary champion: ${o.primary_champion_recommendation}`);
+              if (o.why_framework)
+                champParts.push(
+                  `Why now: ${o.why_framework.why_now || ""} | Why us: ${o.why_framework.why_us || ""}`,
+                );
+              if (o.primary_champion_recommendation)
+                champParts.push(
+                  `Primary champion: ${o.primary_champion_recommendation}`,
+                );
               const champText = champParts.join("\n");
 
               try {
-                const embResp = await openai.embeddings.create({ model: "text-embedding-3-small", input: champText.slice(0, 30000) });
+                const embResp = await openai.embeddings.create({
+                  model: "text-embedding-3-small",
+                  input: champText.slice(0, 30000),
+                });
                 updateFields.championEmbedding = embResp.data[0].embedding;
                 updateFields.championEmbeddedAt = new Date().toISOString();
               } catch (embErr) {
-                console.error(`Champion embedding failed for ${account.companyName}:`, embErr.message);
+                console.error(
+                  `Champion embedding failed for ${account.companyName}:`,
+                  embErr.message,
+                );
               }
             }
 
