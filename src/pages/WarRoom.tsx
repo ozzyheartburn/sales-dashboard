@@ -511,18 +511,10 @@ export function WarRoom() {
     },
   ]);
   const [chatInput, setChatInput] = useState("");
-  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(
-    new Set(),
-  );
-
-  const toggleInsight = (key: string) => {
-    setExpandedInsights((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
+  const [detailInsight, setDetailInsight] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
@@ -1142,19 +1134,6 @@ export function WarRoom() {
 
                     {/* 3 Detail Cards */}
                     {row.cards.map((card, cardIdx) => {
-                      const insightKey = `${rowIdx}-${cardIdx}`;
-                      const isExpanded = expandedInsights.has(insightKey);
-                      // Split description into headline (first sentence) and rest
-                      const sentenceEnd =
-                        card.description.search(/(?<=[.!?])\s/);
-                      const headline =
-                        sentenceEnd > 0
-                          ? card.description.slice(0, sentenceEnd + 1).trim()
-                          : card.description;
-                      const rest =
-                        sentenceEnd > 0
-                          ? card.description.slice(sentenceEnd + 1).trim()
-                          : "";
                       return (
                         <div
                           key={card.title}
@@ -1165,92 +1144,62 @@ export function WarRoom() {
                             backgroundColor: "var(--surface-container-lowest)",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 6,
+                            gap: 8,
                           }}
                         >
-                          <div
+                          <span
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
+                              fontSize: "1rem",
+                              fontWeight: 800,
+                              fontFamily: "var(--font-headline)",
+                              color: "var(--on-background)",
+                              lineHeight: 1.3,
                             }}
                           >
+                            {card.title}
+                          </span>
+                          {card.badge && (
                             <span
                               style={{
-                                fontSize: "0.62rem",
+                                fontSize: "0.55rem",
                                 fontWeight: 700,
                                 fontFamily: "var(--font-label)",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.06em",
-                                color: "var(--on-surface-variant)",
+                                padding: "0.12rem 0.5rem",
+                                borderRadius: 9999,
+                                background: card.badgeColor
+                                  ? `${card.badgeColor}18`
+                                  : "rgba(18,74,241,0.08)",
+                                color: card.badgeColor || "var(--primary)",
+                                alignSelf: "flex-start",
                               }}
                             >
-                              {card.title}
+                              {card.badge}
                             </span>
-                            {card.badge && (
-                              <span
-                                style={{
-                                  fontSize: "0.55rem",
-                                  fontWeight: 700,
-                                  fontFamily: "var(--font-label)",
-                                  padding: "0.12rem 0.5rem",
-                                  borderRadius: 9999,
-                                  background: card.badgeColor
-                                    ? `${card.badgeColor}18`
-                                    : "rgba(18,74,241,0.08)",
-                                  color: card.badgeColor || "var(--primary)",
-                                }}
-                              >
-                                {card.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p
-                            style={{
-                              fontSize: headline.length > 120 ? "0.72rem" : headline.length > 80 ? "0.78rem" : "0.84rem",
-                              color: "var(--on-surface)",
-                              lineHeight: 1.45,
-                              margin: 0,
-                            }}
-                          >
-                            {headline}
-                          </p>
-                          {rest && (
-                            <>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  style={{
-                                    fontSize: "0.84rem",
-                                    color: "var(--on-surface)",
-                                    lineHeight: 1.45,
-                                    overflow: "hidden",
-                                  }}
-                                >
-                                  {rest}
-                                </motion.div>
-                              )}
-                              <button
-                                onClick={() => toggleInsight(insightKey)}
-                                style={{
-                                  background: "none",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  fontSize: "0.65rem",
-                                  fontWeight: 600,
-                                  fontFamily: "var(--font-label)",
-                                  color: "var(--primary)",
-                                  padding: "2px 0",
-                                  textAlign: "left",
-                                  width: "fit-content",
-                                }}
-                              >
-                                {isExpanded ? "Collapse" : "Expand"}
-                              </button>
-                            </>
+                          )}
+                          {card.description && (
+                            <button
+                              onClick={() =>
+                                setDetailInsight({
+                                  title: card.title,
+                                  description: card.description,
+                                })
+                              }
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "0.68rem",
+                                fontWeight: 600,
+                                fontFamily: "var(--font-label)",
+                                color: "var(--primary)",
+                                padding: "2px 0",
+                                textAlign: "left",
+                                width: "fit-content",
+                                marginTop: "auto",
+                              }}
+                            >
+                              More Details
+                            </button>
                           )}
                         </div>
                       );
@@ -1258,6 +1207,99 @@ export function WarRoom() {
                   </motion.div>
                 ))}
               </div>
+
+              {/* ── Insight Detail Widget ── */}
+              <AnimatePresence>
+                {detailInsight && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setDetailInsight(null)}
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: "rgba(0,0,0,0.25)",
+                      zIndex: 1000,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="luminous-shadow"
+                      style={{
+                        backgroundColor: "var(--surface-container-lowest)",
+                        borderRadius: "1rem",
+                        padding: "1.75rem",
+                        maxWidth: 560,
+                        width: "90%",
+                        maxHeight: "70vh",
+                        overflow: "auto",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          marginBottom: 16,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "1.15rem",
+                            fontWeight: 800,
+                            fontFamily: "var(--font-headline)",
+                            color: "var(--on-background)",
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {detailInsight.title}
+                        </span>
+                        <button
+                          onClick={() => setDetailInsight(null)}
+                          style={{
+                            background: "var(--surface-container-low)",
+                            border: "none",
+                            borderRadius: 8,
+                            width: 28,
+                            height: 28,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            color: "var(--on-surface-variant)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <p
+                        style={{
+                          fontSize: "0.9rem",
+                          color: "var(--on-surface)",
+                          lineHeight: 1.6,
+                          margin: 0,
+                        }}
+                      >
+                        {detailInsight.description}
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* ── Proprietary AI Insight Banner ── */}
               <motion.div
