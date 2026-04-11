@@ -218,17 +218,14 @@ app.post("/api/research/save", async (req, res) => {
     const rawData = req.body;
     const researchData = Array.isArray(rawData) ? rawData[0] : rawData;
 
-    // n8n sends account_name — map to companyName for MongoDB consistency
-    const companyName = researchData?.companyName || researchData?.account_name;
+    const companyName = researchData?.companyName;
 
     if (!researchData || !companyName) {
       console.error(
-        "n8n callback missing companyName/account_name:",
+        "n8n callback missing companyName:",
         Object.keys(researchData || {}),
       );
-      return res
-        .status(400)
-        .json({ error: "Missing companyName or account_name in payload" });
+      return res.status(400).json({ error: "Missing companyName in payload" });
     }
 
     console.log(`n8n callback received for ${companyName}`);
