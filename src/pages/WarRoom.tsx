@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ReactFlow,
   Background,
@@ -32,6 +32,7 @@ import {
   TrendingUp,
   Briefcase,
   UsersRound,
+  X,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
