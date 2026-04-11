@@ -106,20 +106,25 @@ app.post("/api/swarm/run", async (req, res) => {
           website: account.website || "Unknown",
           industry: account.industry || "Nordic ecommerce",
           knownStack: account.techStack || "Unknown — research required",
-          notes: [
-            account.rationale,
-            account.reports?.chatGptAnalysis?.slice(0, 4000),
-            account.reports?.perplexityResearch?.slice(0, 4000),
-          ]
-            .filter(Boolean)
-            .join("\n\n") || "None",
+          notes:
+            [
+              account.rationale,
+              account.reports?.chatGptAnalysis?.slice(0, 4000),
+              account.reports?.perplexityResearch?.slice(0, 4000),
+            ]
+              .filter(Boolean)
+              .join("\n\n") || "None",
         };
 
         // Run all agents in parallel via GPT-4o
         const agentResults = {};
         const agentPromises = agents.map(async (agentId) => {
           try {
-            const prompt = buildAgentPrompt(agentId, template || null, accountContext);
+            const prompt = buildAgentPrompt(
+              agentId,
+              template || null,
+              accountContext,
+            );
 
             const completion = await openai.chat.completions.create({
               model: "gpt-4o",
@@ -157,9 +162,14 @@ app.post("/api/swarm/run", async (req, res) => {
             const job = pendingSwarm.get(jobId);
             if (job?.progress) job.progress.completed++;
 
-            console.log(`  Agent ${agentId} completed for ${account.companyName}`);
+            console.log(
+              `  Agent ${agentId} completed for ${account.companyName}`,
+            );
           } catch (agentErr) {
-            console.error(`  Agent ${agentId} failed for ${account.companyName}:`, agentErr.message);
+            console.error(
+              `  Agent ${agentId} failed for ${account.companyName}:`,
+              agentErr.message,
+            );
             agentResults[agentId] = {
               error: agentErr.message,
               executedAt: new Date().toISOString(),
@@ -177,21 +187,34 @@ app.post("/api/swarm/run", async (req, res) => {
             for (const [id, result] of Object.entries(agentResults)) {
               agentOutputs[id] = result.output || result.error;
             }
-            const synthesisPrompt = buildSynthesisPrompt(template, accountContext, agentOutputs);
+            const synthesisPrompt = buildSynthesisPrompt(
+              template,
+              accountContext,
+              agentOutputs,
+            );
 
             const synthCompletion = await openai.chat.completions.create({
               model: "gpt-4o",
               temperature: 0.3,
               messages: [
                 { role: "system", content: synthesisPrompt },
-                { role: "user", content: "Generate the buying signal brief now." },
+                {
+                  role: "user",
+                  content: "Generate the buying signal brief now.",
+                },
               ],
             });
 
-            synthesisBrief = synthCompletion.choices[0]?.message?.content || null;
-            console.log(`  Synthesis completed for ${account.companyName} (template: ${template})`);
+            synthesisBrief =
+              synthCompletion.choices[0]?.message?.content || null;
+            console.log(
+              `  Synthesis completed for ${account.companyName} (template: ${template})`,
+            );
           } catch (synthErr) {
-            console.error(`  Synthesis failed for ${account.companyName}:`, synthErr.message);
+            console.error(
+              `  Synthesis failed for ${account.companyName}:`,
+              synthErr.message,
+            );
             synthesisBrief = `Synthesis failed: ${synthErr.message}`;
           }
         }
@@ -234,7 +257,8 @@ app.post("/api/swarm/run", async (req, res) => {
           account_name,
           template,
           agentCount: agents.length,
-          successCount: Object.values(agentResults).filter((r) => !r.error).length,
+          successCount: Object.values(agentResults).filter((r) => !r.error)
+            .length,
         });
 
         console.log(
@@ -270,7 +294,10 @@ app.post("/api/swarm/run-all", async (req, res) => {
       return res.status(400).json({ error: "Missing agents in payload" });
     }
 
-    const safeConcurrency = Math.min(Math.max(parseInt(concurrency, 10) || 2, 1), 5);
+    const safeConcurrency = Math.min(
+      Math.max(parseInt(concurrency, 10) || 2, 1),
+      5,
+    );
 
     const database = await connectDB();
     const collection = database.collection("PG_Machine");
@@ -318,7 +345,10 @@ app.post("/api/swarm/run-all", async (req, res) => {
             });
 
             if (!account) {
-              job.results[accountName] = { status: "skipped", reason: "not found" };
+              job.results[accountName] = {
+                status: "skipped",
+                reason: "not found",
+              };
               job.progress.failed++;
               continue;
             }
@@ -328,20 +358,25 @@ app.post("/api/swarm/run-all", async (req, res) => {
               website: account.website || "Unknown",
               industry: account.industry || "Nordic ecommerce",
               knownStack: account.techStack || "Unknown — research required",
-              notes: [
-                account.rationale,
-                account.reports?.chatGptAnalysis?.slice(0, 4000),
-                account.reports?.perplexityResearch?.slice(0, 4000),
-              ]
-                .filter(Boolean)
-                .join("\n\n") || "None",
+              notes:
+                [
+                  account.rationale,
+                  account.reports?.chatGptAnalysis?.slice(0, 4000),
+                  account.reports?.perplexityResearch?.slice(0, 4000),
+                ]
+                  .filter(Boolean)
+                  .join("\n\n") || "None",
             };
 
             // Run agents in parallel for this account
             const agentResults = {};
             const agentPromises = agents.map(async (agentId) => {
               try {
-                const prompt = buildAgentPrompt(agentId, template || null, accountContext);
+                const prompt = buildAgentPrompt(
+                  agentId,
+                  template || null,
+                  accountContext,
+                );
 
                 const completion = await openai.chat.completions.create({
                   model: "gpt-4o",
@@ -388,16 +423,24 @@ app.post("/api/swarm/run-all", async (req, res) => {
                 for (const [id, result] of Object.entries(agentResults)) {
                   agentOutputs[id] = result.output || result.error;
                 }
-                const synthesisPrompt = buildSynthesisPrompt(template, accountContext, agentOutputs);
+                const synthesisPrompt = buildSynthesisPrompt(
+                  template,
+                  accountContext,
+                  agentOutputs,
+                );
                 const synthCompletion = await openai.chat.completions.create({
                   model: "gpt-4o",
                   temperature: 0.3,
                   messages: [
                     { role: "system", content: synthesisPrompt },
-                    { role: "user", content: "Generate the buying signal brief now." },
+                    {
+                      role: "user",
+                      content: "Generate the buying signal brief now.",
+                    },
                   ],
                 });
-                synthesisBrief = synthCompletion.choices[0]?.message?.content || null;
+                synthesisBrief =
+                  synthCompletion.choices[0]?.message?.content || null;
               } catch (synthErr) {
                 synthesisBrief = `Synthesis failed: ${synthErr.message}`;
               }
@@ -430,14 +473,20 @@ app.post("/api/swarm/run-all", async (req, res) => {
               { $set: updateFields },
             );
 
-            job.results[accountName] = { status: "completed", agents: Object.keys(agentResults) };
+            job.results[accountName] = {
+              status: "completed",
+              agents: Object.keys(agentResults),
+            };
             job.progress.completed++;
             console.log(
               `  Batch [${job.progress.completed + job.progress.failed}/${job.progress.total}] ${accountName} — done`,
             );
           } catch (accErr) {
             console.error(`  Batch failed for ${accountName}:`, accErr.message);
-            job.results[accountName] = { status: "failed", error: accErr.message };
+            job.results[accountName] = {
+              status: "failed",
+              error: accErr.message,
+            };
             job.progress.failed++;
           }
         }
