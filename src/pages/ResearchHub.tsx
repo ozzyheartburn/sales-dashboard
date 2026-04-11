@@ -217,7 +217,7 @@ export function ResearchHub() {
       </div>
 
       {/* --- ANALYTICS VIEWS --- */}
-      <div style={{ display: "flex", gap: 24, marginBottom: 40 }}>
+      <div style={{ display: "flex", gap: 20, marginBottom: 28 }}>
         {/* Quantitative Metrics */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -226,7 +226,7 @@ export function ResearchHub() {
           style={{
             flex: 1,
             borderRadius: "1rem",
-            padding: "1.25rem",
+            padding: "1rem 1.25rem",
             backgroundColor: "#ffffff",
             border: "1px solid #e5e7eb",
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
@@ -237,14 +237,14 @@ export function ResearchHub() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 14,
+              marginBottom: 10,
             }}
           >
             <div
               style={{
                 fontFamily: "var(--font-headline)",
                 fontWeight: 700,
-                fontSize: "1.1rem",
+                fontSize: "1rem",
                 color: "#1a1a2e",
               }}
             >
@@ -286,7 +286,7 @@ export function ResearchHub() {
             </div>
           </div>
           {/* KPI row */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 18 }}>
+          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
             {[
               { label: "Research/wk", value: "7.2", color: "#124af1" },
               { label: "Meetings/wk", value: "2.3", color: "#22c55e" },
@@ -305,7 +305,7 @@ export function ResearchHub() {
               >
                 <div
                   style={{
-                    fontSize: "1.2rem",
+                    fontSize: "1.05rem",
                     fontWeight: 800,
                     color: kpi.color,
                     fontFamily: "var(--font-headline)",
@@ -315,11 +315,11 @@ export function ResearchHub() {
                 </div>
                 <div
                   style={{
-                    fontSize: "0.65rem",
+                    fontSize: "0.6rem",
                     fontWeight: 600,
                     color: "#6b7194",
                     fontFamily: "var(--font-label)",
-                    marginTop: 2,
+                    marginTop: 1,
                   }}
                 >
                   {kpi.label}
@@ -339,7 +339,7 @@ export function ResearchHub() {
           >
             Meetings & SQOs (last 6 months)
           </div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={120}>
             <BarChart
               data={[
                 { month: "Oct", meetings: 6, sqos: 2 },
@@ -404,7 +404,7 @@ export function ResearchHub() {
           >
             Pipeline Value ($k)
           </div>
-          <ResponsiveContainer width="100%" height={120}>
+          <ResponsiveContainer width="100%" height={80}>
             <AreaChart
               data={[
                 { month: "Oct", value: 85 },
@@ -452,69 +452,6 @@ export function ResearchHub() {
               />
             </AreaChart>
           </ResponsiveContainer>
-          {/* Contacts breakdown */}
-          <div
-            style={{
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              color: "#6b7194",
-              fontFamily: "var(--font-label)",
-              marginBottom: 6,
-              marginTop: 14,
-            }}
-          >
-            Contacts per Account (avg)
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              { label: "CXO", value: 2.1, color: "#14b8a6" },
-              { label: "VP/Dir", value: 3.4, color: "#4e45e4" },
-              { label: "End User", value: 4.7, color: "#8720de" },
-              { label: "Detractor", value: 1.2, color: "#ef4444" },
-              { label: "High Value", value: 1.0, color: "#f59e0b" },
-            ].map((c) => (
-              <div key={c.label} style={{ flex: 1, textAlign: "center" }}>
-                <div
-                  style={{
-                    height: 48,
-                    display: "flex",
-                    alignItems: "flex-end",
-                    justifyContent: "center",
-                    marginBottom: 4,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 24,
-                      borderRadius: "4px 4px 0 0",
-                      background: c.color,
-                      height: `${(c.value / 5) * 48}px`,
-                      transition: "height 0.3s",
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: c.color,
-                  }}
-                >
-                  {c.value}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.58rem",
-                    color: "#6b7194",
-                    fontFamily: "var(--font-label)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {c.label}
-                </div>
-              </div>
-            ))}
-          </div>
         </motion.div>
 
         {/* Qualitative Metrics */}
@@ -525,7 +462,7 @@ export function ResearchHub() {
           style={{
             flex: 1,
             borderRadius: "1rem",
-            padding: "1.25rem",
+            padding: "1rem 1.25rem",
             backgroundColor: "#ffffff",
             border: "1px solid #e5e7eb",
             boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
@@ -536,14 +473,14 @@ export function ResearchHub() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 14,
+              marginBottom: 10,
             }}
           >
             <div
               style={{
                 fontFamily: "var(--font-headline)",
                 fontWeight: 700,
-                fontSize: "1.1rem",
+                fontSize: "1rem",
                 color: "#1a1a2e",
               }}
             >
@@ -585,8 +522,8 @@ export function ResearchHub() {
             </div>
           </div>
           {/* Champion Sentiment Donut */}
-          <div style={{ display: "flex", gap: 24, marginBottom: 18 }}>
-            <div style={{ flex: "0 0 140px" }}>
+          <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+            <div style={{ flex: "0 0 110px" }}>
               <div
                 style={{
                   fontSize: "0.72rem",
@@ -598,7 +535,7 @@ export function ResearchHub() {
               >
                 Champion Sentiment
               </div>
-              <ResponsiveContainer width={140} height={140}>
+              <ResponsiveContainer width={110} height={110}>
                 <PieChart>
                   <Pie
                     data={[
@@ -608,8 +545,8 @@ export function ResearchHub() {
                     ]}
                     cx="50%"
                     cy="50%"
-                    innerRadius={36}
-                    outerRadius={60}
+                    innerRadius={28}
+                    outerRadius={48}
                     paddingAngle={3}
                     dataKey="value"
                     strokeWidth={0}
@@ -765,7 +702,7 @@ export function ResearchHub() {
           >
             Buyer Journey Stage Distribution
           </div>
-          <ResponsiveContainer width="100%" height={160}>
+          <ResponsiveContainer width="100%" height={110}>
             <BarChart
               data={[
                 { stage: "Awareness", count: 18 },
@@ -822,50 +759,6 @@ export function ResearchHub() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          {/* Key Themes */}
-          <div
-            style={{
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              color: "#6b7194",
-              fontFamily: "var(--font-label)",
-              marginBottom: 6,
-              marginTop: 12,
-            }}
-          >
-            Top Pain Points (across accounts)
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {[
-              { label: "Search relevance", count: 12 },
-              { label: "Conversion rate", count: 10 },
-              { label: "Personalization gaps", count: 9 },
-              { label: "Legacy tech debt", count: 7 },
-              { label: "Manual merchandising", count: 6 },
-              { label: "Data silos", count: 5 },
-            ].map((p) => (
-              <span
-                key={p.label}
-                style={{
-                  fontSize: "0.65rem",
-                  fontWeight: 600,
-                  fontFamily: "var(--font-label)",
-                  padding: "0.2rem 0.6rem",
-                  borderRadius: 9999,
-                  background: "#f3f4f6",
-                  color: "#374151",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                {p.label}{" "}
-                <span style={{ color: "#8720de", fontWeight: 700 }}>
-                  {p.count}
-                </span>
-              </span>
-            ))}
-          </div>
         </motion.div>
       </div>
 
