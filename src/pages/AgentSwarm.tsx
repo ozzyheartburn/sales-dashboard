@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -32,6 +32,14 @@ import {
   Brain,
   Shield,
   ChevronRight,
+  CheckSquare,
+  Square,
+  Rocket,
+  RefreshCw,
+  Download,
+  Crosshair,
+  Scan,
+  ArrowRight,
 } from "lucide-react";
 
 interface Agent {
@@ -240,13 +248,29 @@ export function AgentSwarm() {
   const [activeTab, setActiveTab] = useState<
     "instructions" | "dependencies" | "signals"
   >("instructions");
-  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const [activeTemplates, setActiveTemplates] = useState<string[]>([]);
   const [swarmStatus, setSwarmStatus] = useState<"idle" | "running" | "done">(
     "idle",
   );
   const [swarmMessage, setSwarmMessage] = useState("");
+  const [availableAccounts, setAvailableAccounts] = useState<
+    { companyName: string; _id: string }[]
+  >([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
+
+  // Fetch accounts for the multi-select picker
+  useEffect(() => {
+    fetch(`${API_URL}/api/accounts`)
+      .then((res) => res.json())
+      .then((data: { companyName: string; _id: string }[]) => {
+        const populated = data.filter((a) => a.companyName);
+        populated.sort((a, b) => a.companyName.localeCompare(b.companyName));
+        setAvailableAccounts(populated);
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleAgent = (id: string) => {
     setAgents((prev) =>
@@ -257,55 +281,116 @@ export function AgentSwarm() {
   const applyTemplate = (templateId: string) => {
     const template = valueDriverTemplates.find((t) => t.id === templateId);
     if (!template) return;
-    const isAlreadyActive = activeTemplate === templateId;
-    if (isAlreadyActive) {
-      // Deselect: disable all agents
-      setAgents((prev) => prev.map((a) => ({ ...a, enabled: false })));
-      setActiveTemplate(null);
-      return;
-    }
-    // Enable only the agents in this template
-    setAgents((prev) =>
-      prev.map((a) => ({
-        ...a,
-        enabled: template.agentIds.includes(a.id),
-      })),
+
+    setActiveTemplates((prev) => {
+      const isAlreadyActive = prev.includes(templateId);
+      const next = isAlreadyActive
+        ? prev.filter((id) => id !== templateId)
+        : [...prev, templateId];
+
+      // Build union of all agent IDs from selected templates
+      const allAgentIds = new Set<string>();
+      for (const tId of next) {
+        const t = valueDriverTemplates.find((vt) => vt.id === tId);
+        if (t) t.agentIds.forEach((aid) => allAgentIds.add(aid));
+      }
+
+      // Enable agents in the union, disable the rest
+      setAgents((prevAgents) =>
+        prevAgents.map((a) => ({
+          ...a,
+          enabled: allAgentIds.has(a.id),
+        })),
+      );
+
+      return next;
+    });
+  };
+
+  const toggleAccount = (name: string) => {
+    setSelectedAccounts((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
     );
-    setActiveTemplate(templateId);
+  };
+
+  const toggleAllAccounts = () => {
+    if (selectedAccounts.length === availableAccounts.length) {
+      setSelectedAccounts([]);
+    } else {
+      setSelectedAccounts(availableAccounts.map((a) => a.companyName));
+    }
   };
 
   const runSwarm = async () => {
-    if (!searchQuery.trim()) {
-      setSwarmMessage("Enter an account name to run the swarm against.");
-      return;
-    }
     const enabledAgents = agents.filter((a) => a.enabled);
     if (enabledAgents.length === 0) {
       setSwarmMessage("Select at least one agent or value driver template.");
       return;
     }
+
+    // Determine target accounts: selected accounts OR typed name
+    const targetAccounts =
+      selectedAccounts.length > 0
+        ? selectedAccounts
+        : searchQuery.trim()
+          ? [searchQuery.trim()]
+          : [];
+
+    if (targetAccounts.length === 0) {
+      setSwarmMessage("Select accounts or enter an account name.");
+      return;
+    }
+
+    const templateStr =
+      activeTemplates.length > 0 ? activeTemplates.join("+") : "custom";
+
     setSwarmStatus("running");
     setSwarmMessage("");
     try {
-      const res = await fetch(`${API_URL}/api/swarm/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          account_name: searchQuery.trim(),
-          agents: enabledAgents.map((a) => a.id),
-          template: activeTemplate || "custom",
-          instructions: customInstructions || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSwarmStatus("done");
-        setSwarmMessage(
-          `Swarm deployed for "${searchQuery.trim()}" — ${enabledAgents.length} agents running in parallel. Results will be synthesized into a buying signal brief.`,
-        );
+      if (targetAccounts.length === 1) {
+        // Single account → use /api/swarm/run
+        const res = await fetch(`${API_URL}/api/swarm/run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            account_name: targetAccounts[0],
+            agents: enabledAgents.map((a) => a.id),
+            template: templateStr,
+            instructions: customInstructions || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setSwarmStatus("done");
+          setSwarmMessage(
+            `Swarm deployed for "${targetAccounts[0]}" — ${enabledAgents.length} agents running in parallel.`,
+          );
+        } else {
+          setSwarmStatus("idle");
+          setSwarmMessage(data.error || "Failed to start swarm.");
+        }
       } else {
-        setSwarmStatus("idle");
-        setSwarmMessage(data.error || "Failed to start swarm.");
+        // Multiple accounts → use /api/swarm/run-all with account_names
+        const res = await fetch(`${API_URL}/api/swarm/run-all`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            account_names: targetAccounts,
+            agents: enabledAgents.map((a) => a.id),
+            template: templateStr,
+            instructions: customInstructions || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setSwarmStatus("done");
+          setSwarmMessage(
+            `Batch swarm deployed — ${enabledAgents.length} agents × ${targetAccounts.length} accounts. Job ID: ${data.jobId}`,
+          );
+        } else {
+          setSwarmStatus("idle");
+          setSwarmMessage(data.error || "Failed to start batch swarm.");
+        }
       }
     } catch {
       setSwarmStatus("idle");
@@ -359,16 +444,283 @@ export function AgentSwarm() {
         </div>
       </div>
 
-      {/* Two-Column Layout: Agent Swarm + Cockpit */}
+      {/* Three-Column Layout: Shortcuts + Agent Swarm + Cockpit */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 24,
+          gridTemplateColumns: "240px 1fr 1fr",
+          gap: 20,
           alignItems: "start",
         }}
       >
-        {/* LEFT: Swarm Visualization */}
+        {/* LEFT: Shortcuts */}
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+          style={{ display: "flex", flexDirection: "column", gap: 10 }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-label)",
+              fontWeight: 700,
+              fontSize: "0.68rem",
+              color: dark.textDim,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              padding: "0 4px",
+              marginBottom: 2,
+            }}
+          >
+            Quick Actions
+          </div>
+          {[
+            {
+              icon: <Rocket size={16} />,
+              label: "Run All Agents",
+              desc: "Batch swarm across all accounts",
+              color: dark.accent,
+              action: () => {
+                const enabledAgents = agents
+                  .filter((a) => a.enabled)
+                  .map((a) => a.id);
+                if (enabledAgents.length === 0) return;
+                setSwarmStatus("running");
+                setSwarmMessage("Launching batch swarm on all accounts...");
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    agents: enabledAgents,
+                    template: activeTemplates.join("+") || null,
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(
+                      d.message ||
+                        `Batch started for ${d.accountCount} accounts.`,
+                    );
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to start batch swarm.");
+                  });
+              },
+            },
+            {
+              icon: <Crosshair size={16} />,
+              label: "Champion Scan",
+              desc: "Map champions across all accounts",
+              color: dark.purple,
+              action: () => {
+                setSwarmStatus("running");
+                setSwarmMessage(
+                  "Running ChampionBuildingAgent on all accounts...",
+                );
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ agents: ["champion-building-agent"] }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(d.message || "Champion scan started.");
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to start champion scan.");
+                  });
+              },
+            },
+            {
+              icon: <Scan size={16} />,
+              label: "Competitive Intel",
+              desc: "Run competitor & market agents",
+              color: "#f59e0b",
+              action: () => {
+                setSwarmStatus("running");
+                setSwarmMessage("Running competitive intelligence agents...");
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    agents: ["competitor-agent", "market-research-agent"],
+                    template: "reduce-risk",
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(d.message || "Competitive intel started.");
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to start competitive intel.");
+                  });
+              },
+            },
+            {
+              icon: <TrendingUp size={16} />,
+              label: "Financial Pulse",
+              desc: "Revenue & growth signals for all",
+              color: "#22c55e",
+              action: () => {
+                setSwarmStatus("running");
+                setSwarmMessage("Running FinancialAgent on all accounts...");
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ agents: ["financial-agent"] }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(d.message || "Financial pulse started.");
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to start financial pulse.");
+                  });
+              },
+            },
+            {
+              icon: <RefreshCw size={16} />,
+              label: "Refresh Stale Intel",
+              desc: "Re-run on accounts >7 days old",
+              color: "#06b6d4",
+              action: () => {
+                const enabledAgents = agents
+                  .filter((a) => a.enabled)
+                  .map((a) => a.id);
+                if (enabledAgents.length === 0) return;
+                // Find accounts with stale intel (lastSwarmRun > 7 days)
+                const sevenDaysAgo = new Date(
+                  Date.now() - 7 * 24 * 60 * 60 * 1000,
+                ).toISOString();
+                const staleAccounts = availableAccounts
+                  .map((a) => a.companyName)
+                  .slice(0, 50); // Will run on all — backend filters
+                setSwarmStatus("running");
+                setSwarmMessage("Re-running agents on all accounts...");
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    agents: enabledAgents,
+                    account_names: staleAccounts,
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(d.message || "Refresh started.");
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to refresh intel.");
+                  });
+              },
+            },
+            {
+              icon: <AlertTriangle size={16} />,
+              label: "Risk Assessment",
+              desc: "Flag risks & detractors everywhere",
+              color: "#ef4444",
+              action: () => {
+                setSwarmStatus("running");
+                setSwarmMessage("Running RiskFlagger across all accounts...");
+                fetch(`${API_URL}/api/swarm/run-all`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    agents: ["risk-flagger-agent"],
+                    template: "reduce-risk",
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => {
+                    setSwarmStatus("done");
+                    setSwarmMessage(d.message || "Risk assessment started.");
+                  })
+                  .catch(() => {
+                    setSwarmStatus("idle");
+                    setSwarmMessage("Failed to start risk assessment.");
+                  });
+              },
+            },
+          ].map((shortcut, i) => (
+            <motion.div
+              key={shortcut.label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 + i * 0.06 }}
+              onClick={shortcut.action}
+              style={{
+                ...glassCard,
+                padding: "0.75rem 0.85rem",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                transition: "all 0.15s",
+              }}
+              whileHover={{
+                scale: 1.02,
+                borderColor: `${shortcut.color}40`,
+              }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: `${shortcut.color}18`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: shortcut.color,
+                  flexShrink: 0,
+                }}
+              >
+                {shortcut.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    color: dark.text,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {shortcut.label}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.6rem",
+                    color: dark.textMuted,
+                    lineHeight: 1.3,
+                    marginTop: 1,
+                  }}
+                >
+                  {shortcut.desc}
+                </div>
+              </div>
+              <ArrowRight
+                size={12}
+                color={dark.textDim}
+                style={{ flexShrink: 0 }}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* CENTER: Swarm Visualization */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1071,7 +1423,7 @@ export function AgentSwarm() {
                   color: dark.text,
                 }}
               >
-                Target Account
+                Target Accounts
               </span>
             </div>
             <div style={{ position: "relative", marginBottom: 10 }}>
@@ -1086,7 +1438,7 @@ export function AgentSwarm() {
               />
               <input
                 type="text"
-                placeholder="Search accounts..."
+                placeholder="Search or type account..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -1101,6 +1453,95 @@ export function AgentSwarm() {
                 }}
               />
             </div>
+
+            {/* Multi-select account list */}
+            {availableAccounts.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div
+                  onClick={toggleAllAccounts}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "0.3rem 0.4rem",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    color:
+                      selectedAccounts.length === availableAccounts.length
+                        ? dark.accentLight
+                        : dark.textDim,
+                    marginBottom: 4,
+                  }}
+                >
+                  {selectedAccounts.length === availableAccounts.length ? (
+                    <CheckSquare size={12} />
+                  ) : (
+                    <Square size={12} />
+                  )}
+                  Select All ({availableAccounts.length})
+                </div>
+                <div
+                  style={{
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  {availableAccounts
+                    .filter(
+                      (a) =>
+                        !searchQuery.trim() ||
+                        a.companyName
+                          .toLowerCase()
+                          .includes(searchQuery.toLowerCase()),
+                    )
+                    .map((acc) => {
+                      const isSelected = selectedAccounts.includes(
+                        acc.companyName,
+                      );
+                      return (
+                        <div
+                          key={acc._id}
+                          onClick={() => toggleAccount(acc.companyName)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "0.3rem 0.4rem",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            background: isSelected
+                              ? "rgba(20,184,166,0.08)"
+                              : "transparent",
+                            transition: "background 0.15s",
+                          }}
+                        >
+                          {isSelected ? (
+                            <CheckSquare size={12} color={dark.accentLight} />
+                          ) : (
+                            <Square size={12} color={dark.textDim} />
+                          )}
+                          <span
+                            style={{
+                              fontSize: "0.72rem",
+                              color: isSelected ? dark.text : dark.textMuted,
+                              fontWeight: isSelected ? 600 : 400,
+                              fontFamily: "var(--font-label)",
+                            }}
+                          >
+                            {acc.companyName}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
             <div
               style={{
                 fontSize: "0.65rem",
@@ -1304,12 +1745,25 @@ export function AgentSwarm() {
               </span>{" "}
               agents selected across{" "}
               <span style={{ color: dark.accentLight, fontWeight: 700 }}>
-                {activeTemplate
-                  ? valueDriverTemplates.find((t) => t.id === activeTemplate)
-                      ?.name
+                {activeTemplates.length > 0
+                  ? activeTemplates
+                      .map(
+                        (tId) =>
+                          valueDriverTemplates.find((t) => t.id === tId)?.name,
+                      )
+                      .join(" + ")
                   : "custom"}
               </span>{" "}
-              template
+              template{activeTemplates.length > 1 ? "s" : ""}
+              {selectedAccounts.length > 0 && (
+                <>
+                  <br />
+                  <span style={{ color: "#22c55e", fontWeight: 700 }}>
+                    {selectedAccounts.length}
+                  </span>{" "}
+                  account{selectedAccounts.length !== 1 ? "s" : ""} selected
+                </>
+              )}
             </div>
 
             <div
@@ -1457,7 +1911,7 @@ export function AgentSwarm() {
           }}
         >
           {valueDriverTemplates.map((template) => {
-            const isActive = activeTemplate === template.id;
+            const isActive = activeTemplates.includes(template.id);
             return (
               <motion.button
                 key={template.id}

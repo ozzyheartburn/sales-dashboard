@@ -36,6 +36,23 @@ import {
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface ChampionCandidate {
+  full_name: string;
+  title_role: string;
+  pain_hypothesis?: string;
+  engagement_strategy?: string;
+  risk_notes?: string;
+  linkedin_indicators?: string[];
+  confidence?: string;
+}
+
+interface Detractor {
+  full_name: string;
+  title_role: string;
+  reason_for_resistance?: string;
+  mitigation_strategy?: string;
+}
+
 interface Account {
   _id: string;
   companyName: string;
@@ -59,6 +76,12 @@ interface Account {
     searchResults: unknown[];
   };
   timestamp: string;
+  champion_cxo_candidates?: ChampionCandidate[];
+  champion_vp_director_candidates?: ChampionCandidate[];
+  champion_enduser_candidates?: ChampionCandidate[];
+  detractors?: Detractor[];
+  primary_champion_recommendation?: string;
+  champion_overall_readiness?: string;
 }
 
 interface ChatMessage {
@@ -249,7 +272,15 @@ const meddpiccItems = [
 function PersonaNode({
   data,
 }: {
-  data: { label: string; role: string; type: string; notes: string };
+  data: {
+    label: string;
+    role: string;
+    type: string;
+    notes: string;
+    painHypothesis?: string;
+    engagementStrategy?: string;
+    confidence?: string;
+  };
 }) {
   const typeColors: Record<string, string> = {
     champion: "var(--tertiary)",
@@ -329,6 +360,58 @@ function PersonaNode({
           {data.notes}
         </div>
       )}
+      {data.painHypothesis && (
+        <div
+          style={{
+            fontSize: "0.65rem",
+            color: "var(--tertiary)",
+            marginTop: 4,
+            lineHeight: 1.3,
+            fontStyle: "italic",
+          }}
+        >
+          Pain: {data.painHypothesis}
+        </div>
+      )}
+      {data.engagementStrategy && (
+        <div
+          style={{
+            fontSize: "0.65rem",
+            color: "var(--primary)",
+            marginTop: 3,
+            lineHeight: 1.3,
+          }}
+        >
+          Strategy: {data.engagementStrategy}
+        </div>
+      )}
+      {data.confidence && (
+        <span
+          style={{
+            display: "inline-block",
+            marginTop: 4,
+            fontSize: "0.55rem",
+            fontWeight: 600,
+            fontFamily: "var(--font-label)",
+            padding: "0.1rem 0.4rem",
+            borderRadius: 4,
+            background:
+              data.confidence === "high"
+                ? "rgba(34,197,94,0.15)"
+                : data.confidence === "medium"
+                  ? "rgba(245,158,11,0.15)"
+                  : "rgba(239,68,68,0.15)",
+            color:
+              data.confidence === "high"
+                ? "#22c55e"
+                : data.confidence === "medium"
+                  ? "#f59e0b"
+                  : "#ef4444",
+          }}
+        >
+          {data.confidence} confidence
+        </span>
+      )}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -339,6 +422,148 @@ function PersonaNode({
 }
 
 const nodeTypes = { persona: PersonaNode };
+
+// ─── Build Org Chart from Champion Data ───────────────────────────────────────
+function buildOrgChartFromChampions(account: Account | null): {
+  nodes: Node[];
+  edges: Edge[];
+} {
+  if (!account) return { nodes: defaultNodes, edges: defaultEdges };
+
+  const cxo = account.champion_cxo_candidates || [];
+  const vpDir = account.champion_vp_director_candidates || [];
+  const endUser = account.champion_enduser_candidates || [];
+  const blockers = account.detractors || [];
+
+  const hasChampionData =
+    cxo.length > 0 ||
+    vpDir.length > 0 ||
+    endUser.length > 0 ||
+    blockers.length > 0;
+
+  if (!hasChampionData) return { nodes: defaultNodes, edges: defaultEdges };
+
+  const newNodes: Node[] = [];
+  const newEdges: Edge[] = [];
+  let nodeId = 1;
+
+  // Row 0: CXO candidates (economic buyers / exec sponsors)
+  const cxoIds: string[] = [];
+  cxo.forEach((c, i) => {
+    const id = String(nodeId++);
+    cxoIds.push(id);
+    newNodes.push({
+      id,
+      type: "persona",
+      position: { x: 220 * i + 80, y: 0 },
+      data: {
+        label: c.full_name,
+        role: c.title_role,
+        type: "economic-buyer",
+        notes: c.risk_notes || "",
+        painHypothesis: c.pain_hypothesis || "",
+        engagementStrategy: c.engagement_strategy || "",
+        confidence: c.confidence || "",
+      },
+    });
+  });
+
+  // Row 1: VP/Director candidates (champions)
+  const vpIds: string[] = [];
+  vpDir.forEach((c, i) => {
+    const id = String(nodeId++);
+    vpIds.push(id);
+    newNodes.push({
+      id,
+      type: "persona",
+      position: { x: 220 * i + 40, y: 180 },
+      data: {
+        label: c.full_name,
+        role: c.title_role,
+        type: "champion",
+        notes: c.risk_notes || "",
+        painHypothesis: c.pain_hypothesis || "",
+        engagementStrategy: c.engagement_strategy || "",
+        confidence: c.confidence || "",
+      },
+    });
+    // Connect to all CXO nodes
+    cxoIds.forEach((cxoId) => {
+      newEdges.push({
+        id: `e${cxoId}-${id}`,
+        source: cxoId,
+        target: id,
+        animated: true,
+        style: { stroke: "var(--primary)" },
+      });
+    });
+  });
+
+  // Row 2: End-user candidates (influencers)
+  const euIds: string[] = [];
+  endUser.forEach((c, i) => {
+    const id = String(nodeId++);
+    euIds.push(id);
+    newNodes.push({
+      id,
+      type: "persona",
+      position: { x: 220 * i, y: 360 },
+      data: {
+        label: c.full_name,
+        role: c.title_role,
+        type: "influencer",
+        notes: c.risk_notes || "",
+        painHypothesis: c.pain_hypothesis || "",
+        engagementStrategy: c.engagement_strategy || "",
+        confidence: c.confidence || "",
+      },
+    });
+    // Connect to nearest VP node or first CXO
+    const parentId = vpIds[Math.min(i, vpIds.length - 1)] || cxoIds[0];
+    if (parentId) {
+      newEdges.push({
+        id: `e${parentId}-${id}`,
+        source: parentId,
+        target: id,
+        style: { stroke: "var(--secondary-brand)" },
+      });
+    }
+  });
+
+  // Detractors / blockers — positioned to the right
+  blockers.forEach((d, i) => {
+    const id = String(nodeId++);
+    const rightX = Math.max(...newNodes.map((n) => n.position.x), 400) + 80;
+    newNodes.push({
+      id,
+      type: "persona",
+      position: { x: rightX + 220 * i, y: 180 },
+      data: {
+        label: d.full_name,
+        role: d.title_role,
+        type: "blocker",
+        notes: d.reason_for_resistance || "",
+        painHypothesis: "",
+        engagementStrategy: d.mitigation_strategy || "",
+        confidence: "",
+      },
+    });
+    // Dashed edge from first CXO
+    if (cxoIds[0]) {
+      newEdges.push({
+        id: `e${cxoIds[0]}-${id}`,
+        source: cxoIds[0],
+        target: id,
+        style: {
+          stroke: "#f59e0b",
+          strokeDasharray: "5 5",
+        },
+      });
+    }
+  });
+
+  return { nodes: newNodes, edges: newEdges };
+}
 
 // ─── Default Org Chart Nodes/Edges (placeholder) ─────────────────────────────
 const defaultNodes: Node[] = [
@@ -530,6 +755,16 @@ export function WarRoom() {
       ),
     [setEdges],
   );
+
+  // Rebuild org chart when selected account changes
+  useEffect(() => {
+    if (selectedAccount) {
+      const { nodes: newNodes, edges: newEdges } =
+        buildOrgChartFromChampions(selectedAccount);
+      setNodes(newNodes);
+      setEdges(newEdges);
+    }
+  }, [selectedAccount, setNodes, setEdges]);
 
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`)
@@ -1630,9 +1865,70 @@ export function WarRoom() {
                       lineHeight: 1.5,
                     }}
                   >
-                    AI has identified <b>Head of Product Discovery</b> and{" "}
-                    <b>VP Product</b> as likely champions based on their
-                    involvement in search & personalization initiatives.
+                    {(() => {
+                      const vpChamps =
+                        selectedAccount?.champion_vp_director_candidates || [];
+                      const euChamps =
+                        selectedAccount?.champion_enduser_candidates || [];
+                      const allChamps = [...vpChamps, ...euChamps];
+                      if (allChamps.length === 0) {
+                        return (
+                          <span style={{ color: "var(--on-surface-variant)" }}>
+                            No champion data yet — run ChampionBuildingAgent.
+                          </span>
+                        );
+                      }
+                      return (
+                        <>
+                          {allChamps.map((c, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                marginBottom: i < allChamps.length - 1 ? 6 : 0,
+                              }}
+                            >
+                              <b>{c.full_name}</b> — {c.title_role}
+                              {c.pain_hypothesis && (
+                                <div
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--tertiary)",
+                                    fontStyle: "italic",
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  Pain: {c.pain_hypothesis}
+                                </div>
+                              )}
+                              {c.engagement_strategy && (
+                                <div
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--primary)",
+                                    marginTop: 1,
+                                  }}
+                                >
+                                  Strategy: {c.engagement_strategy}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {selectedAccount?.primary_champion_recommendation && (
+                            <div
+                              style={{
+                                marginTop: 8,
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                                color: "var(--tertiary)",
+                              }}
+                            >
+                              Primary:{" "}
+                              {selectedAccount.primary_champion_recommendation}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -1669,11 +1965,81 @@ export function WarRoom() {
                       lineHeight: 1.5,
                     }}
                   >
-                    <span style={{ color: "var(--error)", fontWeight: 600 }}>
-                      Gap detected.
-                    </span>{" "}
-                    CTO/CPO identified as likely EB but no direct engagement
-                    yet. Recommend multi-threading through champion.
+                    {(() => {
+                      const cxo =
+                        selectedAccount?.champion_cxo_candidates || [];
+                      if (cxo.length === 0) {
+                        return (
+                          <>
+                            <span
+                              style={{ color: "var(--error)", fontWeight: 600 }}
+                            >
+                              Gap detected.
+                            </span>{" "}
+                            No CXO-level contacts identified yet. Run
+                            ChampionBuildingAgent to scan.
+                          </>
+                        );
+                      }
+                      return cxo.map((c, i) => (
+                        <div
+                          key={i}
+                          style={{ marginBottom: i < cxo.length - 1 ? 6 : 0 }}
+                        >
+                          <b>{c.full_name}</b> — {c.title_role}
+                          {c.pain_hypothesis && (
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--tertiary)",
+                                fontStyle: "italic",
+                                marginTop: 2,
+                              }}
+                            >
+                              Pain: {c.pain_hypothesis}
+                            </div>
+                          )}
+                          {c.engagement_strategy && (
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--primary)",
+                                marginTop: 1,
+                              }}
+                            >
+                              Strategy: {c.engagement_strategy}
+                            </div>
+                          )}
+                          {c.confidence && (
+                            <span
+                              style={{
+                                display: "inline-block",
+                                marginTop: 3,
+                                fontSize: "0.6rem",
+                                fontWeight: 600,
+                                fontFamily: "var(--font-label)",
+                                padding: "0.1rem 0.4rem",
+                                borderRadius: 4,
+                                background:
+                                  c.confidence === "high"
+                                    ? "rgba(34,197,94,0.15)"
+                                    : c.confidence === "medium"
+                                      ? "rgba(245,158,11,0.15)"
+                                      : "rgba(239,68,68,0.15)",
+                                color:
+                                  c.confidence === "high"
+                                    ? "#22c55e"
+                                    : c.confidence === "medium"
+                                      ? "#f59e0b"
+                                      : "#ef4444",
+                              }}
+                            >
+                              {c.confidence} confidence
+                            </span>
+                          )}
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
 
@@ -1710,10 +2076,82 @@ export function WarRoom() {
                       lineHeight: 1.5,
                     }}
                   >
-                    3 gaps identified: <b>Economic Buyer</b>,{" "}
-                    <b>Decision Process</b>, <b>Paper Process</b>. Focus next
-                    steps on uncovering procurement timeline and budget
-                    authority.
+                    {(() => {
+                      const acc = selectedAccount;
+                      const gaps: string[] = [];
+                      const filled: string[] = [];
+
+                      // Champion
+                      const hasChampions =
+                        (acc?.champion_vp_director_candidates?.length || 0) >
+                          0 ||
+                        (acc?.champion_enduser_candidates?.length || 0) > 0;
+                      if (hasChampions) filled.push("Champion");
+                      else gaps.push("Champion");
+
+                      // Economic Buyer
+                      const hasEB =
+                        (acc?.champion_cxo_candidates?.length || 0) > 0;
+                      if (hasEB) filled.push("Economic Buyer");
+                      else gaps.push("Economic Buyer");
+
+                      // Identified Pain
+                      const hasPain = [
+                        ...(acc?.champion_cxo_candidates || []),
+                        ...(acc?.champion_vp_director_candidates || []),
+                        ...(acc?.champion_enduser_candidates || []),
+                      ].some((c) => c.pain_hypothesis);
+                      if (hasPain) filled.push("Identified Pain");
+                      else gaps.push("Identified Pain");
+
+                      // Competition — check detractors as proxy
+                      const hasDetractors = (acc?.detractors?.length || 0) > 0;
+                      if (hasDetractors) filled.push("Competition Mapped");
+                      else gaps.push("Competition");
+
+                      // Static gaps (not yet tracked)
+                      gaps.push("Decision Process", "Paper Process");
+                      filled.push("Metrics", "Decision Criteria");
+
+                      if (gaps.length === 0) {
+                        return (
+                          <span style={{ color: "#22c55e", fontWeight: 600 }}>
+                            All MEDDPICC fields covered.
+                          </span>
+                        );
+                      }
+                      return (
+                        <>
+                          {gaps.length} gap{gaps.length !== 1 ? "s" : ""}{" "}
+                          identified:{" "}
+                          {gaps.map((g, i) => (
+                            <span key={g}>
+                              <b>{g}</b>
+                              {i < gaps.length - 1 ? ", " : ". "}
+                            </span>
+                          ))}
+                          {hasChampions && !hasEB && (
+                            <span>
+                              Recommend multi-threading through champion to
+                              reach Economic Buyer.
+                            </span>
+                          )}
+                          {acc?.champion_overall_readiness && (
+                            <div
+                              style={{
+                                marginTop: 4,
+                                fontSize: "0.75rem",
+                                color: "var(--tertiary)",
+                                fontWeight: 600,
+                              }}
+                            >
+                              Overall readiness:{" "}
+                              {acc.champion_overall_readiness}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

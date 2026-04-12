@@ -353,7 +353,13 @@ app.post("/api/swarm/run", async (req, res) => {
 // Run agents on ALL accounts (batch mode, sequential to avoid rate limits)
 app.post("/api/swarm/run-all", async (req, res) => {
   try {
-    const { agents, template, instructions, concurrency = 2 } = req.body;
+    const {
+      agents,
+      template,
+      instructions,
+      concurrency = 2,
+      account_names,
+    } = req.body;
     if (!agents || agents.length === 0) {
       return res.status(400).json({ error: "Missing agents in payload" });
     }
@@ -365,17 +371,23 @@ app.post("/api/swarm/run-all", async (req, res) => {
 
     const database = await connectDB();
     const collection = database.collection("PG_Machine");
-    const accounts = await collection
-      .find({ companyName: { $ne: null } })
-      .project({ companyName: 1 })
-      .toArray();
 
-    if (accounts.length === 0) {
-      return res.status(404).json({ error: "No accounts found in database" });
+    // If specific account_names provided, use those; otherwise fetch all
+    let accountNames;
+    if (Array.isArray(account_names) && account_names.length > 0) {
+      accountNames = account_names;
+    } else {
+      const accounts = await collection
+        .find({ companyName: { $ne: null } })
+        .project({ companyName: 1 })
+        .toArray();
+      if (accounts.length === 0) {
+        return res.status(404).json({ error: "No accounts found in database" });
+      }
+      accountNames = accounts.map((a) => a.companyName);
     }
 
     const jobId = `batch-${Date.now()}`;
-    const accountNames = accounts.map((a) => a.companyName);
 
     pendingSwarm.set(jobId, {
       status: "running",
