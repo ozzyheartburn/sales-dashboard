@@ -756,14 +756,52 @@ export function WarRoom() {
     [setEdges],
   );
 
-  // Rebuild org chart when selected account changes
+  // Rebuild org chart when selected account changes — load persisted first, fallback to champion data
   useEffect(() => {
-    if (selectedAccount) {
-      const { nodes: newNodes, edges: newEdges } =
-        buildOrgChartFromChampions(selectedAccount);
-      setNodes(newNodes);
-      setEdges(newEdges);
-    }
+    if (!selectedAccount) return;
+
+    const accountName = selectedAccount.companyName;
+
+    // Try loading persisted org chart from backend
+    fetch(`${API_URL}/api/org-chart/${encodeURIComponent(accountName)}`)
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("not found");
+      })
+      .then((data) => {
+        if (data.nodes && data.nodes.length > 0) {
+          setNodes(data.nodes);
+          setEdges(data.edges || []);
+        } else {
+          throw new Error("empty");
+        }
+      })
+      .catch(() => {
+        // Fallback: build from champion data
+        const { nodes: newNodes, edges: newEdges } =
+          buildOrgChartFromChampions(selectedAccount);
+        setNodes(newNodes);
+        setEdges(newEdges);
+
+        // Auto-save if we built a real chart (not defaults)
+        const hasChampionData =
+          (selectedAccount.champion_cxo_candidates || []).length > 0 ||
+          (selectedAccount.champion_vp_director_candidates || []).length > 0 ||
+          (selectedAccount.champion_enduser_candidates || []).length > 0 ||
+          (selectedAccount.detractors || []).length > 0;
+
+        if (hasChampionData) {
+          fetch(`${API_URL}/api/org-chart/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              account_name: accountName,
+              nodes: newNodes,
+              edges: newEdges,
+            }),
+          }).catch(() => {});
+        }
+      });
   }, [selectedAccount, setNodes, setEdges]);
 
   useEffect(() => {
