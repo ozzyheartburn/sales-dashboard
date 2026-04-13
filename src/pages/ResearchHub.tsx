@@ -25,6 +25,8 @@ import {
   Star,
   Brain,
   FileText,
+  ExternalLink,
+  Link2,
 } from "lucide-react";
 import {
   BarChart,
@@ -1190,7 +1192,11 @@ export function ResearchHub() {
                 gap: 10,
                 position: "relative",
                 minHeight: 120,
+                cursor: "pointer",
+                transition: "box-shadow 0.15s, transform 0.15s",
               }}
+              whileHover={{ scale: 1.01 }}
+              onClick={() => setSelectedAccount(acc)}
             >
               {/* Header: Name + Website */}
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1634,7 +1640,33 @@ function ResearchReportContent({ account }: { account: Account }) {
     lineHeight: 1.5,
   };
 
-  const renderInsightList = (items: unknown[], color: string) => {
+  const sourceBadge = (source: string, color: string) => (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        fontSize: "0.58rem",
+        fontFamily: "var(--font-label)",
+        fontWeight: 700,
+        padding: "0.1rem 0.45rem",
+        borderRadius: 9999,
+        background: `${color}12`,
+        color,
+        marginLeft: 6,
+        verticalAlign: "middle",
+      }}
+    >
+      <Link2 size={8} />
+      {source}
+    </span>
+  );
+
+  const renderInsightList = (
+    items: unknown[],
+    color: string,
+    sourceLabel?: string,
+  ) => {
     if (!Array.isArray(items) || items.length === 0) return null;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1655,9 +1687,17 @@ function ResearchReportContent({ account }: { account: Account }) {
                   fontSize: "0.84rem",
                   color: "var(--on-surface)",
                   marginBottom: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
                 }}
               >
                 {item.title}
+                {item.source
+                  ? sourceBadge(item.source, color)
+                  : sourceLabel
+                    ? sourceBadge(sourceLabel, color)
+                    : sourceBadge("Perplexity + ChatGPT", "#6b7194")}
               </div>
             )}
             {item.description && (
@@ -1669,6 +1709,22 @@ function ResearchReportContent({ account }: { account: Account }) {
                 }}
               >
                 {item.description}
+              </div>
+            )}
+            {item.citation && (
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--on-surface-variant)",
+                  marginTop: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontStyle: "italic",
+                }}
+              >
+                <ExternalLink size={9} />
+                {item.citation}
               </div>
             )}
           </div>
@@ -1842,7 +1898,16 @@ function ResearchReportContent({ account }: { account: Account }) {
         </div>
         {account.rationale && (
           <div style={{ marginTop: 14 }}>
-            <div style={labelStyle}>Rationale</div>
+            <div
+              style={{
+                ...labelStyle,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              Rationale
+              {sourceBadge("Perplexity + ChatGPT", "#6b7194")}
+            </div>
             <div style={{ ...valueStyle, lineHeight: 1.6 }}>
               {account.rationale}
             </div>
@@ -1873,6 +1938,7 @@ function ResearchReportContent({ account }: { account: Account }) {
                 {renderInsightList(
                   account.insights.strategicContext,
                   "#124af1",
+                  "Perplexity Research",
                 )}
               </div>
             )}
@@ -1886,6 +1952,7 @@ function ResearchReportContent({ account }: { account: Account }) {
                 {renderInsightList(
                   account.insights.ecommercePriorities,
                   "#4e45e4",
+                  "Perplexity Research",
                 )}
               </div>
             )}
@@ -1899,6 +1966,7 @@ function ResearchReportContent({ account }: { account: Account }) {
                 {renderInsightList(
                   account.insights.activeInitiatives,
                   "#22c55e",
+                  "ChatGPT Analysis",
                 )}
               </div>
             )}
@@ -1909,7 +1977,11 @@ function ResearchReportContent({ account }: { account: Account }) {
                 >
                   Key Challenges
                 </div>
-                {renderInsightList(account.insights.keyChallenges, "#ef4444")}
+                {renderInsightList(
+                  account.insights.keyChallenges,
+                  "#ef4444",
+                  "Perplexity Research",
+                )}
               </div>
             )}
             {account.insights.opportunityFrame?.length > 0 && (
@@ -1922,6 +1994,7 @@ function ResearchReportContent({ account }: { account: Account }) {
                 {renderInsightList(
                   account.insights.opportunityFrame,
                   "#8720de",
+                  "ChatGPT Analysis",
                 )}
               </div>
             )}
@@ -1963,7 +2036,16 @@ function ResearchReportContent({ account }: { account: Account }) {
                 style={{ flexShrink: 0, marginTop: 2 }}
               />
               <div>
-                <div style={labelStyle}>Primary Champion Recommendation</div>
+                <div
+                  style={{
+                    ...labelStyle,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Primary Champion Recommendation
+                  {sourceBadge("Agent Swarm", "#8720de")}
+                </div>
                 <div style={valueStyle}>
                   {account.primary_champion_recommendation}
                 </div>
@@ -2169,12 +2251,335 @@ function ResearchReportContent({ account }: { account: Account }) {
         </motion.div>
       )}
 
+      {/* Source Documents */}
+      {(account.reports?.chatGptAnalysis ||
+        account.reports?.perplexityResearch) && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.35 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <FileText size={18} color="#06b6d4" />,
+            "Source Documents",
+          )}
+          <div
+            style={{
+              fontSize: "0.75rem",
+              color: "var(--on-surface-variant)",
+              marginBottom: 12,
+              fontStyle: "italic",
+            }}
+          >
+            All insights, strategic context, and recommendations above are
+            derived from the following source reports.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {account.reports?.perplexityResearch && (
+              <details
+                style={{
+                  borderRadius: 10,
+                  border: "1px solid rgba(167,176,222,0.12)",
+                  overflow: "hidden",
+                }}
+              >
+                <summary
+                  style={{
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    fontSize: "0.84rem",
+                    color: "var(--on-surface)",
+                    background: "var(--surface-container-low)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Globe size={14} color="#8720de" />
+                  Perplexity Research Report
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: "0.62rem",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                      padding: "0.1rem 0.45rem",
+                      borderRadius: 9999,
+                      background: "rgba(135,32,222,0.10)",
+                      color: "#8720de",
+                    }}
+                  >
+                    PRIMARY SOURCE
+                  </span>
+                </summary>
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    fontSize: "0.82rem",
+                    color: "var(--on-surface)",
+                    lineHeight: 1.6,
+                    whiteSpace: "pre-wrap",
+                    maxHeight: 500,
+                    overflow: "auto",
+                  }}
+                >
+                  {account.reports.perplexityResearch}
+                </div>
+              </details>
+            )}
+            {account.reports?.chatGptAnalysis && (
+              <details
+                style={{
+                  borderRadius: 10,
+                  border: "1px solid rgba(167,176,222,0.12)",
+                  overflow: "hidden",
+                }}
+              >
+                <summary
+                  style={{
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-label)",
+                    fontWeight: 600,
+                    fontSize: "0.84rem",
+                    color: "var(--on-surface)",
+                    background: "var(--surface-container-low)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Brain size={14} color="#124af1" />
+                  ChatGPT Analysis Report
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: "0.62rem",
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                      padding: "0.1rem 0.45rem",
+                      borderRadius: 9999,
+                      background: "rgba(18,74,241,0.10)",
+                      color: "#124af1",
+                    }}
+                  >
+                    PRIMARY SOURCE
+                  </span>
+                </summary>
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    fontSize: "0.82rem",
+                    color: "var(--on-surface)",
+                    lineHeight: 1.6,
+                    whiteSpace: "pre-wrap",
+                    maxHeight: 500,
+                    overflow: "auto",
+                  }}
+                >
+                  {account.reports.chatGptAnalysis}
+                </div>
+              </details>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Citations & References */}
+      {(account.metadata?.citations?.length > 0 ||
+        account.metadata?.searchResults?.length > 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.42 }}
+          style={sectionCard}
+        >
+          {sectionTitle(
+            <Link2 size={18} color="#f59e0b" />,
+            "Citations & References",
+          )}
+          <div
+            style={{
+              fontSize: "0.75rem",
+              color: "var(--on-surface-variant)",
+              marginBottom: 12,
+              fontStyle: "italic",
+            }}
+          >
+            External sources referenced during the research process. All data
+            points in this report are traceable to these citations.
+          </div>
+          {account.metadata?.citations?.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>
+                Citations ({(account.metadata.citations as any[]).length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {(account.metadata.citations as any[]).map(
+                  (c: any, i: number) => {
+                    const url =
+                      typeof c === "string"
+                        ? c.startsWith("http")
+                          ? c
+                          : null
+                        : c.url || null;
+                    const title =
+                      typeof c === "string"
+                        ? c
+                        : c.title || c.url || JSON.stringify(c);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 8,
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          background: "rgba(245,158,11,0.04)",
+                          border: "1px solid rgba(245,158,11,0.10)",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "0.65rem",
+                            fontFamily: "var(--font-label)",
+                            fontWeight: 700,
+                            color: "#f59e0b",
+                            minWidth: 20,
+                            flexShrink: 0,
+                          }}
+                        >
+                          [{i + 1}]
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          {url ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--primary)",
+                                textDecoration: "none",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {title}
+                              <ExternalLink
+                                size={10}
+                                style={{ flexShrink: 0 }}
+                              />
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--on-surface-variant)",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {title}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
+          {account.metadata?.searchResults?.length > 0 && (
+            <div>
+              <div style={{ ...labelStyle, marginBottom: 8 }}>
+                Search Results (
+                {(account.metadata.searchResults as any[]).length})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {(account.metadata.searchResults as any[])
+                  .slice(0, 15)
+                  .map((sr: any, i: number) => {
+                    const url = sr.url || sr.link || null;
+                    const title =
+                      sr.title || sr.snippet || url || JSON.stringify(sr);
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 8,
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          background: "rgba(18,74,241,0.03)",
+                          border: "1px solid rgba(18,74,241,0.08)",
+                        }}
+                      >
+                        <ExternalLink
+                          size={11}
+                          color="var(--primary)"
+                          style={{ flexShrink: 0, marginTop: 2 }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          {url ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--primary)",
+                                textDecoration: "none",
+                                wordBreak: "break-all",
+                              }}
+                            >
+                              {title}
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: "0.78rem",
+                                color: "var(--on-surface-variant)",
+                              }}
+                            >
+                              {title}
+                            </span>
+                          )}
+                          {sr.snippet && sr.title && (
+                            <div
+                              style={{
+                                fontSize: "0.72rem",
+                                color: "var(--on-surface-variant)",
+                                marginTop: 2,
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {sr.snippet}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* Metadata */}
       {account.metadata && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.35 }}
+          transition={{ duration: 0.35, delay: 0.49 }}
           style={sectionCard}
         >
           {sectionTitle(
@@ -2197,32 +2602,6 @@ function ResearchReportContent({ account }: { account: Account }) {
                 <div style={labelStyle}>Record Timestamp</div>
                 <div style={valueStyle}>
                   {new Date(account.timestamp).toLocaleString()}
-                </div>
-              </div>
-            )}
-            {account.metadata.citations?.length > 0 && (
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={labelStyle}>
-                  Citations ({account.metadata.citations.length})
-                </div>
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
-                >
-                  {(account.metadata.citations as any[])
-                    .slice(0, 10)
-                    .map((c: any, i: number) => (
-                      <div
-                        key={i}
-                        style={{
-                          fontSize: "0.78rem",
-                          color: "var(--on-surface-variant)",
-                        }}
-                      >
-                        {typeof c === "string"
-                          ? c
-                          : c.title || c.url || JSON.stringify(c)}
-                      </div>
-                    ))}
                 </div>
               </div>
             )}
