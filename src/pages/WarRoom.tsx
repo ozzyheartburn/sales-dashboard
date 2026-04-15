@@ -33,6 +33,9 @@ import {
   Briefcase,
   UsersRound,
   X,
+  ShieldCheck,
+  UserPlus,
+  Plus,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -280,6 +283,10 @@ function PersonaNode({
     painHypothesis?: string;
     engagementStrategy?: string;
     confidence?: string;
+    isChampion?: boolean;
+    isVerified?: boolean;
+    onToggleChampion?: () => void;
+    onToggleVerified?: () => void;
   };
 }) {
   const typeColors: Record<string, string> = {
@@ -348,6 +355,69 @@ function PersonaNode({
       >
         {typeLabels[data.type] || "Unknown"}
       </span>
+
+      {/* Champion + Verified toggles */}
+      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onToggleChampion?.();
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            fontSize: "0.58rem",
+            fontWeight: 700,
+            fontFamily: "var(--font-label)",
+            padding: "0.15rem 0.45rem",
+            borderRadius: 6,
+            border: "1.5px solid",
+            borderColor: data.isChampion
+              ? "var(--tertiary)"
+              : "rgba(107,113,148,0.3)",
+            background: data.isChampion
+              ? "rgba(135,32,222,0.12)"
+              : "transparent",
+            color: data.isChampion
+              ? "var(--tertiary)"
+              : "var(--on-surface-variant)",
+            cursor: "pointer",
+            transition: "all 140ms ease",
+          }}
+        >
+          <UserCheck size={10} />
+          Champion
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onToggleVerified?.();
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            fontSize: "0.58rem",
+            fontWeight: 700,
+            fontFamily: "var(--font-label)",
+            padding: "0.15rem 0.45rem",
+            borderRadius: 6,
+            border: "1.5px solid",
+            borderColor: data.isVerified ? "#22c55e" : "rgba(107,113,148,0.3)",
+            background: data.isVerified
+              ? "rgba(34,197,94,0.12)"
+              : "transparent",
+            color: data.isVerified ? "#22c55e" : "var(--on-surface-variant)",
+            cursor: "pointer",
+            transition: "all 140ms ease",
+          }}
+        >
+          <ShieldCheck size={10} />
+          {data.isVerified ? "Verified" : "Unverified"}
+        </button>
+      </div>
+
       {data.notes && (
         <div
           style={{
@@ -464,6 +534,8 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        isChampion: false,
+        isVerified: false,
       },
     });
   });
@@ -485,6 +557,8 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        isChampion: true,
+        isVerified: false,
       },
     });
     // Connect to all CXO nodes
@@ -516,6 +590,8 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        isChampion: false,
+        isVerified: false,
       },
     });
     // Connect to nearest VP node or first CXO
@@ -546,6 +622,8 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: "",
         engagementStrategy: d.mitigation_strategy || "",
         confidence: "",
+        isChampion: false,
+        isVerified: false,
       },
     });
     // Dashed edge from first CXO
@@ -741,6 +819,12 @@ export function WarRoom() {
     title: string;
     description: string;
   } | null>(null);
+  const [showAddPerson, setShowAddPerson] = useState(false);
+  const [newPerson, setNewPerson] = useState({
+    name: "",
+    role: "",
+    type: "unknown" as string,
+  });
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState(defaultNodes);
@@ -755,6 +839,105 @@ export function WarRoom() {
       ),
     [setEdges],
   );
+
+  // Toggle isChampion on a node
+  const toggleChampion = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, isChampion: !n.data.isChampion } }
+            : n,
+        ),
+      );
+    },
+    [setNodes],
+  );
+
+  // Toggle isVerified on a node
+  const toggleVerified = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, isVerified: !n.data.isVerified } }
+            : n,
+        ),
+      );
+    },
+    [setNodes],
+  );
+
+  // Inject toggle callbacks into node data whenever nodes change
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onToggleChampion: () => toggleChampion(n.id),
+          onToggleVerified: () => toggleVerified(n.id),
+        },
+      })),
+    );
+    // Only re-inject when toggleChampion/toggleVerified references change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toggleChampion, toggleVerified]);
+
+  // Add a new person to the org chart
+  const handleAddPerson = useCallback(() => {
+    if (!newPerson.name.trim()) return;
+
+    const maxX = nodes.reduce((mx, n) => Math.max(mx, n.position.x), 0);
+    const maxY = nodes.reduce((mx, n) => Math.max(mx, n.position.y), 0);
+    const id = String(Date.now());
+
+    const newNode: Node = {
+      id,
+      type: "persona",
+      position: { x: maxX + 240, y: maxY > 0 ? maxY / 2 : 180 },
+      data: {
+        label: newPerson.name.trim(),
+        role: newPerson.role.trim() || "Unknown Role",
+        type: newPerson.type,
+        notes: "",
+        isChampion: false,
+        isVerified: false,
+        onToggleChampion: () => toggleChampion(id),
+        onToggleVerified: () => toggleVerified(id),
+      },
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    setNewPerson({ name: "", role: "", type: "unknown" });
+    setShowAddPerson(false);
+  }, [newPerson, nodes, setNodes, toggleChampion, toggleVerified]);
+
+  // Auto-save org chart when nodes or edges change (debounced)
+  useEffect(() => {
+    if (!selectedAccount) return;
+    const timeout = setTimeout(() => {
+      // Strip callback functions before saving
+      const cleanNodes = nodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onToggleChampion: undefined,
+          onToggleVerified: undefined,
+        },
+      }));
+      fetch(`${API_URL}/api/org-chart/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          account_name: selectedAccount.companyName,
+          nodes: cleanNodes,
+          edges,
+        }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, [nodes, edges, selectedAccount]);
 
   // Rebuild org chart when selected account changes — load persisted first, fallback to champion data
   useEffect(() => {
@@ -1658,7 +1841,13 @@ export function WarRoom() {
 
           {/* ── Org Chart Tab ───────────────────────────────────── */}
           {activeTab === "orgchart" && (
-            <div style={{ height: "calc(100vh - 160px)", width: "100%" }}>
+            <div
+              style={{
+                height: "calc(100vh - 160px)",
+                width: "100%",
+                position: "relative",
+              }}
+            >
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -1738,6 +1927,260 @@ export function WarRoom() {
                   Blocker
                 </span>
               </div>
+
+              {/* Add Person Button */}
+              <button
+                onClick={() => setShowAddPerson(true)}
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0.5rem 1rem",
+                  borderRadius: 10,
+                  border: "none",
+                  background:
+                    "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                  color: "#fff",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(135,32,222,0.25)",
+                  transition: "all 140ms ease",
+                  zIndex: 5,
+                }}
+              >
+                <Plus size={15} />
+                Add Person
+              </button>
+
+              {/* Add Person Form */}
+              <AnimatePresence>
+                {showAddPerson && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.35)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 50,
+                    }}
+                    onClick={() => setShowAddPerson(false)}
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        background: "var(--surface-container-lowest)",
+                        borderRadius: "1rem",
+                        padding: "1.5rem",
+                        width: 340,
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: "var(--font-headline)",
+                            fontWeight: 700,
+                            fontSize: "1.1rem",
+                            color: "var(--on-background)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <UserPlus size={18} color="var(--tertiary)" />
+                          Add Person
+                        </div>
+                        <button
+                          onClick={() => setShowAddPerson(false)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: "var(--on-surface-variant)",
+                          }}
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
+                        <div>
+                          <label
+                            style={{
+                              fontSize: "0.75rem",
+                              fontFamily: "var(--font-label)",
+                              fontWeight: 600,
+                              color: "var(--on-surface-variant)",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            value={newPerson.name}
+                            onChange={(e) =>
+                              setNewPerson((p) => ({
+                                ...p,
+                                name: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. Jane Smith"
+                            style={{
+                              width: "100%",
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: 8,
+                              border: "1.5px solid rgba(107,113,148,0.25)",
+                              background: "var(--surface-container-low)",
+                              color: "var(--on-surface)",
+                              fontFamily: "var(--font-body)",
+                              fontSize: "0.85rem",
+                              outline: "none",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              fontSize: "0.75rem",
+                              fontFamily: "var(--font-label)",
+                              fontWeight: 600,
+                              color: "var(--on-surface-variant)",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            Role / Title
+                          </label>
+                          <input
+                            type="text"
+                            value={newPerson.role}
+                            onChange={(e) =>
+                              setNewPerson((p) => ({
+                                ...p,
+                                role: e.target.value,
+                              }))
+                            }
+                            placeholder="e.g. VP of Engineering"
+                            style={{
+                              width: "100%",
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: 8,
+                              border: "1.5px solid rgba(107,113,148,0.25)",
+                              background: "var(--surface-container-low)",
+                              color: "var(--on-surface)",
+                              fontFamily: "var(--font-body)",
+                              fontSize: "0.85rem",
+                              outline: "none",
+                              boxSizing: "border-box",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              fontSize: "0.75rem",
+                              fontFamily: "var(--font-label)",
+                              fontWeight: 600,
+                              color: "var(--on-surface-variant)",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            Type
+                          </label>
+                          <select
+                            value={newPerson.type}
+                            onChange={(e) =>
+                              setNewPerson((p) => ({
+                                ...p,
+                                type: e.target.value,
+                              }))
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: 8,
+                              border: "1.5px solid rgba(107,113,148,0.25)",
+                              background: "var(--surface-container-low)",
+                              color: "var(--on-surface)",
+                              fontFamily: "var(--font-body)",
+                              fontSize: "0.85rem",
+                              outline: "none",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <option value="unknown">Unknown</option>
+                            <option value="economic-buyer">
+                              Economic Buyer
+                            </option>
+                            <option value="champion">Champion</option>
+                            <option value="influencer">Influencer</option>
+                            <option value="blocker">Blocker</option>
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={handleAddPerson}
+                          disabled={!newPerson.name.trim()}
+                          style={{
+                            marginTop: 4,
+                            padding: "0.6rem 1rem",
+                            borderRadius: 10,
+                            border: "none",
+                            background: newPerson.name.trim()
+                              ? "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))"
+                              : "rgba(107,113,148,0.2)",
+                            color: newPerson.name.trim()
+                              ? "#fff"
+                              : "var(--on-surface-variant)",
+                            fontFamily: "var(--font-label)",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            cursor: newPerson.name.trim()
+                              ? "pointer"
+                              : "not-allowed",
+                            transition: "all 140ms ease",
+                          }}
+                        >
+                          Add to Org Chart
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 

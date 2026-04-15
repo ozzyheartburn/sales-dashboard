@@ -56,6 +56,116 @@ const pendingResearch = new Map();
 // In-memory tracking of swarm jobs
 const pendingSwarm = new Map();
 
+// Helper: run agentic extra iterations — web-grounded research via GPT-4o
+async function runAgenticExtraIterations(
+  account,
+  agentResults,
+  perplexityResearch,
+) {
+  const companyName = account.companyName;
+  const championNames = [];
+  for (const tier of [
+    account.champion_cxo_candidates,
+    account.champion_vp_director_candidates,
+    account.champion_enduser_candidates,
+  ]) {
+    if (Array.isArray(tier)) {
+      tier.forEach((c) => {
+        if (c.full_name) championNames.push(c.full_name);
+      });
+    }
+  }
+  // Also check fresh agent results for champion data
+  const champAgent = agentResults?.["champion-building-agent"];
+  if (champAgent?.output && typeof champAgent.output === "object") {
+    const o = champAgent.output;
+    for (const arr of [
+      o.champion_cxo_candidates,
+      o.champion_vp_director_candidates,
+      o.champion_enduser_candidates,
+    ]) {
+      if (Array.isArray(arr)) {
+        arr.forEach((c) => {
+          if (c.full_name && !championNames.includes(c.full_name))
+            championNames.push(c.full_name);
+        });
+      }
+    }
+  }
+
+  // Build context from Perplexity research + agent outputs
+  const contextParts = [`Company: ${companyName}`];
+  if (perplexityResearch) {
+    contextParts.push(
+      `PERPLEXITY RESEARCH:\n${perplexityResearch.slice(0, 8000)}`,
+    );
+  }
+  if (agentResults) {
+    for (const [agentId, result] of Object.entries(agentResults)) {
+      if (result.output && typeof result.output === "object") {
+        contextParts.push(
+          `AGENT ${agentId} OUTPUT:\n${JSON.stringify(result.output).slice(0, 3000)}`,
+        );
+      } else if (result.rawText) {
+        contextParts.push(
+          `AGENT ${agentId} OUTPUT:\n${result.rawText.slice(0, 3000)}`,
+        );
+      }
+    }
+  }
+  const existingContext = contextParts.join("\n\n");
+
+  const championSearchInstructions =
+    championNames.length > 0
+      ? `\n\nCHAMPION NAMES TO RESEARCH: ${championNames.join(", ")}\nFor each champion, search for their LinkedIn profile, social media presence (Facebook, Instagram, X/Twitter), recent public mentions, conference talks, blog posts, and professional interests.`
+      : "";
+
+  const response = await openai.responses.create({
+    model: "gpt-4o",
+    tools: [{ type: "web_search_preview" }],
+    input: [
+      {
+        role: "system",
+        content:
+          "You are a senior sales intelligence researcher. Your task is to find the LATEST public information about a company and its key people from the last 6 months. " +
+          "Search for: press releases, news articles, product launches, funding rounds, partnerships, executive changes, earnings reports, conference presentations, and any other public media. " +
+          "Also search for key champions/contacts at the company — their LinkedIn profiles, social media activity, professional interests, speaking engagements, and public opinions. " +
+          "Use the existing research data provided as context to focus your web searches on gaps and recent developments. " +
+          'Return a JSON object with this structure: { "company_news": [{ "title": ..., "date": ..., "source_url": ..., "summary": ... }], "champion_profiles": [{ "name": ..., "linkedin_url": ..., "social_profiles": [...], "recent_activity": ..., "interests": ..., "key_findings": ... }], "market_signals": [{ "signal": ..., "relevance": ..., "source_url": ... }], "summary": "<comprehensive 2-3 paragraph summary of all findings>" }',
+      },
+      {
+        role: "user",
+        content: `Research the latest 6 months of public information about ${companyName}. Here is existing research context:\n\n${existingContext}${championSearchInstructions}\n\nSearch the web thoroughly and return your findings as JSON.`,
+      },
+    ],
+  });
+
+  // Extract text from the response
+  const outputText = response.output_text || "";
+
+  // Try to parse JSON from the response
+  let parsed = null;
+  try {
+    const jsonMatch = outputText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+  } catch (_) {
+    // Keep raw text if JSON parsing fails
+  }
+
+  return {
+    customerName: companyName,
+    summary: parsed?.summary || outputText.slice(0, 5000),
+    company_news: parsed?.company_news || [],
+    champion_profiles: parsed?.champion_profiles || [],
+    market_signals: parsed?.market_signals || [],
+    championsResearched: championNames,
+    rawResponse: outputText,
+    model: "gpt-4o",
+    tool: "web_search_preview",
+    executedAt: new Date().toISOString(),
+  };
+}
+
 // Run Agent Swarm: execute agents in parallel via GPT-4o, synthesize buying signal brief
 app.post("/api/swarm/run", async (req, res) => {
   try {
@@ -100,17 +210,19 @@ app.post("/api/swarm/run", async (req, res) => {
           return;
         }
 
-        // Build account context for prompt builder
+        // Build account context for prompt builder (full Perplexity research as dedicated source)
+        const fullPerplexity = account.reports?.perplexityResearch || "";
         const accountContext = {
           companyName: account.companyName,
           website: account.website || "Unknown",
           industry: account.industry || "Nordic ecommerce",
           knownStack: account.techStack || "Unknown — research required",
+          perplexityResearch: fullPerplexity.slice(0, 15000),
           notes:
             [
               account.rationale,
               account.reports?.chatGptAnalysis?.slice(0, 4000),
-              account.reports?.perplexityResearch?.slice(0, 4000),
+              fullPerplexity.slice(0, 8000),
             ]
               .filter(Boolean)
               .join("\n\n") || "None",
@@ -309,6 +421,34 @@ app.post("/api/swarm/run", async (req, res) => {
           };
         }
 
+        // Run agentic extra iterations — web-grounded research
+        let xtraIterations = null;
+        try {
+          console.log(
+            `  Running agentic extra iterations for ${account.companyName}...`,
+          );
+          xtraIterations = await runAgenticExtraIterations(
+            account,
+            agentResults,
+            account.reports?.perplexityResearch,
+          );
+          updateFields["agentic-xtra-iterations"] = xtraIterations;
+          console.log(
+            `  Extra iterations completed for ${account.companyName}`,
+          );
+        } catch (xtraErr) {
+          console.error(
+            `  Extra iterations failed for ${account.companyName}:`,
+            xtraErr.message,
+          );
+          updateFields["agentic-xtra-iterations"] = {
+            customerName: account.companyName,
+            summary: `Extra iterations failed: ${xtraErr.message}`,
+            error: xtraErr.message,
+            executedAt: new Date().toISOString(),
+          };
+        }
+
         await collection.updateOne(
           { companyName: { $regex: new RegExp(`^${account_name}$`, "i") } },
           { $set: updateFields },
@@ -326,7 +466,7 @@ app.post("/api/swarm/run", async (req, res) => {
         });
 
         console.log(
-          `Swarm completed for ${account_name} — ${agents.length} agents, results stored to MongoDB`,
+          `Swarm completed for ${account_name} — ${agents.length} agents + extra iterations, results stored to MongoDB`,
         );
       } catch (err) {
         console.error(`Swarm failed for ${account_name}:`, err.message);
@@ -429,16 +569,18 @@ app.post("/api/swarm/run-all", async (req, res) => {
               continue;
             }
 
+            const fullPerplexity = account.reports?.perplexityResearch || "";
             const accountContext = {
               companyName: account.companyName,
               website: account.website || "Unknown",
               industry: account.industry || "Nordic ecommerce",
               knownStack: account.techStack || "Unknown — research required",
+              perplexityResearch: fullPerplexity.slice(0, 15000),
               notes:
                 [
                   account.rationale,
                   account.reports?.chatGptAnalysis?.slice(0, 4000),
-                  account.reports?.perplexityResearch?.slice(0, 4000),
+                  fullPerplexity.slice(0, 8000),
                 ]
                   .filter(Boolean)
                   .join("\n\n") || "None",
@@ -608,6 +750,33 @@ app.post("/api/swarm/run-all", async (req, res) => {
                 brief: synthesisBrief,
                 template,
                 agentsUsed: agents,
+                executedAt: new Date().toISOString(),
+              };
+            }
+
+            // Run agentic extra iterations — web-grounded research
+            try {
+              console.log(
+                `  Running agentic extra iterations for ${account.companyName}...`,
+              );
+              const xtraIterations = await runAgenticExtraIterations(
+                account,
+                agentResults,
+                account.reports?.perplexityResearch,
+              );
+              updateFields["agentic-xtra-iterations"] = xtraIterations;
+              console.log(
+                `  Extra iterations completed for ${account.companyName}`,
+              );
+            } catch (xtraErr) {
+              console.error(
+                `  Extra iterations failed for ${account.companyName}:`,
+                xtraErr.message,
+              );
+              updateFields["agentic-xtra-iterations"] = {
+                customerName: account.companyName,
+                summary: `Extra iterations failed: ${xtraErr.message}`,
+                error: xtraErr.message,
                 executedAt: new Date().toISOString(),
               };
             }
