@@ -2041,12 +2041,105 @@ app.post("/api/auth/link", async (req, res) => {
   }
 });
 
-// Register PG_Machine as legacy tenant on startup
+// Seed users + roles collections for a tenant database on startup
+async function seedUsersAndRoles(database, tenantSlug) {
+  // Ensure users collection exists with indexes
+  const usersCol = database.collection("users");
+  try {
+    await usersCol.createIndex({ email: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+    await usersCol.createIndex({ auth0Id: 1 }, { unique: true, sparse: true });
+  } catch (_) {
+    // Indexes may already exist
+  }
+
+  // Ensure roles collection exists with indexes
+  const rolesCol = database.collection("roles");
+  try {
+    await rolesCol.createIndex({ name: 1 }, { unique: true });
+  } catch (_) {}
+
+  // Seed default roles
+  const DEFAULT_ROLES = [
+    {
+      name: "admin",
+      description: "Full access — manage users, run research, edit everything",
+      permissions: [
+        "accounts:read", "accounts:write", "accounts:delete",
+        "research:run", "swarm:run",
+        "org_chart:read", "org_chart:write",
+        "intelligence:read", "intelligence:write",
+        "sales_activities:read", "sales_activities:write",
+        "users:read", "users:write", "users:invite",
+        "tenant:manage",
+      ],
+    },
+    {
+      name: "analyst",
+      description: "Run research, edit accounts, view everything",
+      permissions: [
+        "accounts:read", "accounts:write",
+        "research:run", "swarm:run",
+        "org_chart:read", "org_chart:write",
+        "intelligence:read", "intelligence:write",
+        "sales_activities:read", "sales_activities:write",
+        "users:read",
+      ],
+    },
+    {
+      name: "viewer",
+      description: "Read-only access to all data",
+      permissions: [
+        "accounts:read", "org_chart:read",
+        "intelligence:read", "sales_activities:read", "users:read",
+      ],
+    },
+  ];
+
+  for (const role of DEFAULT_ROLES) {
+    await rolesCol.updateOne(
+      { name: role.name },
+      {
+        $set: { ...role, updatedAt: new Date().toISOString() },
+        $setOnInsert: { createdAt: new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+  }
+
+  // Seed god-mode admin user
+  await usersCol.updateOne(
+    { email: "alimelkkilaoskari@gmail.com" },
+    {
+      $set: {
+        email: "alimelkkilaoskari@gmail.com",
+        name: "Oskari Ali-Melkkilä",
+        role: "admin",
+        tenantSlug,
+        isPlatformAdmin: true,
+        updatedAt: new Date().toISOString(),
+      },
+      $setOnInsert: {
+        auth0Id: null,
+        createdAt: new Date().toISOString(),
+      },
+    },
+    { upsert: true },
+  );
+
+  console.log(`  ✅ Users & roles seeded for ${tenantSlug}`);
+}
+
+// Register PG_Machine as legacy tenant + seed users/roles on startup
 (async () => {
   try {
     await ensureConnected();
     await registerExistingTenant();
     console.log("Platform tenant registry initialized");
+
+    // Seed PG_Machine with users + roles collections
+    const pgDb = await connectDB();
+    await seedUsersAndRoles(pgDb, "PG_Machine");
+    console.log("PG_Machine users & roles initialized");
   } catch (err) {
     console.error("Failed to initialize platform registry:", err.message);
   }
