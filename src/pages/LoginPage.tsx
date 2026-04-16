@@ -1,9 +1,11 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { motion } from "motion/react";
-import { LogIn, Shield, Sparkles, BarChart3, Brain } from "lucide-react";
+import { LogIn, Shield, Sparkles, BarChart3, Brain, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const { loginWithRedirect, isLoading } = useAuth0();
+  const navigate = useNavigate();
 
   return (
     <div
@@ -285,6 +287,41 @@ export function LoginPage() {
               {item.label}
             </div>
           ))}
+        </motion.div>
+
+        {/* Admin access */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.5 }}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "1.5rem",
+          }}
+        >
+          <button
+            onClick={() => navigate("/admin")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              background: "none",
+              border: "none",
+              color: "var(--on-surface-variant)",
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              fontFamily: "var(--font-label)",
+              cursor: "pointer",
+              opacity: 0.7,
+              transition: "opacity 140ms ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+          >
+            <Settings size={12} />
+            Platform Admin
+          </button>
         </motion.div>
       </motion.div>
     </div>

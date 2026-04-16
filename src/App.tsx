@@ -5,6 +5,7 @@ import { DashboardHome } from "./pages/DashboardHome";
 import { ResearchHub } from "./pages/ResearchHub";
 import { WarRoom } from "./pages/WarRoom";
 import { LoginPage } from "./pages/LoginPage";
+import { AdminPanel } from "./pages/AdminPanel";
 
 function LoadingScreen() {
   return (
@@ -61,6 +62,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Admin panel — standalone, always accessible */}
+        <Route path="/admin" element={<AdminPanel />} />
+
         {isAuthenticated ? (
           <>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

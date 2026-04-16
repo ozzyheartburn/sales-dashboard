@@ -2046,7 +2046,10 @@ async function seedUsersAndRoles(database, tenantSlug) {
   // Ensure users collection exists with indexes
   const usersCol = database.collection("users");
   try {
-    await usersCol.createIndex({ email: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+    await usersCol.createIndex(
+      { email: 1 },
+      { unique: true, collation: { locale: "en", strength: 2 } },
+    );
     await usersCol.createIndex({ auth0Id: 1 }, { unique: true, sparse: true });
   } catch (_) {
     // Indexes may already exist
@@ -2064,12 +2067,20 @@ async function seedUsersAndRoles(database, tenantSlug) {
       name: "admin",
       description: "Full access — manage users, run research, edit everything",
       permissions: [
-        "accounts:read", "accounts:write", "accounts:delete",
-        "research:run", "swarm:run",
-        "org_chart:read", "org_chart:write",
-        "intelligence:read", "intelligence:write",
-        "sales_activities:read", "sales_activities:write",
-        "users:read", "users:write", "users:invite",
+        "accounts:read",
+        "accounts:write",
+        "accounts:delete",
+        "research:run",
+        "swarm:run",
+        "org_chart:read",
+        "org_chart:write",
+        "intelligence:read",
+        "intelligence:write",
+        "sales_activities:read",
+        "sales_activities:write",
+        "users:read",
+        "users:write",
+        "users:invite",
         "tenant:manage",
       ],
     },
@@ -2077,11 +2088,16 @@ async function seedUsersAndRoles(database, tenantSlug) {
       name: "analyst",
       description: "Run research, edit accounts, view everything",
       permissions: [
-        "accounts:read", "accounts:write",
-        "research:run", "swarm:run",
-        "org_chart:read", "org_chart:write",
-        "intelligence:read", "intelligence:write",
-        "sales_activities:read", "sales_activities:write",
+        "accounts:read",
+        "accounts:write",
+        "research:run",
+        "swarm:run",
+        "org_chart:read",
+        "org_chart:write",
+        "intelligence:read",
+        "intelligence:write",
+        "sales_activities:read",
+        "sales_activities:write",
         "users:read",
       ],
     },
@@ -2089,8 +2105,11 @@ async function seedUsersAndRoles(database, tenantSlug) {
       name: "viewer",
       description: "Read-only access to all data",
       permissions: [
-        "accounts:read", "org_chart:read",
-        "intelligence:read", "sales_activities:read", "users:read",
+        "accounts:read",
+        "org_chart:read",
+        "intelligence:read",
+        "sales_activities:read",
+        "users:read",
       ],
     },
   ];
