@@ -39,8 +39,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
 } from "recharts";
 import { AgentSwarm } from "./AgentSwarm";
 
@@ -258,9 +256,9 @@ export function ResearchHub() {
         driven proof
       </div>
 
-      {/* --- ANALYTICS VIEWS --- */}
+      {/* --- BUYER PROGRESSION ANALYTICS --- */}
       <div style={{ display: "flex", gap: 20, marginBottom: 28 }}>
-        {/* Quantitative Metrics */}
+        {/* Buyer Progression Metrics */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,100 +274,103 @@ export function ResearchHub() {
         >
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              fontFamily: "var(--font-headline)",
+              fontWeight: 700,
+              fontSize: "1rem",
+              color: "#1a1a2e",
               marginBottom: 10,
             }}
           >
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1rem",
-                color: "#1a1a2e",
-              }}
-            >
-              Quantitative Metrics
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <select
-                style={{
-                  background: "#f3f4f6",
-                  color: "#374151",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  padding: "0.3rem 0.6rem",
-                  fontSize: "0.72rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                }}
-              >
-                <option>Last 30 days</option>
-                <option>Last 90 days</option>
-                <option>Last 12 months</option>
-              </select>
-              <select
-                style={{
-                  background: "#f3f4f6",
-                  color: "#374151",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  padding: "0.3rem 0.6rem",
-                  fontSize: "0.72rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                }}
-              >
-                <option>All Accounts</option>
-                <option>Top Priority</option>
-                <option>Medium Priority</option>
-              </select>
-            </div>
+            Buyer Progression Metrics
           </div>
-          {/* KPI row */}
-          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-            {[
-              { label: "Research/wk", value: "7.2", color: "#124af1" },
-              { label: "Meetings/wk", value: "2.3", color: "#22c55e" },
-              { label: "SQOs/mo", value: "4.2", color: "#8720de" },
-              { label: "Avg Deal", value: "$42.5k", color: "#f59e0b" },
-            ].map((kpi) => (
-              <div
-                key={kpi.label}
-                style={{
-                  flex: 1,
-                  background: "#f8f9fc",
-                  borderRadius: 10,
-                  padding: "0.6rem 0.75rem",
-                  textAlign: "center",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "1.05rem",
-                    fontWeight: 800,
-                    color: kpi.color,
-                    fontFamily: "var(--font-headline)",
-                  }}
-                >
-                  {kpi.value}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.6rem",
-                    fontWeight: 600,
-                    color: "#6b7194",
-                    fontFamily: "var(--font-label)",
-                    marginTop: 1,
-                  }}
-                >
-                  {kpi.label}
-                </div>
+          {/* KPI row — derived from live accounts */}
+          {(() => {
+            const total = accounts.length;
+            const progressing = accounts.filter(
+              (a) => a.buyingSignalScore >= 60,
+            ).length;
+            const stalled = accounts.filter(
+              (a) => a.buyingSignalScore > 0 && a.buyingSignalScore < 40,
+            ).length;
+            const avgSignal =
+              total > 0
+                ? Math.round(
+                    accounts.reduce(
+                      (s, a) => s + (a.buyingSignalScore || 0),
+                      0,
+                    ) / total,
+                  )
+                : 0;
+            const withChampion = accounts.filter(
+              (a) =>
+                (a.champion_cxo_candidates?.length || 0) +
+                  (a.champion_vp_director_candidates?.length || 0) +
+                  (a.champion_enduser_candidates?.length || 0) >
+                0,
+            ).length;
+            const champCoverage =
+              total > 0 ? Math.round((withChampion / total) * 100) : 0;
+            return (
+              <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                {[
+                  {
+                    label: "Progressing",
+                    value: String(progressing),
+                    color: "#22c55e",
+                  },
+                  {
+                    label: "Stalled",
+                    value: String(stalled),
+                    color: "#ef4444",
+                  },
+                  {
+                    label: "Avg Signal",
+                    value: String(avgSignal),
+                    color: "#124af1",
+                  },
+                  {
+                    label: "Champion %",
+                    value: `${champCoverage}%`,
+                    color: "#8720de",
+                  },
+                ].map((kpi) => (
+                  <div
+                    key={kpi.label}
+                    style={{
+                      flex: 1,
+                      background: "#f8f9fc",
+                      borderRadius: 10,
+                      padding: "0.6rem 0.75rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "1.05rem",
+                        fontWeight: 800,
+                        color: kpi.color,
+                        fontFamily: "var(--font-headline)",
+                      }}
+                    >
+                      {kpi.value}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.6rem",
+                        fontWeight: 600,
+                        color: "#6b7194",
+                        fontFamily: "var(--font-label)",
+                        marginTop: 1,
+                      }}
+                    >
+                      {kpi.label}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {/* Meetings & SQOs Bar Chart */}
+            );
+          })()}
+          {/* Buying Signal Distribution */}
           <div
             style={{
               fontSize: "0.72rem",
@@ -379,28 +380,36 @@ export function ResearchHub() {
               marginBottom: 6,
             }}
           >
-            Meetings & SQOs (last 6 months)
+            Buying Signal Score Distribution
           </div>
           <ResponsiveContainer width="100%" height={120}>
             <BarChart
-              data={[
-                { month: "Oct", meetings: 6, sqos: 2 },
-                { month: "Nov", meetings: 8, sqos: 3 },
-                { month: "Dec", meetings: 7, sqos: 3 },
-                { month: "Jan", meetings: 10, sqos: 4 },
-                { month: "Feb", meetings: 9, sqos: 5 },
-                { month: "Mar", meetings: 11, sqos: 5 },
-              ]}
-              barGap={2}
+              data={(() => {
+                const buckets = [
+                  { range: "0–20", min: 0, max: 20 },
+                  { range: "21–40", min: 21, max: 40 },
+                  { range: "41–60", min: 41, max: 60 },
+                  { range: "61–80", min: 61, max: 80 },
+                  { range: "81–100", min: 81, max: 100 },
+                ];
+                return buckets.map((b) => ({
+                  range: b.range,
+                  count: accounts.filter(
+                    (a) =>
+                      (a.buyingSignalScore || 0) >= b.min &&
+                      (a.buyingSignalScore || 0) <= b.max,
+                  ).length,
+                }));
+              })()}
               barCategoryGap="20%"
             >
               <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
               <XAxis
-                dataKey="month"
+                dataKey="range"
                 axisLine={false}
                 tickLine={false}
                 tick={{
-                  fontSize: 11,
+                  fontSize: 10,
                   fill: "#6b7194",
                   fontFamily: "var(--font-label)",
                 }}
@@ -409,6 +418,7 @@ export function ResearchHub() {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: "#6b7194" }}
+                allowDecimals={false}
               />
               <Tooltip
                 contentStyle={{
@@ -419,21 +429,16 @@ export function ResearchHub() {
                   fontSize: "0.8rem",
                 }}
               />
-              <Bar
-                dataKey="meetings"
-                fill="#124af1"
-                radius={[4, 4, 0, 0]}
-                name="Meetings"
-              />
-              <Bar
-                dataKey="sqos"
-                fill="#8720de"
-                radius={[4, 4, 0, 0]}
-                name="SQOs"
-              />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Accounts">
+                {["#ef4444", "#f59e0b", "#06b6d4", "#4e45e4", "#22c55e"].map(
+                  (c, i) => (
+                    <Cell key={i} fill={c} />
+                  ),
+                )}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-          {/* Pipeline Trend */}
+          {/* Priority Breakdown */}
           <div
             style={{
               fontSize: "0.72rem",
@@ -444,59 +449,62 @@ export function ResearchHub() {
               marginTop: 14,
             }}
           >
-            Pipeline Value ($k)
+            Deal Priority Breakdown
           </div>
-          <ResponsiveContainer width="100%" height={80}>
-            <AreaChart
-              data={[
-                { month: "Oct", value: 85 },
-                { month: "Nov", value: 110 },
-                { month: "Dec", value: 95 },
-                { month: "Jan", value: 140 },
-                { month: "Feb", value: 168 },
-                { month: "Mar", value: 195 },
-              ]}
-            >
-              <defs>
-                <linearGradient id="pipelineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#124af1" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#124af1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(167,176,222,0.15)" vertical={false} />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: "#6b7194" }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: "#6b7194" }}
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 12,
-                  border: "none",
-                  background: "#fff",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                  fontSize: "0.8rem",
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="#124af1"
-                strokeWidth={2.5}
-                fill="url(#pipelineGrad)"
-                name="Pipeline ($k)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(() => {
+              const priorities = ["P0", "P1", "P2", "P3"];
+              const colors = ["#ef4444", "#f59e0b", "#124af1", "#6b7194"];
+              return priorities.map((p, i) => {
+                const count = accounts.filter((a) => a.priority === p).length;
+                const pct =
+                  accounts.length > 0
+                    ? Math.round((count / accounts.length) * 100)
+                    : 0;
+                return (
+                  <div key={p}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.7rem",
+                        fontFamily: "var(--font-label)",
+                        fontWeight: 600,
+                        color: "#374151",
+                        marginBottom: 2,
+                      }}
+                    >
+                      <span>{p}</span>
+                      <span style={{ color: "#6b7194" }}>
+                        {count} accounts ({pct}%)
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 6,
+                        borderRadius: 3,
+                        background: "#f3f4f6",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          borderRadius: 3,
+                          background: colors[i],
+                          width: `${pct}%`,
+                          transition: "width 0.4s",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </motion.div>
 
-        {/* Qualitative Metrics */}
+        {/* Customer Buying Signals */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -512,58 +520,16 @@ export function ResearchHub() {
         >
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              fontFamily: "var(--font-headline)",
+              fontWeight: 700,
+              fontSize: "1rem",
+              color: "#1a1a2e",
               marginBottom: 10,
             }}
           >
-            <div
-              style={{
-                fontFamily: "var(--font-headline)",
-                fontWeight: 700,
-                fontSize: "1rem",
-                color: "#1a1a2e",
-              }}
-            >
-              Qualitative Metrics
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <select
-                style={{
-                  background: "#f3f4f6",
-                  color: "#374151",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  padding: "0.3rem 0.6rem",
-                  fontSize: "0.72rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                }}
-              >
-                <option>Last 30 days</option>
-                <option>Last 90 days</option>
-                <option>Last 12 months</option>
-              </select>
-              <select
-                style={{
-                  background: "#f3f4f6",
-                  color: "#374151",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 6,
-                  padding: "0.3rem 0.6rem",
-                  fontSize: "0.72rem",
-                  fontFamily: "var(--font-label)",
-                  fontWeight: 600,
-                }}
-              >
-                <option>All Accounts</option>
-                <option>Top Priority</option>
-                <option>Medium Priority</option>
-              </select>
-            </div>
+            Customer Buying Signals
           </div>
-          {/* Champion Sentiment Donut */}
+          {/* Champion Readiness Donut */}
           <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
             <div style={{ flex: "0 0 110px" }}>
               <div
@@ -575,78 +541,94 @@ export function ResearchHub() {
                   marginBottom: 4,
                 }}
               >
-                Champion Sentiment
+                Champion Readiness
               </div>
-              <ResponsiveContainer width={110} height={110}>
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: "Positive", value: 58 },
-                      { name: "Neutral", value: 27 },
-                      { name: "Negative", value: 15 },
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={28}
-                    outerRadius={48}
-                    paddingAngle={3}
-                    dataKey="value"
-                    strokeWidth={0}
-                  >
-                    <Cell fill="#22c55e" />
-                    <Cell fill="#f59e0b" />
-                    <Cell fill="#ef4444" />
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#fff",
-                      boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                      fontSize: "0.8rem",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 10,
-                  marginTop: 2,
-                }}
-              >
-                {[
-                  { color: "#22c55e", label: "Pos" },
-                  { color: "#f59e0b", label: "Neut" },
-                  { color: "#ef4444", label: "Neg" },
-                ].map((l) => (
-                  <div
-                    key={l.label}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 3,
-                      fontSize: "0.58rem",
-                      color: "#6b7194",
-                      fontFamily: "var(--font-label)",
-                      fontWeight: 600,
-                    }}
-                  >
+              {(() => {
+                const readinessMap: Record<string, number> = {};
+                accounts.forEach((a) => {
+                  const r = a.champion_overall_readiness || "Unknown";
+                  readinessMap[r] = (readinessMap[r] || 0) + 1;
+                });
+                const readinessColors: Record<string, string> = {
+                  High: "#22c55e",
+                  Medium: "#f59e0b",
+                  Low: "#ef4444",
+                  Unknown: "#9ca3af",
+                };
+                const pieData = Object.entries(readinessMap).map(
+                  ([name, value]) => ({ name, value }),
+                );
+                return (
+                  <>
+                    <ResponsiveContainer width={110} height={110}>
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={28}
+                          outerRadius={48}
+                          paddingAngle={3}
+                          dataKey="value"
+                          strokeWidth={0}
+                        >
+                          {pieData.map((d, i) => (
+                            <Cell
+                              key={i}
+                              fill={readinessColors[d.name] || "#9ca3af"}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: 12,
+                            border: "none",
+                            background: "#fff",
+                            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                            fontSize: "0.8rem",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                     <div
                       style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        background: l.color,
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 8,
+                        marginTop: 2,
+                        flexWrap: "wrap",
                       }}
-                    />
-                    {l.label}
-                  </div>
-                ))}
-              </div>
+                    >
+                      {pieData.map((d) => (
+                        <div
+                          key={d.name}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 3,
+                            fontSize: "0.58rem",
+                            color: "#6b7194",
+                            fontFamily: "var(--font-label)",
+                            fontWeight: 600,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              background: readinessColors[d.name] || "#9ca3af",
+                            }}
+                          />
+                          {d.name}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
-            {/* Win/Loss Themes */}
+            {/* Risk Indicators */}
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -657,82 +639,92 @@ export function ResearchHub() {
                   marginBottom: 8,
                 }}
               >
-                Win / Loss Themes
+                Progression Risk Indicators
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {[
-                  {
-                    theme: "Discovery relevance",
-                    wins: 14,
-                    losses: 2,
-                    color: "#22c55e",
-                  },
-                  {
-                    theme: "Personalization depth",
-                    wins: 11,
-                    losses: 4,
-                    color: "#124af1",
-                  },
-                  {
-                    theme: "Integration complexity",
-                    wins: 3,
-                    losses: 9,
-                    color: "#ef4444",
-                  },
-                  {
-                    theme: "Time-to-value",
-                    wins: 8,
-                    losses: 5,
-                    color: "#f59e0b",
-                  },
-                  {
-                    theme: "Pricing / ROI clarity",
-                    wins: 10,
-                    losses: 3,
-                    color: "#8720de",
-                  },
-                ].map((t) => (
-                  <div key={t.theme}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "0.7rem",
-                        fontFamily: "var(--font-label)",
-                        fontWeight: 600,
-                        color: "#374151",
-                        marginBottom: 2,
-                      }}
-                    >
-                      <span>{t.theme}</span>
-                      <span style={{ color: "#6b7194" }}>
-                        {t.wins}W / {t.losses}L
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 6,
-                        borderRadius: 3,
-                        background: "#f3f4f6",
-                        overflow: "hidden",
-                      }}
-                    >
+                {(() => {
+                  const total = accounts.length || 1;
+                  const noChampions = accounts.filter(
+                    (a) =>
+                      (a.champion_cxo_candidates?.length || 0) +
+                        (a.champion_vp_director_candidates?.length || 0) +
+                        (a.champion_enduser_candidates?.length || 0) ===
+                      0,
+                  ).length;
+                  const lowSignal = accounts.filter(
+                    (a) => (a.buyingSignalScore || 0) < 30,
+                  ).length;
+                  const noSwarm = accounts.filter(
+                    (a) => !a.metadata?.lastSwarmRun,
+                  ).length;
+                  const hasDetractors = accounts.filter(
+                    (a) => (a.detractors?.length || 0) > 0,
+                  ).length;
+                  const risks = [
+                    {
+                      label: "No Champion Identified",
+                      count: noChampions,
+                      color: "#ef4444",
+                    },
+                    {
+                      label: "Low Buying Signal (<30)",
+                      count: lowSignal,
+                      color: "#f59e0b",
+                    },
+                    {
+                      label: "No Agent Swarm Run",
+                      count: noSwarm,
+                      color: "#6b7194",
+                    },
+                    {
+                      label: "Active Detractors",
+                      count: hasDetractors,
+                      color: "#8720de",
+                    },
+                  ];
+                  return risks.map((r) => (
+                    <div key={r.label}>
                       <div
                         style={{
-                          height: "100%",
-                          borderRadius: 3,
-                          background: t.color,
-                          width: `${(t.wins / (t.wins + t.losses)) * 100}%`,
-                          transition: "width 0.4s",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "0.7rem",
+                          fontFamily: "var(--font-label)",
+                          fontWeight: 600,
+                          color: "#374151",
+                          marginBottom: 2,
                         }}
-                      />
+                      >
+                        <span>{r.label}</span>
+                        <span style={{ color: "#6b7194" }}>
+                          {r.count} / {accounts.length}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          height: 6,
+                          borderRadius: 3,
+                          background: "#f3f4f6",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            borderRadius: 3,
+                            background: r.color,
+                            width: `${(r.count / total) * 100}%`,
+                            transition: "width 0.4s",
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </div>
           </div>
-          {/* Buyer Journey Insights */}
+          {/* Buying Signal by Account — top movers & stalled */}
           <div
             style={{
               fontSize: "0.72rem",
@@ -742,17 +734,24 @@ export function ResearchHub() {
               marginBottom: 6,
             }}
           >
-            Buyer Journey Stage Distribution
+            Account Buying Signals (top 10)
           </div>
-          <ResponsiveContainer width="100%" height={110}>
+          <ResponsiveContainer width="100%" height={140}>
             <BarChart
-              data={[
-                { stage: "Awareness", count: 18 },
-                { stage: "Interest", count: 14 },
-                { stage: "Evaluate", count: 9 },
-                { stage: "Commit", count: 6 },
-                { stage: "Closed", count: 4 },
-              ]}
+              data={[...accounts]
+                .filter((a) => a.buyingSignalScore != null)
+                .sort(
+                  (a, b) =>
+                    (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+                )
+                .slice(0, 10)
+                .map((a) => ({
+                  name:
+                    a.companyName?.length > 12
+                      ? a.companyName.slice(0, 12) + "…"
+                      : a.companyName,
+                  score: a.buyingSignalScore || 0,
+                }))}
               layout="vertical"
               barCategoryGap="18%"
             >
@@ -762,17 +761,18 @@ export function ResearchHub() {
               />
               <XAxis
                 type="number"
+                domain={[0, 100]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: "#6b7194" }}
               />
               <YAxis
                 type="category"
-                dataKey="stage"
+                dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 11, fill: "#374151", fontWeight: 600 }}
-                width={70}
+                tick={{ fontSize: 10, fill: "#374151", fontWeight: 600 }}
+                width={90}
               />
               <Tooltip
                 contentStyle={{
@@ -783,21 +783,26 @@ export function ResearchHub() {
                   fontSize: "0.8rem",
                 }}
               />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]} name="Accounts">
-                {[
-                  { stage: "Awareness", count: 18 },
-                  { stage: "Interest", count: 14 },
-                  { stage: "Evaluate", count: 9 },
-                  { stage: "Commit", count: 6 },
-                  { stage: "Closed", count: 4 },
-                ].map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={
-                      ["#124af1", "#4e45e4", "#8720de", "#06b6d4", "#22c55e"][i]
-                    }
-                  />
-                ))}
+              <Bar dataKey="score" radius={[0, 4, 4, 0]} name="Signal Score">
+                {[...accounts]
+                  .filter((a) => a.buyingSignalScore != null)
+                  .sort(
+                    (a, b) =>
+                      (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+                  )
+                  .slice(0, 10)
+                  .map((a, i) => (
+                    <Cell
+                      key={i}
+                      fill={
+                        (a.buyingSignalScore || 0) >= 70
+                          ? "#22c55e"
+                          : (a.buyingSignalScore || 0) >= 40
+                            ? "#f59e0b"
+                            : "#ef4444"
+                      }
+                    />
+                  ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>

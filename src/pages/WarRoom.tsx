@@ -36,6 +36,8 @@ import {
   ShieldCheck,
   UserPlus,
   Plus,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ interface Account {
   metadata: {
     citations: unknown[];
     searchResults: unknown[];
+    lastSwarmRun?: string;
   };
   timestamp: string;
   champion_cxo_candidates?: ChampionCandidate[];
@@ -804,8 +807,9 @@ export function WarRoom() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"pyramid" | "orgchart" | "ai">(
-    "pyramid",
+    "orgchart",
   );
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -1390,25 +1394,97 @@ export function WarRoom() {
                   <FileText size={14} /> Export Blueprint
                 </button>
                 <button
+                  disabled={refreshing || !selectedAccount}
+                  onClick={async () => {
+                    if (!selectedAccount) return;
+                    setRefreshing(true);
+                    try {
+                      // 1. Fire n8n monolith research
+                      await fetch(`${API_URL}/api/research`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          account_name: selectedAccount.companyName,
+                          website_url: selectedAccount.website,
+                        }),
+                      });
+                      // 2. Run all agents via swarm
+                      const allAgents = [
+                        "financial-agent",
+                        "tech-stack-agent",
+                        "hiring-agent",
+                        "initiative-agent",
+                        "category-complexity-agent",
+                        "competitor-agent",
+                        "sentiment-agent",
+                        "leadership-agent",
+                        "earnings-call-agent",
+                        "vendor-tenure-agent",
+                        "champion-building-agent",
+                        "risk-flagger-agent",
+                        "market-research-agent",
+                      ];
+                      await fetch(`${API_URL}/api/swarm/run`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          account_name: selectedAccount.companyName,
+                          agents: allAgents,
+                          template: "full-refresh",
+                        }),
+                      });
+                    } catch (err) {
+                      console.error("Refresh failed:", err);
+                    } finally {
+                      setRefreshing(false);
+                    }
+                  }}
                   style={{
                     padding: "0.5rem 1.2rem",
                     borderRadius: 8,
                     border: "none",
-                    background:
-                      "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                    background: refreshing
+                      ? "var(--on-surface-variant)"
+                      : "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
                     color: "#fff",
                     fontFamily: "var(--font-label)",
                     fontWeight: 700,
                     fontSize: "0.82rem",
-                    cursor: "pointer",
+                    cursor: refreshing ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
+                    opacity: refreshing ? 0.7 : 1,
                   }}
                 >
-                  <Sparkles size={14} /> Update AI Strategy
+                  {refreshing ? (
+                    <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                  ) : (
+                    <RefreshCw size={14} />
+                  )}
+                  {refreshing ? "Refreshing..." : "Refresh the data"}
                 </button>
               </div>
+
+              {/* ── Previous research timestamp ── */}
+              {selectedAccount && (
+                <p
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "var(--on-surface-variant)",
+                    fontFamily: "var(--font-body)",
+                    marginTop: -4,
+                    marginBottom: 16,
+                  }}
+                >
+                  Previous research completed:{" "}
+                  {selectedAccount.metadata?.lastSwarmRun
+                    ? new Date(selectedAccount.metadata.lastSwarmRun).toLocaleString()
+                    : selectedAccount.timestamp
+                      ? new Date(selectedAccount.timestamp).toLocaleString()
+                      : "No research run yet"}
+                </p>
+              )}
 
               {/* ── Metric Cards Row ── */}
               <div

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -45,8 +45,35 @@ export function AppLayout() {
     }[]
   >([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [top5Accounts, setTop5Accounts] = useState<
+    { companyName: string; buyingSignalScore: number; priority: string }[]
+  >([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
+
+  // Fetch top 5 accounts by signal score for sidebar
+  useEffect(() => {
+    fetch(`${API_URL}/api/accounts`)
+      .then((res) => res.json())
+      .then(
+        (
+          data: {
+            companyName: string;
+            buyingSignalScore: number;
+            priority: string;
+          }[],
+        ) => {
+          const sorted = [...data]
+            .filter((a) => a.companyName && a.buyingSignalScore != null)
+            .sort(
+              (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
+            )
+            .slice(0, 5);
+          setTop5Accounts(sorted);
+        },
+      )
+      .catch(() => {});
+  }, []);
 
   const handleAiSubmit = async () => {
     if (!aiQuery.trim() || aiLoading) return;
@@ -152,14 +179,72 @@ export function AppLayout() {
               (item.path !== "/dashboard" &&
                 location.pathname.startsWith(item.path));
             return (
-              <button
-                key={item.path}
-                className={`nav-item ${isActive ? "active" : ""}`}
-                onClick={() => navigate(item.path)}
-              >
-                <item.icon size={15} />
-                {item.label}
-              </button>
+              <div key={item.path}>
+                <button
+                  className={`nav-item ${isActive ? "active" : ""}`}
+                  onClick={() => navigate(item.path)}
+                >
+                  <item.icon size={15} />
+                  {item.label}
+                </button>
+
+                {/* Top 5 accounts under War Room */}
+                {item.path === "/dashboard/war-room" &&
+                  top5Accounts.length > 0 && (
+                    <div style={{ padding: "2px 0 6px 0" }}>
+                      {top5Accounts.map((acc, i) => (
+                        <button
+                          key={acc.companyName}
+                          onClick={() => navigate("/dashboard/war-room")}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            padding: "4px 24px 4px 44px",
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            transition: "background 100ms",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              "rgba(18,74,241,0.05)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "transparent")
+                          }
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.68rem",
+                              color: "var(--on-surface-variant)",
+                              fontFamily: "var(--font-body)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: 110,
+                            }}
+                          >
+                            {acc.companyName}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.68rem",
+                              fontWeight: 800,
+                              fontFamily: "var(--font-label)",
+                              color: "var(--primary)",
+                              flexShrink: 0,
+                              marginLeft: 6,
+                            }}
+                          >
+                            {acc.buyingSignalScore}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+              </div>
             );
           })}
         </nav>
