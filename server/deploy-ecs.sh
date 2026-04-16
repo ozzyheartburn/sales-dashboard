@@ -49,7 +49,7 @@ echo ""
 echo "→ Step 2: Build & push Docker image"
 cd "$(dirname "$0")"
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
-docker build --platform linux/amd64 -t "$REPO_NAME" .
+docker build --no-cache --platform linux/amd64 -t "$REPO_NAME" .
 docker tag "$REPO_NAME:latest" "$ECR_URI:latest"
 docker push "$ECR_URI:latest"
 echo "  ✓ Image pushed to ECR"

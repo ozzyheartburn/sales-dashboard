@@ -2176,11 +2176,16 @@ async function seedUsersAndRoles(database, tenantSlug) {
   // Ensure users collection exists with indexes
   const usersCol = database.collection("users");
   try {
+    // Drop legacy googleId unique index if it exists (causes duplicate key errors)
+    try {
+      await usersCol.dropIndex("googleId_1");
+    } catch (_) {
+      // Index may not exist — that's fine
+    }
     await usersCol.createIndex(
       { email: 1 },
       { unique: true, collation: { locale: "en", strength: 2 } },
     );
-    await usersCol.createIndex({ googleId: 1 }, { unique: true, sparse: true });
   } catch (_) {
     // Indexes may already exist
   }
@@ -2299,7 +2304,6 @@ async function seedUsersAndRoles(database, tenantSlug) {
           updatedAt: new Date().toISOString(),
         },
         $setOnInsert: {
-          googleId: null,
           createdAt: new Date().toISOString(),
         },
       },

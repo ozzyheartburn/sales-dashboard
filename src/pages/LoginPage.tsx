@@ -12,8 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { useState } from "react";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE || "https://sales-dashboard-liard.vercel.app";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export function LoginPage() {
   const navigate = useNavigate();
