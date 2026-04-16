@@ -5,6 +5,16 @@ const { MongoClient, ServerApiVersion } = require("mongodb");
 const path = require("path");
 const OpenAI = require("openai");
 const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
+const {
+  checkJwt,
+  resolveTenant,
+  requireRole,
+  extractUser,
+} = require("./auth-middleware");
+const {
+  provisionTenant,
+  registerExistingTenant,
+} = require("./provision-tenant");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -22,14 +32,76 @@ const client = new MongoClient(process.env.MONGODB_URI, {
   },
 });
 
+// Database connection cache (per-tenant)
+const dbCache = new Map();
+let connected = false;
+
+async function ensureConnected() {
+  if (!connected) {
+    await client.connect();
+    connected = true;
+  }
+}
+
+// Legacy: connect to PG_Machine (backward compat for existing routes)
 let db;
 async function connectDB() {
+  await ensureConnected();
   if (!db) {
-    await client.connect();
     db = client.db("PG_Machine");
   }
   return db;
 }
+
+// Multi-tenant: connect to a specific tenant database
+async function connectTenantDB(tenantSlug) {
+  await ensureConnected();
+  if (!dbCache.has(tenantSlug)) {
+    dbCache.set(tenantSlug, client.db(tenantSlug));
+  }
+  return dbCache.get(tenantSlug);
+}
+
+// Connect to platform database
+async function connectPlatformDB() {
+  await ensureConnected();
+  return client.db("platform");
+}
+
+// Middleware: resolve tenant DB and attach to request
+async function attachTenantDB(req, res, next) {
+  try {
+    const tenantSlug =
+      req.tenantSlug || req.headers["x-tenant"] || "PG_Machine";
+    req.tenantSlug = tenantSlug;
+
+    // Verify tenant exists in platform registry
+    const platformDb = await connectPlatformDB();
+    const tenant = await platformDb
+      .collection("tenants")
+      .findOne({ slug: tenantSlug, status: "active" });
+    if (!tenant) {
+      return res
+        .status(404)
+        .json({ error: `Tenant "${tenantSlug}" not found or inactive` });
+    }
+
+    req.tenantDb = await connectTenantDB(tenant.databaseName);
+    req.tenantInfo = tenant;
+    next();
+  } catch (err) {
+    console.error("Tenant resolution error:", err);
+    res.status(500).json({ error: "Failed to resolve tenant" });
+  }
+}
+
+// Auth middleware stack: JWT → extract user → resolve tenant → attach DB
+// Use this for protected routes
+const authStack = [checkJwt, extractUser, resolveTenant, attachTenantDB];
+
+// Light auth: just tenant header (for backward compat during migration)
+// TODO: Remove once all clients send Auth0 tokens
+const tenantOnly = [attachTenantDB];
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -1581,11 +1653,9 @@ app.post("/api/sales-activities/:companyName/activity", async (req, res) => {
       "other",
     ];
     if (!allowedTypes.includes(activityType)) {
-      return res
-        .status(400)
-        .json({
-          error: `activityType must be one of: ${allowedTypes.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `activityType must be one of: ${allowedTypes.join(", ")}`,
+      });
     }
 
     const allowedOutcomes = [
@@ -1600,11 +1670,9 @@ app.post("/api/sales-activities/:companyName/activity", async (req, res) => {
       "pending",
     ];
     if (outcomeType && !allowedOutcomes.includes(outcomeType)) {
-      return res
-        .status(400)
-        .json({
-          error: `outcomeType must be one of: ${allowedOutcomes.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `outcomeType must be one of: ${allowedOutcomes.join(", ")}`,
+      });
     }
 
     const database = await connectDB();
@@ -1790,6 +1858,199 @@ app.get("/api/sales-activities/:companyName/summary", async (req, res) => {
     res.status(500).json({ error: "Failed to compute summary" });
   }
 });
+
+// =========================================================================
+// Tenant Management — provisioning, listing, user management
+// =========================================================================
+
+// List all tenants (platform admin only)
+app.get("/api/tenants", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const tenants = await platformDb
+      .collection("tenants")
+      .find({})
+      .project({ slug: 1, displayName: 1, status: 1, createdAt: 1 })
+      .toArray();
+    res.json(tenants);
+  } catch (err) {
+    console.error("Error listing tenants:", err);
+    res.status(500).json({ error: "Failed to list tenants" });
+  }
+});
+
+// Provision a new tenant
+app.post("/api/tenants/provision", async (req, res) => {
+  try {
+    const { slug, displayName, adminEmail } = req.body;
+    if (!slug || !displayName) {
+      return res
+        .status(400)
+        .json({ error: "Missing slug or displayName in payload" });
+    }
+
+    // Validate slug format (alphanumeric + underscores only)
+    if (!/^[a-zA-Z0-9_]+$/.test(slug)) {
+      return res.status(400).json({
+        error: "Slug must contain only letters, numbers, and underscores",
+      });
+    }
+
+    await provisionTenant(slug, displayName, adminEmail || null);
+    res.json({ success: true, slug, displayName });
+  } catch (err) {
+    console.error("Error provisioning tenant:", err);
+    res.status(500).json({ error: "Failed to provision tenant" });
+  }
+});
+
+// Get tenant info
+app.get("/api/tenants/:slug", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const tenant = await platformDb
+      .collection("tenants")
+      .findOne({ slug: req.params.slug });
+    if (!tenant) {
+      return res.status(404).json({ error: "Tenant not found" });
+    }
+    res.json(tenant);
+  } catch (err) {
+    console.error("Error fetching tenant:", err);
+    res.status(500).json({ error: "Failed to fetch tenant" });
+  }
+});
+
+// Get users for a tenant
+app.get("/api/tenants/:slug/users", async (req, res) => {
+  try {
+    const tenantDb = await connectTenantDB(req.params.slug);
+    const users = await tenantDb
+      .collection("users")
+      .find({})
+      .project({ auth0Id: 0 })
+      .toArray();
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching tenant users:", err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+// Add/invite a user to a tenant
+app.post("/api/tenants/:slug/users", async (req, res) => {
+  try {
+    const { email, name, role } = req.body;
+    if (!email || !role) {
+      return res.status(400).json({ error: "Missing email or role" });
+    }
+
+    const allowedRoles = ["admin", "analyst", "viewer"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        error: `Role must be one of: ${allowedRoles.join(", ")}`,
+      });
+    }
+
+    const tenantDb = await connectTenantDB(req.params.slug);
+    const usersCol = tenantDb.collection("users");
+
+    await usersCol.updateOne(
+      { email: email.toLowerCase() },
+      {
+        $set: {
+          email: email.toLowerCase(),
+          name: name || null,
+          role,
+          tenantSlug: req.params.slug,
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: {
+          auth0Id: null,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+
+    console.log(
+      `User ${email} added to tenant ${req.params.slug} with role: ${role}`,
+    );
+    res.json({ success: true, email, role, tenantSlug: req.params.slug });
+  } catch (err) {
+    console.error("Error adding user:", err);
+    res.status(500).json({ error: "Failed to add user" });
+  }
+});
+
+// Get roles for a tenant
+app.get("/api/tenants/:slug/roles", async (req, res) => {
+  try {
+    const tenantDb = await connectTenantDB(req.params.slug);
+    const roles = await tenantDb.collection("roles").find({}).toArray();
+    res.json(roles);
+  } catch (err) {
+    console.error("Error fetching roles:", err);
+    res.status(500).json({ error: "Failed to fetch roles" });
+  }
+});
+
+// Auth0 post-login callback: link Auth0 user to tenant user record
+app.post("/api/auth/link", async (req, res) => {
+  try {
+    const { auth0Id, email, name } = req.body;
+    if (!auth0Id || !email) {
+      return res.status(400).json({ error: "Missing auth0Id or email" });
+    }
+
+    // Look up which tenant(s) this email belongs to
+    const platformDb = await connectPlatformDB();
+    const tenants = await platformDb
+      .collection("tenants")
+      .find({ status: "active" })
+      .toArray();
+
+    const linked = [];
+    for (const tenant of tenants) {
+      const tenantDb = await connectTenantDB(tenant.databaseName);
+      const result = await tenantDb.collection("users").updateOne(
+        { email: email.toLowerCase() },
+        {
+          $set: {
+            auth0Id,
+            name: name || undefined,
+            lastLoginAt: new Date().toISOString(),
+          },
+        },
+      );
+      if (result.matchedCount > 0) {
+        linked.push(tenant.slug);
+      }
+    }
+
+    if (linked.length === 0) {
+      return res.status(404).json({
+        error: "No tenant found for this email. Ask an admin to invite you.",
+      });
+    }
+
+    res.json({ success: true, linkedTenants: linked });
+  } catch (err) {
+    console.error("Error linking auth:", err);
+    res.status(500).json({ error: "Failed to link auth" });
+  }
+});
+
+// Register PG_Machine as legacy tenant on startup
+(async () => {
+  try {
+    await ensureConnected();
+    await registerExistingTenant();
+    console.log("Platform tenant registry initialized");
+  } catch (err) {
+    console.error("Failed to initialize platform registry:", err.message);
+  }
+})();
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
