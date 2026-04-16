@@ -1,11 +1,43 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { AppLayout } from "./components/AppLayout";
 import { DashboardHome } from "./pages/DashboardHome";
 import { ResearchHub } from "./pages/ResearchHub";
 import { WarRoom } from "./pages/WarRoom";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
+
+export interface AuthUser {
+  email: string;
+  name: string | null;
+  picture: string | null;
+  googleId: string;
+  role: string;
+  isPlatformAdmin: boolean;
+  tenant: string;
+  linkedTenants: string[];
+  teamName: string | null;
+}
+
+interface AuthContextType {
+  user: AuthUser | null;
+  credential: string | null;
+  login: (user: AuthUser, credential: string) => void;
+  logout: () => void;
+  isLoading: boolean;
+}
+
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  credential: null,
+  login: () => {},
+  logout: () => {},
+  isLoading: true,
+});
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 function LoadingScreen() {
   return (
@@ -53,35 +85,70 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const { isAuthenticated, isLoading } = useAuth0();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [credential, setCredential] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("auth_user");
+    const storedCred = localStorage.getItem("auth_credential");
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+        setCredential(storedCred);
+      } catch {
+        localStorage.removeItem("auth_user");
+        localStorage.removeItem("auth_credential");
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = (u: AuthUser, cred: string) => {
+    setUser(u);
+    setCredential(cred);
+    localStorage.setItem("auth_user", JSON.stringify(u));
+    localStorage.setItem("auth_credential", cred);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setCredential(null);
+    localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_credential");
+  };
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Admin panel — standalone, always accessible */}
-        <Route path="/admin" element={<AdminPanel />} />
+    <AuthContext.Provider
+      value={{ user, credential, login, logout, isLoading }}
+    >
+      <BrowserRouter>
+        <Routes>
+          {/* Admin panel — standalone, always accessible */}
+          <Route path="/admin" element={<AdminPanel />} />
 
-        {isAuthenticated ? (
-          <>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<AppLayout />}>
-              <Route index element={<DashboardHome />} />
-              <Route path="research-hub" element={<ResearchHub />} />
-              <Route path="war-room" element={<WarRoom />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </>
-        ) : (
-          <>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </>
-        )}
-      </Routes>
-    </BrowserRouter>
+          {user ? (
+            <>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<AppLayout />}>
+                <Route index element={<DashboardHome />} />
+                <Route path="research-hub" element={<ResearchHub />} />
+                <Route path="war-room" element={<WarRoom />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </>
+          ) : (
+            <>
+              <Route path="/" element={<LoginPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
+        </Routes>
+      </BrowserRouter>
+    </AuthContext.Provider>
   );
 }

@@ -38,16 +38,28 @@ type ToastType = "success" | "error";
 
 const ROLES = [
   {
-    value: "end-user",
-    label: "End-user",
-    description: "Sales rep — run research, view data",
-    dbRole: "analyst",
+    value: "end_user",
+    label: "End User",
+    description: "Sales rep — sees only their own accounts",
+    dbRole: "end_user",
   },
   {
-    value: "manager",
-    label: "Manager / Director",
-    description: "Full access — manage users, run research",
-    dbRole: "admin",
+    value: "team_leader",
+    label: "Team Leader",
+    description: "Sees team data, runs research",
+    dbRole: "team_leader",
+  },
+  {
+    value: "company_admin",
+    label: "Company Admin",
+    description: "Full access — manage users & data",
+    dbRole: "company_admin",
+  },
+  {
+    value: "platform_admin",
+    label: "Platform Admin",
+    description: "Super admin — all tenants (founders only)",
+    dbRole: "platform_admin",
   },
 ];
 
@@ -71,7 +83,7 @@ export function AdminPanel() {
   // Invite form
   const [inviteTenant, setInviteTenant] = useState("");
   const [inviteRows, setInviteRows] = useState([
-    { email: "", name: "", role: "end-user" },
+    { email: "", name: "", role: "end_user", teamName: "" },
   ]);
   const [inviting, setInviting] = useState(false);
 
@@ -164,7 +176,7 @@ export function AdminPanel() {
             body: JSON.stringify({
               email: adminEmail.trim(),
               name: adminName.trim() || null,
-              role: "admin",
+              role: "company_admin",
             }),
           });
         }
@@ -208,18 +220,17 @@ export function AdminPanel() {
     for (const row of validRows) {
       const roleMapping = ROLES.find((r) => r.value === row.role);
       try {
-        const res = await fetch(
-          `${API_BASE}/tenants/${inviteTenant}/users`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: row.email.trim(),
-              name: row.name.trim() || null,
-              role: roleMapping?.dbRole || "analyst",
-            }),
-          },
-        );
+        const res = await fetch(`${API_BASE}/tenants/${inviteTenant}/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: row.email.trim(),
+            name: row.name.trim() || null,
+            role: roleMapping?.dbRole || "end_user",
+            teamName:
+              row.role === "team_leader" ? row.teamName?.trim() || null : null,
+          }),
+        });
         if (res.ok) success++;
         else failed++;
       } catch {
@@ -232,7 +243,7 @@ export function AdminPanel() {
         `${success} user${success > 1 ? "s" : ""} added${failed > 0 ? `, ${failed} failed` : ""}`,
         failed > 0 ? "error" : "success",
       );
-      setInviteRows([{ email: "", name: "", role: "end-user" }]);
+      setInviteRows([{ email: "", name: "", role: "end_user", teamName: "" }]);
       fetchUsers(inviteTenant);
     } else {
       showToast("Failed to add users", "error");
@@ -242,7 +253,10 @@ export function AdminPanel() {
   };
 
   const addInviteRow = () => {
-    setInviteRows((prev) => [...prev, { email: "", name: "", role: "end-user" }]);
+    setInviteRows((prev) => [
+      ...prev,
+      { email: "", name: "", role: "end_user", teamName: "" },
+    ]);
   };
 
   const removeInviteRow = (idx: number) => {
@@ -251,7 +265,7 @@ export function AdminPanel() {
 
   const updateInviteRow = (
     idx: number,
-    field: "email" | "name" | "role",
+    field: "email" | "name" | "role" | "teamName",
     value: string,
   ) => {
     setInviteRows((prev) =>
@@ -442,8 +456,7 @@ export function AdminPanel() {
                   (e.currentTarget.style.borderColor = "var(--primary)")
                 }
                 onBlur={(e) =>
-                  (e.currentTarget.style.borderColor =
-                    "rgba(107,113,148,0.2)")
+                  (e.currentTarget.style.borderColor = "rgba(107,113,148,0.2)")
                 }
               />
               {companyName.trim() && (
@@ -517,11 +530,16 @@ export function AdminPanel() {
                 ...btnPrimary,
                 opacity: provisioning || !companyName.trim() ? 0.5 : 1,
                 cursor:
-                  provisioning || !companyName.trim() ? "not-allowed" : "pointer",
+                  provisioning || !companyName.trim()
+                    ? "not-allowed"
+                    : "pointer",
               }}
             >
               {provisioning ? (
-                <Loader2 size={14} style={{ animation: "spin 0.8s linear infinite" }} />
+                <Loader2
+                  size={14}
+                  style={{ animation: "spin 0.8s linear infinite" }}
+                />
               ) : (
                 <Building2 size={14} />
               )}
@@ -588,7 +606,14 @@ export function AdminPanel() {
             </div>
 
             {/* User rows */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1rem" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+                marginBottom: "1rem",
+              }}
+            >
               {inviteRows.map((row, idx) => (
                 <div
                   key={idx}
@@ -662,6 +687,28 @@ export function AdminPanel() {
                       ))}
                     </select>
                   </div>
+                  {/* Team name field — only visible for team_leader */}
+                  {row.role === "team_leader" && (
+                    <div>
+                      {idx === 0 && <label style={labelStyle}>Team Name</label>}
+                      <input
+                        type="text"
+                        value={row.teamName || ""}
+                        onChange={(e) =>
+                          updateInviteRow(idx, "teamName", e.target.value)
+                        }
+                        placeholder="e.g. Nordic Enterprise"
+                        style={inputStyle}
+                        onFocus={(e) =>
+                          (e.currentTarget.style.borderColor = "var(--primary)")
+                        }
+                        onBlur={(e) =>
+                          (e.currentTarget.style.borderColor =
+                            "rgba(107,113,148,0.2)")
+                        }
+                      />
+                    </div>
+                  )}
                   <div>
                     {inviteRows.length > 1 && (
                       <button
@@ -724,8 +771,7 @@ export function AdminPanel() {
                   ...btnPrimary,
                   background: "var(--primary)",
                   opacity: inviting || !inviteTenant ? 0.5 : 1,
-                  cursor:
-                    inviting || !inviteTenant ? "not-allowed" : "pointer",
+                  cursor: inviting || !inviteTenant ? "not-allowed" : "pointer",
                 }}
               >
                 {inviting ? (

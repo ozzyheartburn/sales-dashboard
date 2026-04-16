@@ -17,8 +17,33 @@ const COLLECTIONS = [
 
 const DEFAULT_ROLES = [
   {
-    name: "admin",
-    description: "Full access — manage users, run research, edit everything",
+    name: "platform_admin",
+    description:
+      "Super Admin / Platform Owner — full platform access across all tenants",
+    permissions: [
+      "accounts:read",
+      "accounts:write",
+      "accounts:delete",
+      "research:run",
+      "swarm:run",
+      "org_chart:read",
+      "org_chart:write",
+      "intelligence:read",
+      "intelligence:write",
+      "sales_activities:read",
+      "sales_activities:write",
+      "users:read",
+      "users:write",
+      "users:invite",
+      "tenant:manage",
+      "tenant:provision",
+      "platform:manage",
+    ],
+  },
+  {
+    name: "company_admin",
+    description:
+      "Company Admin — manage users and data within their own tenant",
     permissions: [
       "accounts:read",
       "accounts:write",
@@ -38,8 +63,8 @@ const DEFAULT_ROLES = [
     ],
   },
   {
-    name: "analyst",
-    description: "Run research, edit accounts, view everything",
+    name: "team_leader",
+    description: "Team Leader — sees their team's data, run research",
     permissions: [
       "accounts:read",
       "accounts:write",
@@ -55,14 +80,14 @@ const DEFAULT_ROLES = [
     ],
   },
   {
-    name: "viewer",
-    description: "Read-only access to all data",
+    name: "end_user",
+    description: "End User — sees only their own accounts",
     permissions: [
       "accounts:read",
       "org_chart:read",
       "intelligence:read",
       "sales_activities:read",
-      "users:read",
+      "sales_activities:write",
     ],
   },
 ];
@@ -134,12 +159,12 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
     console.log(`  ✅ Index: accounts.companyName (unique, case-insensitive)`);
 
     const usersCol = tenantDb.collection("users");
-    await usersCol.createIndex({ auth0Id: 1 }, { unique: true, sparse: true });
+    await usersCol.createIndex({ googleId: 1 }, { unique: true, sparse: true });
     await usersCol.createIndex(
       { email: 1 },
       { unique: true, collation: { locale: "en", strength: 2 } },
     );
-    console.log(`  ✅ Index: users.auth0Id (unique)`);
+    console.log(`  ✅ Index: users.googleId (unique)`);
     console.log(`  ✅ Index: users.email (unique, case-insensitive)`);
 
     const rolesCol = tenantDb.collection("roles");
@@ -186,12 +211,12 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
         {
           $set: {
             email: adminEmail.toLowerCase(),
-            role: "admin",
+            role: "company_admin",
             tenantSlug,
             updatedAt: new Date().toISOString(),
           },
           $setOnInsert: {
-            auth0Id: null, // Will be linked on first login
+            googleId: null, // Will be linked on first login
             name: null,
             createdAt: new Date().toISOString(),
           },
@@ -204,7 +229,7 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
     console.log(`\n🎉 Tenant "${displayName}" (${tenantSlug}) provisioned!\n`);
     console.log(`Database: ${tenantSlug}`);
     console.log(`Collections: ${COLLECTIONS.join(", ")}`);
-    console.log(`Roles: admin, analyst, viewer`);
+    console.log(`Roles: platform_admin, company_admin, team_leader, end_user`);
     if (adminEmail) console.log(`Admin: ${adminEmail}\n`);
   } catch (err) {
     console.error("Provisioning failed:", err);

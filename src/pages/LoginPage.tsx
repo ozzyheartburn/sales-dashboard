@@ -1,11 +1,102 @@
-import { useAuth0 } from "@auth0/auth0-react";
+import { useGoogleLogin } from "@react-oauth/google";
 import { motion } from "motion/react";
-import { LogIn, Shield, Sparkles, BarChart3, Brain, Settings } from "lucide-react";
+import {
+  Shield,
+  Sparkles,
+  BarChart3,
+  Brain,
+  Settings,
+  KeyRound,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../App";
+import { useState } from "react";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "https://sales-dashboard-liard.vercel.app";
 
 export function LoginPage() {
-  const { loginWithRedirect, isLoading } = useAuth0();
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showDevLogin, setShowDevLogin] = useState(false);
+  const [devEmail, setDevEmail] = useState("");
+
+  const handleDevLogin = async () => {
+    if (!devEmail.trim()) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/dev-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: devEmail.trim() }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setError(err.error || "Login failed");
+        setIsLoading(false);
+        return;
+      }
+      const data = await res.json();
+      login(data.user, data.credential);
+      navigate("/dashboard");
+    } catch {
+      setError("Login failed. Please try again.");
+    }
+    setIsLoading(false);
+  };
+
+  const googleLogin = useGoogleLogin({
+    flow: "implicit",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: async (tokenResponse: any) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Exchange the access token for user info from Google
+        const userInfoRes = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          },
+        );
+        const userInfo = await userInfoRes.json();
+
+        // Call our backend to link/verify the user
+        const res = await fetch(`${API_BASE}/api/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            credential: tokenResponse.access_token,
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+            googleId: userInfo.sub,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          setError(err.error || "Login failed");
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        login(data.user, tokenResponse.access_token);
+        navigate("/dashboard");
+      } catch {
+        setError("Login failed. Please try again.");
+      }
+      setIsLoading(false);
+    },
+    onError: () => {
+      setError("Google sign-in failed");
+      setIsLoading(false);
+    },
+  });
 
   return (
     <div
@@ -135,7 +226,7 @@ export function LoginPage() {
 
           {/* Sign in with Google button */}
           <button
-            onClick={() => loginWithRedirect()}
+            onClick={() => googleLogin()}
             disabled={isLoading}
             style={{
               width: "100%",
@@ -184,8 +275,22 @@ export function LoginPage() {
                 d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
               />
             </svg>
-            {isLoading ? "Loading…" : "Sign in with Google"}
+            {isLoading ? "Signing in…" : "Sign in with Google"}
           </button>
+
+          {/* Error message */}
+          {error && (
+            <p
+              style={{
+                color: "var(--error)",
+                fontSize: "0.8rem",
+                marginTop: "0.75rem",
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </p>
+          )}
 
           {/* Divider */}
           <div
@@ -200,13 +305,14 @@ export function LoginPage() {
               style={{
                 flex: 1,
                 height: 1,
-                backgroundColor: "rgba(107,113,148,0.15)",
+                background: "rgba(107,113,148,0.15)",
               }}
             />
             <span
               style={{
                 fontSize: "0.7rem",
                 color: "var(--on-surface-variant)",
+                fontFamily: "var(--font-label)",
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -218,40 +324,99 @@ export function LoginPage() {
               style={{
                 flex: 1,
                 height: 1,
-                backgroundColor: "rgba(107,113,148,0.15)",
+                background: "rgba(107,113,148,0.15)",
               }}
             />
           </div>
 
-          {/* Sign in with SSO / email */}
-          <button
-            onClick={() =>
-              loginWithRedirect({ authorizationParams: { prompt: "login" } })
-            }
-            disabled={isLoading}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              padding: "0.75rem 1.25rem",
-              borderRadius: 12,
-              border: "none",
-              background:
-                "linear-gradient(135deg, var(--primary), var(--secondary-brand))",
-              color: "var(--on-primary)",
-              fontFamily: "var(--font-label)",
-              fontWeight: 700,
-              fontSize: "0.88rem",
-              cursor: isLoading ? "wait" : "pointer",
-              opacity: isLoading ? 0.6 : 1,
-              transition: "all 140ms ease",
-            }}
-          >
-            <LogIn size={16} />
-            {isLoading ? "Loading…" : "Sign in with Email"}
-          </button>
+          {/* Platform Admin Login */}
+          {!showDevLogin ? (
+            <button
+              onClick={() => setShowDevLogin(true)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                padding: "0.65rem 1rem",
+                borderRadius: 12,
+                border: "1px solid rgba(107,113,148,0.15)",
+                backgroundColor: "transparent",
+                color: "var(--on-surface-variant)",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                transition: "all 140ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor =
+                  "var(--surface-container-low)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <KeyRound size={15} />
+              Platform Admin Login
+            </button>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
+            >
+              <input
+                type="email"
+                placeholder="Platform admin email"
+                value={devEmail}
+                onChange={(e) => setDevEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleDevLogin()}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "0.65rem 0.9rem",
+                  borderRadius: 10,
+                  border: "1px solid rgba(107,113,148,0.2)",
+                  backgroundColor: "var(--surface-container-low)",
+                  color: "var(--on-surface)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "0.85rem",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                onClick={handleDevLogin}
+                disabled={isLoading || !devEmail.trim()}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  padding: "0.65rem 1rem",
+                  borderRadius: 10,
+                  border: "none",
+                  background:
+                    "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                  color: "white",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 700,
+                  fontSize: "0.85rem",
+                  cursor: isLoading ? "wait" : "pointer",
+                  opacity: isLoading || !devEmail.trim() ? 0.6 : 1,
+                  transition: "opacity 140ms ease",
+                }}
+              >
+                <KeyRound size={15} />
+                {isLoading ? "Signing in…" : "Sign in as Admin"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Feature highlights */}

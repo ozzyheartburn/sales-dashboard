@@ -6,10 +6,10 @@ const path = require("path");
 const OpenAI = require("openai");
 const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
 const {
-  checkJwt,
-  resolveTenant,
+  verifyGoogleToken,
+  resolveUserTenant,
   requireRole,
-  extractUser,
+  PLATFORM_ADMIN_EMAILS,
 } = require("./auth-middleware");
 const {
   provisionTenant,
@@ -95,12 +95,15 @@ async function attachTenantDB(req, res, next) {
   }
 }
 
-// Auth middleware stack: JWT → extract user → resolve tenant → attach DB
+// Auth middleware stack: Google token → resolve user tenant → attach DB
 // Use this for protected routes
-const authStack = [checkJwt, extractUser, resolveTenant, attachTenantDB];
+const authStack = [
+  verifyGoogleToken,
+  resolveUserTenant(connectPlatformDB, connectTenantDB),
+  attachTenantDB,
+];
 
 // Light auth: just tenant header (for backward compat during migration)
-// TODO: Remove once all clients send Auth0 tokens
 const tenantOnly = [attachTenantDB];
 
 // Health check
@@ -1940,12 +1943,17 @@ app.get("/api/tenants/:slug/users", async (req, res) => {
 // Add/invite a user to a tenant
 app.post("/api/tenants/:slug/users", async (req, res) => {
   try {
-    const { email, name, role } = req.body;
+    const { email, name, role, teamName } = req.body;
     if (!email || !role) {
       return res.status(400).json({ error: "Missing email or role" });
     }
 
-    const allowedRoles = ["admin", "analyst", "viewer"];
+    const allowedRoles = [
+      "platform_admin",
+      "company_admin",
+      "team_leader",
+      "end_user",
+    ];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({
         error: `Role must be one of: ${allowedRoles.join(", ")}`,
@@ -1955,18 +1963,27 @@ app.post("/api/tenants/:slug/users", async (req, res) => {
     const tenantDb = await connectTenantDB(req.params.slug);
     const usersCol = tenantDb.collection("users");
 
+    const setFields = {
+      email: email.toLowerCase(),
+      name: name || null,
+      role,
+      tenantSlug: req.params.slug,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Only store teamName for team_leader role
+    if (role === "team_leader" && teamName) {
+      setFields.teamName = teamName.trim();
+    } else {
+      setFields.teamName = null;
+    }
+
     await usersCol.updateOne(
       { email: email.toLowerCase() },
       {
-        $set: {
-          email: email.toLowerCase(),
-          name: name || null,
-          role,
-          tenantSlug: req.params.slug,
-          updatedAt: new Date().toISOString(),
-        },
+        $set: setFields,
         $setOnInsert: {
-          auth0Id: null,
+          googleId: null,
           createdAt: new Date().toISOString(),
         },
       },
@@ -1974,9 +1991,15 @@ app.post("/api/tenants/:slug/users", async (req, res) => {
     );
 
     console.log(
-      `User ${email} added to tenant ${req.params.slug} with role: ${role}`,
+      `User ${email} added to tenant ${req.params.slug} with role: ${role}${role === "team_leader" && teamName ? " (team: " + teamName + ")" : ""}`,
     );
-    res.json({ success: true, email, role, tenantSlug: req.params.slug });
+    res.json({
+      success: true,
+      email,
+      role,
+      teamName: setFields.teamName,
+      tenantSlug: req.params.slug,
+    });
   } catch (err) {
     console.error("Error adding user:", err);
     res.status(500).json({ error: "Failed to add user" });
@@ -1995,13 +2018,16 @@ app.get("/api/tenants/:slug/roles", async (req, res) => {
   }
 });
 
-// Auth0 post-login callback: link Auth0 user to tenant user record
-app.post("/api/auth/link", async (req, res) => {
+// Google login callback: verify user and return user info + role
+app.post("/api/auth/google", async (req, res) => {
   try {
-    const { auth0Id, email, name } = req.body;
-    if (!auth0Id || !email) {
-      return res.status(400).json({ error: "Missing auth0Id or email" });
+    const { credential, email, name, picture, googleId } = req.body;
+    if (!credential || !email) {
+      return res.status(400).json({ error: "Missing credential or email" });
     }
+
+    const normalizedEmail = email.toLowerCase();
+    const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(normalizedEmail);
 
     // Look up which tenant(s) this email belongs to
     const platformDb = await connectPlatformDB();
@@ -2011,33 +2037,137 @@ app.post("/api/auth/link", async (req, res) => {
       .toArray();
 
     const linked = [];
+    let userRole = null;
+    let userTenant = null;
+    let teamName = null;
+
     for (const tenant of tenants) {
       const tenantDb = await connectTenantDB(tenant.databaseName);
-      const result = await tenantDb.collection("users").updateOne(
-        { email: email.toLowerCase() },
+      const result = await tenantDb.collection("users").findOneAndUpdate(
+        { email: normalizedEmail },
         {
           $set: {
-            auth0Id,
+            googleId: googleId || null,
             name: name || undefined,
+            picture: picture || null,
             lastLoginAt: new Date().toISOString(),
           },
         },
+        { returnDocument: "after" },
       );
-      if (result.matchedCount > 0) {
+      if (result) {
         linked.push(tenant.slug);
+        if (!userRole) {
+          userRole = result.role;
+          userTenant = tenant.slug;
+          teamName = result.teamName || null;
+        }
       }
     }
 
+    // Platform admins always get access even if not in any tenant user list
+    if (isPlatformAdmin && linked.length === 0) {
+      linked.push("PG_Machine");
+      userRole = "platform_admin";
+      userTenant = "PG_Machine";
+    }
+
     if (linked.length === 0) {
-      return res.status(404).json({
+      return res.status(403).json({
         error: "No tenant found for this email. Ask an admin to invite you.",
       });
     }
 
-    res.json({ success: true, linkedTenants: linked });
+    res.json({
+      success: true,
+      user: {
+        email: normalizedEmail,
+        name: name || null,
+        picture: picture || null,
+        googleId: googleId || null,
+        role: isPlatformAdmin ? "platform_admin" : userRole,
+        isPlatformAdmin,
+        tenant: userTenant,
+        linkedTenants: linked,
+        teamName,
+      },
+      credential,
+    });
   } catch (err) {
-    console.error("Error linking auth:", err);
-    res.status(500).json({ error: "Failed to link auth" });
+    console.error("Error with Google auth:", err);
+    res.status(500).json({ error: "Authentication failed" });
+  }
+});
+
+// Dev login for platform admins — email-only, no Google OAuth required
+app.post("/api/auth/dev-login", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Missing email" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
+      return res
+        .status(403)
+        .json({ error: "Not authorized. Platform admin access only." });
+    }
+
+    // Look up tenants the same way as Google auth
+    const platformDb = await connectPlatformDB();
+    const tenants = await platformDb
+      .collection("tenants")
+      .find({ status: "active" })
+      .toArray();
+
+    const linked = [];
+    let userName = null;
+
+    for (const tenant of tenants) {
+      const tenantDb = await connectTenantDB(tenant.databaseName);
+      const user = await tenantDb.collection("users").findOneAndUpdate(
+        { email: normalizedEmail },
+        {
+          $set: { lastLoginAt: new Date().toISOString() },
+        },
+        { returnDocument: "after" },
+      );
+      if (user) {
+        linked.push(tenant.slug);
+        if (!userName && user.name) userName = user.name;
+      }
+    }
+
+    // Platform admins always get PG_Machine access
+    if (!linked.includes("PG_Machine")) {
+      linked.push("PG_Machine");
+    }
+
+    const devCredential = `dev-${Date.now()}-${normalizedEmail}`;
+
+    res.json({
+      success: true,
+      user: {
+        email: normalizedEmail,
+        name: userName || normalizedEmail.split("@")[0],
+        picture: null,
+        googleId: null,
+        role: "platform_admin",
+        isPlatformAdmin: true,
+        tenant: "PG_Machine",
+        linkedTenants: linked,
+        teamName: null,
+      },
+      credential: devCredential,
+    });
+
+    console.log(
+      `Dev login: ${normalizedEmail} → tenants: ${linked.join(", ")}`,
+    );
+  } catch (err) {
+    console.error("Error with dev login:", err);
+    res.status(500).json({ error: "Dev login failed" });
   }
 });
 
@@ -2050,7 +2180,7 @@ async function seedUsersAndRoles(database, tenantSlug) {
       { email: 1 },
       { unique: true, collation: { locale: "en", strength: 2 } },
     );
-    await usersCol.createIndex({ auth0Id: 1 }, { unique: true, sparse: true });
+    await usersCol.createIndex({ googleId: 1 }, { unique: true, sparse: true });
   } catch (_) {
     // Indexes may already exist
   }
@@ -2061,11 +2191,36 @@ async function seedUsersAndRoles(database, tenantSlug) {
     await rolesCol.createIndex({ name: 1 }, { unique: true });
   } catch (_) {}
 
-  // Seed default roles
+  // Seed default roles (4-tier hierarchy)
   const DEFAULT_ROLES = [
     {
-      name: "admin",
-      description: "Full access — manage users, run research, edit everything",
+      name: "platform_admin",
+      description:
+        "Super Admin / Platform Owner — full platform access across all tenants",
+      permissions: [
+        "accounts:read",
+        "accounts:write",
+        "accounts:delete",
+        "research:run",
+        "swarm:run",
+        "org_chart:read",
+        "org_chart:write",
+        "intelligence:read",
+        "intelligence:write",
+        "sales_activities:read",
+        "sales_activities:write",
+        "users:read",
+        "users:write",
+        "users:invite",
+        "tenant:manage",
+        "tenant:provision",
+        "platform:manage",
+      ],
+    },
+    {
+      name: "company_admin",
+      description:
+        "Company Admin — manage users and data within their own tenant",
       permissions: [
         "accounts:read",
         "accounts:write",
@@ -2085,8 +2240,8 @@ async function seedUsersAndRoles(database, tenantSlug) {
       ],
     },
     {
-      name: "analyst",
-      description: "Run research, edit accounts, view everything",
+      name: "team_leader",
+      description: "Team Leader — sees their team's data, run research",
       permissions: [
         "accounts:read",
         "accounts:write",
@@ -2102,14 +2257,14 @@ async function seedUsersAndRoles(database, tenantSlug) {
       ],
     },
     {
-      name: "viewer",
-      description: "Read-only access to all data",
+      name: "end_user",
+      description: "End User — sees only their own accounts",
       permissions: [
         "accounts:read",
         "org_chart:read",
         "intelligence:read",
         "sales_activities:read",
-        "users:read",
+        "sales_activities:write",
       ],
     },
   ];
@@ -2125,25 +2280,32 @@ async function seedUsersAndRoles(database, tenantSlug) {
     );
   }
 
-  // Seed god-mode admin user
-  await usersCol.updateOne(
-    { email: "alimelkkilaoskari@gmail.com" },
-    {
-      $set: {
-        email: "alimelkkilaoskari@gmail.com",
-        name: "Oskari Ali-Melkkilä",
-        role: "admin",
-        tenantSlug,
-        isPlatformAdmin: true,
-        updatedAt: new Date().toISOString(),
+  // Seed platform admin users
+  const platformAdmins = [
+    { email: "alimelkkilaoskari@gmail.com", name: "Oskari Ali-Melkkilä" },
+    { email: "samuli.melart@gmail.com", name: "Samuli Melart" },
+  ];
+
+  for (const admin of platformAdmins) {
+    await usersCol.updateOne(
+      { email: admin.email },
+      {
+        $set: {
+          email: admin.email,
+          name: admin.name,
+          role: "platform_admin",
+          tenantSlug,
+          isPlatformAdmin: true,
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: {
+          googleId: null,
+          createdAt: new Date().toISOString(),
+        },
       },
-      $setOnInsert: {
-        auth0Id: null,
-        createdAt: new Date().toISOString(),
-      },
-    },
-    { upsert: true },
-  );
+      { upsert: true },
+    );
+  }
 
   console.log(`  ✅ Users & roles seeded for ${tenantSlug}`);
 }
