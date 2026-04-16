@@ -190,6 +190,7 @@ export function AppLayout() {
 
                 {/* Top 5 accounts under War Room */}
                 {item.path === "/dashboard/war-room" &&
+                  isActive &&
                   top5Accounts.length > 0 && (
                     <div style={{ padding: "2px 0 6px 0" }}>
                       {top5Accounts.map((acc, i) => (

@@ -16,8 +16,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
-  Target,
-  Building2,
   Crown,
   UserCheck,
   Users,
@@ -1049,155 +1047,6 @@ export function WarRoom() {
         fontFamily: "var(--font-body)",
       }}
     >
-      {/* ─── Account Sidebar ─────────────────────────────────────── */}
-      <div
-        style={{
-          width: 280,
-          flexShrink: 0,
-          borderRight: "1px solid rgba(107,113,148,0.15)",
-          background: "var(--surface-container-lowest)",
-          overflowY: "auto",
-          padding: "1.25rem 0",
-        }}
-      >
-        <div
-          style={{
-            padding: "0 1rem 1rem",
-            borderBottom: "1px solid rgba(107,113,148,0.1)",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--font-headline)",
-              fontWeight: 800,
-              fontSize: "1.15rem",
-              color: "var(--on-background)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <Target size={18} color="var(--primary)" /> War Room
-          </div>
-          <div
-            style={{
-              fontSize: "0.82rem",
-              color: "var(--on-surface-variant)",
-              marginTop: 4,
-            }}
-          >
-            {accounts.length} accounts · Sorted by signal score
-          </div>
-        </div>
-        {loading ? (
-          <div
-            style={{
-              padding: "2rem 1rem",
-              color: "var(--on-surface-variant)",
-              fontSize: "0.9rem",
-            }}
-          >
-            Loading accounts...
-          </div>
-        ) : (
-          accounts.map((acc) => (
-            <button
-              key={acc._id}
-              onClick={() => setSelectedAccount(acc)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                width: "100%",
-                padding: "0.75rem 1rem",
-                border: "none",
-                background:
-                  selectedAccount?._id === acc._id
-                    ? "rgba(18,74,241,0.08)"
-                    : "transparent",
-                borderLeft:
-                  selectedAccount?._id === acc._id
-                    ? "3px solid var(--primary)"
-                    : "3px solid transparent",
-                cursor: "pointer",
-                transition: "all 100ms",
-                textAlign: "left",
-              }}
-            >
-              <Building2
-                size={16}
-                color={
-                  selectedAccount?._id === acc._id
-                    ? "var(--primary)"
-                    : "var(--on-surface-variant)"
-                }
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontFamily: "var(--font-headline)",
-                    fontWeight: 600,
-                    fontSize: "0.85rem",
-                    color: "var(--on-background)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {acc.companyName}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.72rem",
-                    color: "var(--on-surface-variant)",
-                  }}
-                >
-                  {acc.website}
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  gap: 2,
-                }}
-              >
-                {acc.buyingSignalScore != null && (
-                  <span
-                    style={{
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      color: "var(--primary)",
-                    }}
-                  >
-                    {acc.buyingSignalScore}
-                  </span>
-                )}
-                {acc.priority && (
-                  <span
-                    style={{
-                      fontSize: "0.58rem",
-                      fontWeight: 700,
-                      fontFamily: "var(--font-label)",
-                      padding: "0.1rem 0.4rem",
-                      borderRadius: 4,
-                      background:
-                        acc.priority === "P1"
-                          ? "var(--error)"
-                          : "var(--secondary-brand)",
-                      color: "#fff",
-                    }}
-                  >
-                    {acc.priority}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))
-        )}
-      </div>
-
       {/* ─── Main Content ────────────────────────────────────────── */}
       <div
         style={{
@@ -1458,7 +1307,10 @@ export function WarRoom() {
                   }}
                 >
                   {refreshing ? (
-                    <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                    <Loader2
+                      size={14}
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
                   ) : (
                     <RefreshCw size={14} />
                   )}
@@ -1479,7 +1331,9 @@ export function WarRoom() {
                 >
                   Previous research completed:{" "}
                   {selectedAccount.metadata?.lastSwarmRun
-                    ? new Date(selectedAccount.metadata.lastSwarmRun).toLocaleString()
+                    ? new Date(
+                        selectedAccount.metadata.lastSwarmRun,
+                      ).toLocaleString()
                     : selectedAccount.timestamp
                       ? new Date(selectedAccount.timestamp).toLocaleString()
                       : "No research run yet"}
