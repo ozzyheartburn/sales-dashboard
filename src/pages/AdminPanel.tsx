@@ -480,6 +480,7 @@ export function AdminPanel() {
             </div>
 
             <div
+              className="responsive-grid-4"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",

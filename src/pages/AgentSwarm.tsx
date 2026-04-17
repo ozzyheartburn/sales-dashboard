@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth, buildAuthHeaders } from "../App";
 import {
   Search,
   Cpu,
@@ -259,10 +260,12 @@ export function AgentSwarm() {
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
+  const { user } = useAuth();
+  const authHeaders = buildAuthHeaders(user);
 
   // Fetch accounts for the multi-select picker
   useEffect(() => {
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: { companyName: string; _id: string }[]) => {
         const populated = data.filter((a) => a.companyName);
@@ -411,6 +414,7 @@ export function AgentSwarm() {
 
   return (
     <div
+      className="page-container"
       style={{
         padding: "1.5rem",
         maxWidth: 1440,
@@ -446,6 +450,7 @@ export function AgentSwarm() {
 
       {/* Three-Column Layout: Shortcuts + Agent Swarm + Cockpit */}
       <div
+        className="agentswarm-layout"
         style={{
           display: "grid",
           gridTemplateColumns: "240px 1fr 1fr",
@@ -1391,6 +1396,7 @@ export function AgentSwarm() {
 
         {/* Workflow content — 4-column grid */}
         <div
+          className="agentswarm-grid-4"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr 1fr",
@@ -1903,6 +1909,7 @@ export function AgentSwarm() {
 
         {/* Template Cards */}
         <div
+          className="agentswarm-grid-4"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",

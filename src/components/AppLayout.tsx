@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { useAuth, buildAuthHeaders } from "../App";
 import { motion, AnimatePresence } from "motion/react";
 import {
   LayoutDashboard,
@@ -16,6 +17,7 @@ import {
   Loader2,
   X,
   ExternalLink,
+  Menu,
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +35,8 @@ const navItems = [
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const authHeaders = buildAuthHeaders(user);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
@@ -48,12 +52,13 @@ export function AppLayout() {
   const [top5Accounts, setTop5Accounts] = useState<
     { companyName: string; buyingSignalScore: number; priority: string }[]
   >([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
 
   // Fetch top 5 accounts by signal score for sidebar
   useEffect(() => {
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then(
         (
@@ -83,7 +88,7 @@ export function AppLayout() {
     try {
       const res = await fetch(`${API_URL}/api/hybrid-search`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ query: aiQuery, topK: 5 }),
       });
       const data = await res.json();
@@ -98,9 +103,59 @@ export function AppLayout() {
 
   return (
     <div className="app-layout dark">
+      {/* Mobile Top Bar */}
+      <div className="mobile-topbar">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 4,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Menu size={22} color="var(--on-surface)" />
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              background:
+                "linear-gradient(135deg, var(--primary), var(--tertiary))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Sparkles size={12} color="#fff" />
+          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-headline)",
+              fontWeight: 800,
+              fontSize: "0.85rem",
+              color: "var(--on-background)",
+            }}
+          >
+            PG Machine
+          </span>
+        </div>
+      </div>
+
+      {/* Sidebar Backdrop (mobile) */}
+      <div
+        className={`sidebar-backdrop ${sidebarOpen ? "visible" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
       {/* Sidebar */}
       <aside
-        className="sidebar"
+        className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}
         style={{
           background: "var(--surface-container-lowest)",
           borderRight: "1px solid rgba(167,176,222,0.10)",
@@ -182,7 +237,10 @@ export function AppLayout() {
               <div key={item.path}>
                 <button
                   className={`nav-item ${isActive ? "active" : ""}`}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    setSidebarOpen(false);
+                  }}
                 >
                   <item.icon size={15} />
                   {item.label}
@@ -277,7 +335,14 @@ export function AppLayout() {
               flexShrink: 0,
             }}
           >
-            AJ
+            {user?.name
+              ? user.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()
+              : "?"}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p
@@ -289,7 +354,7 @@ export function AppLayout() {
               }}
               className="truncate"
             >
-              Alex Johnson
+              {user?.name || user?.email || "User"}
             </p>
             <p
               style={{
@@ -298,7 +363,9 @@ export function AppLayout() {
               }}
               className="truncate"
             >
-              Enterprise AE · Nordics
+              {user?.role === "platform_admin"
+                ? "Platform Admin"
+                : user?.role || "User"}
             </p>
           </div>
           <Settings
@@ -355,6 +422,7 @@ export function AppLayout() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 420, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 280 }}
+            className="ai-panel-mobile"
             style={{
               position: "fixed",
               top: 0,

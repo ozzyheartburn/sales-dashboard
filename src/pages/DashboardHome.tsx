@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth, buildAuthHeaders } from "../App";
 import { motion } from "motion/react";
 import {
   TrendingUp,
@@ -95,12 +96,14 @@ const sevStyle: Record<
 
 export function DashboardHome() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const authHeaders = buildAuthHeaders(user);
   const [dismissed, setDismissed] = useState<number[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: Account[]) => setAccounts(data))
       .catch(() => {});
@@ -170,7 +173,7 @@ export function DashboardHome() {
 
   function handleRefresh() {
     setRefreshing(true);
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: Account[]) => {
         setAccounts(data);
@@ -181,6 +184,7 @@ export function DashboardHome() {
 
   return (
     <div
+      className="page-container"
       style={{
         padding: "1.5rem",
         maxWidth: 1440,
@@ -197,6 +201,8 @@ export function DashboardHome() {
           alignItems: "flex-start",
           justifyContent: "space-between",
           marginBottom: "2rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
         }}
       >
         <div>
@@ -497,9 +503,11 @@ export function DashboardHome() {
             </span>
           </div>
           <div
+            className="responsive-grid-alerts"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(420px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(min(420px, 100%), 1fr))",
               gap: "0.75rem",
             }}
           >

@@ -68,6 +68,12 @@ async function connectPlatformDB() {
   return client.db("platform");
 }
 
+// Connect to pg_identity database (central identity + RBAC)
+async function connectIdentityDB() {
+  await ensureConnected();
+  return client.db("pg_identity");
+}
+
 // Middleware: resolve tenant DB and attach to request
 async function attachTenantDB(req, res, next) {
   try {
@@ -112,19 +118,167 @@ app.get("/api/health", (req, res) => {
 });
 
 // Get accounts from PG_Machine collection
+// Supports role-based filtering via headers:
+//   x-user-email, x-user-role, x-user-team, x-tenant
+//   x-customer-company-id, x-customer-user-id-rbac (pg_identity cross-ref)
 app.get("/api/accounts", async (req, res) => {
   try {
-    const database = await connectDB();
+    const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
+    const userRole = req.headers["x-user-role"];
+    const userEmail = req.headers["x-user-email"];
+    const userTeam = req.headers["x-user-team"];
+    const customerCompanyId = req.headers["x-customer-company-id"];
+    const customerRbac = req.headers["x-customer-user-id-rbac"];
+
+    // If identity headers present, cross-reference pg_identity to verify
+    if (userEmail) {
+      const identity = await resolveIdentity(userEmail);
+      if (identity) {
+        // Enforce tenant isolation: user can only access their own company's database
+        const allowedTenant = identity.databaseName || identity.companySlug;
+        if (
+          customerRbac !== "platform_admin" &&
+          tenantSlug !== allowedTenant &&
+          tenantSlug !== "PG_Machine"
+        ) {
+          return res
+            .status(403)
+            .json({
+              error: "Access denied: you cannot access this tenant's data",
+            });
+        }
+      }
+    }
+
+    // Resolve database: use tenant DB if specified, else PG_Machine
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
     const collection = database.collection("PG_Machine");
-    const accounts = await collection
-      .find({ companyName: { $ne: null } })
-      .toArray();
+
+    // Build filter based on role (use RBAC level if available, fall back to role header)
+    const effectiveRole = customerRbac || userRole;
+    const filter = { companyName: { $ne: null } };
+
+    if (effectiveRole === "end_user" && userEmail) {
+      // End users only see accounts assigned to them
+      filter.assignedTo = userEmail.toLowerCase();
+    } else if (effectiveRole === "team_leader" && userTeam) {
+      // Team leaders see accounts assigned to their team
+      filter.assignedTeam = userTeam;
+    }
+    // platform_admin and company_admin see all accounts (no extra filter)
+
+    const accounts = await collection.find(filter).toArray();
     res.json(accounts);
   } catch (err) {
     console.error("Error fetching accounts:", err);
     res.status(500).json({ error: "Failed to fetch accounts" });
   }
 });
+
+// Assign an account to a user/team
+app.put("/api/accounts/:companyName/assign", async (req, res) => {
+  try {
+    const companyName = decodeURIComponent(req.params.companyName);
+    const { assignedTo, assignedTeam } = req.body;
+    const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
+
+    if (!assignedTo && !assignedTeam) {
+      return res
+        .status(400)
+        .json({ error: "Provide assignedTo (email) and/or assignedTeam" });
+    }
+
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
+    const collection = database.collection("PG_Machine");
+
+    const setFields = { updatedAt: new Date().toISOString() };
+    if (assignedTo) setFields.assignedTo = assignedTo.toLowerCase();
+    if (assignedTeam) setFields.assignedTeam = assignedTeam;
+
+    const result = await collection.updateOne(
+      { companyName: { $regex: new RegExp(`^${companyName}$`, "i") } },
+      { $set: setFields },
+    );
+
+    if (result.matchedCount === 0) {
+      return res
+        .status(404)
+        .json({ error: `Account "${companyName}" not found` });
+    }
+
+    console.log(
+      `Account "${companyName}" assigned to ${assignedTo || "(no user)"} / team: ${assignedTeam || "(no team)"}`,
+    );
+    res.json({ success: true, companyName, assignedTo, assignedTeam });
+  } catch (err) {
+    console.error("Error assigning account:", err);
+    res.status(500).json({ error: "Failed to assign account" });
+  }
+});
+
+// Bulk assign accounts to a user/team
+app.post("/api/accounts/bulk-assign", async (req, res) => {
+  try {
+    const { assignments } = req.body;
+    const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
+
+    // assignments: [{ companyName, assignedTo, assignedTeam }]
+    if (!Array.isArray(assignments) || assignments.length === 0) {
+      return res.status(400).json({ error: "Provide an assignments array" });
+    }
+
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
+    const collection = database.collection("PG_Machine");
+
+    const results = [];
+    for (const a of assignments) {
+      if (!a.companyName) {
+        results.push({
+          companyName: null,
+          status: "skipped",
+          reason: "missing companyName",
+        });
+        continue;
+      }
+      const setFields = { updatedAt: new Date().toISOString() };
+      if (a.assignedTo) setFields.assignedTo = a.assignedTo.toLowerCase();
+      if (a.assignedTeam) setFields.assignedTeam = a.assignedTeam;
+
+      const result = await collection.updateOne(
+        { companyName: { $regex: new RegExp(`^${a.companyName}$`, "i") } },
+        { $set: setFields },
+      );
+      results.push({
+        companyName: a.companyName,
+        status: result.matchedCount > 0 ? "assigned" : "not_found",
+      });
+    }
+
+    console.log(
+      `Bulk assign: ${results.filter((r) => r.status === "assigned").length}/${assignments.length} accounts assigned`,
+    );
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error("Error bulk assigning accounts:", err);
+    res.status(500).json({ error: "Failed to bulk assign" });
+  }
+});
+
 // In-memory tracking of pending research jobs
 const pendingResearch = new Map();
 
@@ -2040,6 +2194,7 @@ app.post("/api/auth/google", async (req, res) => {
     let userRole = null;
     let userTenant = null;
     let teamName = null;
+    let primaryTenant = null;
 
     for (const tenant of tenants) {
       const tenantDb = await connectTenantDB(tenant.databaseName);
@@ -2062,6 +2217,8 @@ app.post("/api/auth/google", async (req, res) => {
           userTenant = tenant.slug;
           teamName = result.teamName || null;
         }
+        if (!primaryTenant && result.primaryTenant)
+          primaryTenant = result.primaryTenant;
       }
     }
 
@@ -2078,6 +2235,12 @@ app.post("/api/auth/google", async (req, res) => {
       });
     }
 
+    // Use primaryTenant from user record if available
+    const resolvedTenant = primaryTenant || userTenant;
+
+    // Cross-reference pg_identity for RBAC fields
+    const identity = await resolveIdentity(normalizedEmail);
+
     res.json({
       success: true,
       user: {
@@ -2087,9 +2250,13 @@ app.post("/api/auth/google", async (req, res) => {
         googleId: googleId || null,
         role: isPlatformAdmin ? "platform_admin" : userRole,
         isPlatformAdmin,
-        tenant: userTenant,
+        tenant: resolvedTenant,
         linkedTenants: linked,
         teamName,
+        // pg_identity fields
+        customer_company_id: identity?.customer_company_id || null,
+        customer_user_id: identity?.customer_user_id || null,
+        customer_user_id_rbac: identity?.customer_user_id_rbac || null,
       },
       credential,
     });
@@ -2123,6 +2290,7 @@ app.post("/api/auth/dev-login", async (req, res) => {
 
     const linked = [];
     let userName = null;
+    let primaryTenant = null;
 
     for (const tenant of tenants) {
       const tenantDb = await connectTenantDB(tenant.databaseName);
@@ -2136,6 +2304,8 @@ app.post("/api/auth/dev-login", async (req, res) => {
       if (user) {
         linked.push(tenant.slug);
         if (!userName && user.name) userName = user.name;
+        if (!primaryTenant && user.primaryTenant)
+          primaryTenant = user.primaryTenant;
       }
     }
 
@@ -2143,6 +2313,12 @@ app.post("/api/auth/dev-login", async (req, res) => {
     if (!linked.includes("PG_Machine")) {
       linked.push("PG_Machine");
     }
+
+    // Use primaryTenant from user record, or first linked tenant
+    const resolvedTenant = primaryTenant || linked[0] || "PG_Machine";
+
+    // Cross-reference pg_identity for RBAC fields
+    const identity = await resolveIdentity(normalizedEmail);
 
     const devCredential = `dev-${Date.now()}-${normalizedEmail}`;
 
@@ -2155,9 +2331,13 @@ app.post("/api/auth/dev-login", async (req, res) => {
         googleId: null,
         role: "platform_admin",
         isPlatformAdmin: true,
-        tenant: "PG_Machine",
+        tenant: resolvedTenant,
         linkedTenants: linked,
         teamName: null,
+        // pg_identity fields
+        customer_company_id: identity?.customer_company_id || null,
+        customer_user_id: identity?.customer_user_id || null,
+        customer_user_id_rbac: identity?.customer_user_id_rbac || null,
       },
       credential: devCredential,
     });
@@ -2285,10 +2465,18 @@ async function seedUsersAndRoles(database, tenantSlug) {
     );
   }
 
-  // Seed platform admin users
+  // Seed platform admin users with their primary tenants
   const platformAdmins = [
-    { email: "alimelkkilaoskari@gmail.com", name: "Oskari Ali-Melkkilä" },
-    { email: "samuli.melart@gmail.com", name: "Samuli Melart" },
+    {
+      email: "alimelkkilaoskari@gmail.com",
+      name: "Oskari Ali-Melkkilä",
+      primaryTenant: "PG_Machine",
+    },
+    {
+      email: "samuli.melart@gmail.com",
+      name: "Samuli Melart",
+      primaryTenant: "6gnordic",
+    },
   ];
 
   for (const admin of platformAdmins) {
@@ -2301,6 +2489,7 @@ async function seedUsersAndRoles(database, tenantSlug) {
           role: "platform_admin",
           tenantSlug,
           isPlatformAdmin: true,
+          primaryTenant: admin.primaryTenant,
           updatedAt: new Date().toISOString(),
         },
         $setOnInsert: {
@@ -2314,6 +2503,418 @@ async function seedUsersAndRoles(database, tenantSlug) {
   console.log(`  ✅ Users & roles seeded for ${tenantSlug}`);
 }
 
+// =========================================================================
+// pg_identity — central identity & RBAC database
+// Collections: "companies" (one doc per customer company with embedded users)
+//              "rbac_policies" (defines permission sets per RBAC level)
+// =========================================================================
+
+// Seed the pg_identity database with companies, users, and RBAC policies
+async function seedIdentityDB() {
+  const identityDb = await connectIdentityDB();
+  const companiesCol = identityDb.collection("companies");
+  const rbacCol = identityDb.collection("rbac_policies");
+
+  // Create indexes
+  try {
+    await companiesCol.createIndex(
+      { customer_company_id: 1 },
+      { unique: true },
+    );
+    await companiesCol.createIndex({ slug: 1 }, { unique: true });
+    await companiesCol.createIndex({ "users.email": 1 });
+    await companiesCol.createIndex({ "users.customer_user_id": 1 });
+    await rbacCol.createIndex({ customer_user_id_rbac: 1 }, { unique: true });
+  } catch (_) {}
+
+  // Seed RBAC policies
+  const RBAC_POLICIES = [
+    {
+      customer_user_id_rbac: "platform_admin",
+      description:
+        "Full platform access — all tenants, all views, impersonation",
+      permissions: ["*"],
+      dataScope: "all",
+      canImpersonate: true,
+      canAccessAdmin: true,
+    },
+    {
+      customer_user_id_rbac: "company_admin",
+      description: "Full access within own company/tenant",
+      permissions: [
+        "accounts:*",
+        "research:*",
+        "swarm:*",
+        "org_chart:*",
+        "intelligence:*",
+        "sales_activities:*",
+        "users:*",
+        "tenant:manage",
+      ],
+      dataScope: "company",
+      canImpersonate: false,
+      canAccessAdmin: true,
+    },
+    {
+      customer_user_id_rbac: "team_leader",
+      description: "Access to own team's data",
+      permissions: [
+        "accounts:read",
+        "accounts:write",
+        "research:run",
+        "swarm:run",
+        "org_chart:*",
+        "intelligence:read",
+        "sales_activities:*",
+        "users:read",
+      ],
+      dataScope: "team",
+      canImpersonate: false,
+      canAccessAdmin: false,
+    },
+    {
+      customer_user_id_rbac: "end_user",
+      description: "Access to own assigned accounts only",
+      permissions: [
+        "accounts:read",
+        "org_chart:read",
+        "intelligence:read",
+        "sales_activities:read",
+        "sales_activities:write",
+      ],
+      dataScope: "self",
+      canImpersonate: false,
+      canAccessAdmin: false,
+    },
+  ];
+
+  for (const policy of RBAC_POLICIES) {
+    await rbacCol.updateOne(
+      { customer_user_id_rbac: policy.customer_user_id_rbac },
+      {
+        $set: { ...policy, updatedAt: new Date().toISOString() },
+        $setOnInsert: { createdAt: new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+  }
+
+  // Seed company: PG Machine / Constructor (Oskari's workspace)
+  await companiesCol.updateOne(
+    { customer_company_id: "comp_pg_machine" },
+    {
+      $set: {
+        customer_company_id: "comp_pg_machine",
+        companyName: "PG Machine / Constructor",
+        slug: "PG_Machine",
+        databaseName: "PG_Machine",
+        status: "active",
+        updatedAt: new Date().toISOString(),
+      },
+      $setOnInsert: {
+        createdAt: new Date().toISOString(),
+        users: [
+          {
+            customer_user_id: "usr_oskari",
+            name: "Oskari Ali-Melkkilä",
+            email: "alimelkkilaoskari@gmail.com",
+            role: "platform_admin",
+            department: "Master Admin",
+            manager: null,
+            backupEmail: "oskari.ali-melkkila@hotmail.com",
+            customer_user_id_rbac: "platform_admin",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    },
+    { upsert: true },
+  );
+
+  // Ensure Oskari user exists in PG_Machine company (even if doc already existed)
+  await companiesCol.updateOne(
+    {
+      customer_company_id: "comp_pg_machine",
+      "users.email": { $ne: "alimelkkilaoskari@gmail.com" },
+    },
+    {
+      $push: {
+        users: {
+          customer_user_id: "usr_oskari",
+          name: "Oskari Ali-Melkkilä",
+          email: "alimelkkilaoskari@gmail.com",
+          role: "platform_admin",
+          department: "Master Admin",
+          manager: null,
+          backupEmail: "oskari.ali-melkkila@hotmail.com",
+          customer_user_id_rbac: "platform_admin",
+          createdAt: new Date().toISOString(),
+        },
+      },
+    },
+  );
+
+  // Seed company: 6G Nordic (Samuli's workspace)
+  await companiesCol.updateOne(
+    { customer_company_id: "comp_6gnordic" },
+    {
+      $set: {
+        customer_company_id: "comp_6gnordic",
+        companyName: "6G Nordic",
+        slug: "6gnordic",
+        databaseName: "6gnordic",
+        status: "active",
+        updatedAt: new Date().toISOString(),
+      },
+      $setOnInsert: {
+        createdAt: new Date().toISOString(),
+        users: [
+          {
+            customer_user_id: "usr_samuli",
+            name: "Samuli Melart",
+            email: "samuli.melart@gmail.com",
+            role: "platform_admin",
+            department: "Master Admin",
+            manager: null,
+            backupEmail: "alimelkkilaoskari@gmail.com",
+            customer_user_id_rbac: "platform_admin",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    },
+    { upsert: true },
+  );
+
+  // Ensure Samuli user exists in 6G Nordic company
+  await companiesCol.updateOne(
+    {
+      customer_company_id: "comp_6gnordic",
+      "users.email": { $ne: "samuli.melart@gmail.com" },
+    },
+    {
+      $push: {
+        users: {
+          customer_user_id: "usr_samuli",
+          name: "Samuli Melart",
+          email: "samuli.melart@gmail.com",
+          role: "platform_admin",
+          department: "Master Admin",
+          manager: null,
+          backupEmail: "alimelkkilaoskari@gmail.com",
+          customer_user_id_rbac: "platform_admin",
+          createdAt: new Date().toISOString(),
+        },
+      },
+    },
+  );
+
+  console.log("  ✅ pg_identity database seeded (companies + RBAC policies)");
+}
+
+// Helper: look up a user's identity from pg_identity by email
+async function resolveIdentity(email) {
+  const identityDb = await connectIdentityDB();
+  const companiesCol = identityDb.collection("companies");
+  const rbacCol = identityDb.collection("rbac_policies");
+
+  // Find which company this user belongs to
+  const company = await companiesCol.findOne(
+    { "users.email": email.toLowerCase(), status: "active" },
+    {
+      projection: {
+        customer_company_id: 1,
+        companyName: 1,
+        slug: 1,
+        databaseName: 1,
+        users: { $elemMatch: { email: email.toLowerCase() } },
+      },
+    },
+  );
+
+  if (!company || !company.users || company.users.length === 0) {
+    return null;
+  }
+
+  const user = company.users[0];
+
+  // Look up RBAC policy
+  const rbac = await rbacCol.findOne({
+    customer_user_id_rbac: user.customer_user_id_rbac,
+  });
+
+  return {
+    customer_company_id: company.customer_company_id,
+    companyName: company.companyName,
+    companySlug: company.slug,
+    databaseName: company.databaseName,
+    customer_user_id: user.customer_user_id,
+    customer_user_id_rbac: user.customer_user_id_rbac,
+    rbac: rbac || null,
+    user,
+  };
+}
+
+// =========================================================================
+// Identity API endpoints
+// =========================================================================
+
+// Get all companies from pg_identity
+app.get("/api/identity/companies", async (req, res) => {
+  try {
+    const identityDb = await connectIdentityDB();
+    const companies = await identityDb
+      .collection("companies")
+      .find({})
+      .project({
+        customer_company_id: 1,
+        companyName: 1,
+        slug: 1,
+        status: 1,
+        "users.customer_user_id": 1,
+        "users.name": 1,
+        "users.email": 1,
+        "users.role": 1,
+        "users.customer_user_id_rbac": 1,
+      })
+      .toArray();
+    res.json(companies);
+  } catch (err) {
+    console.error("Error fetching identity companies:", err);
+    res.status(500).json({ error: "Failed to fetch companies" });
+  }
+});
+
+// Get a single company with full user details
+app.get("/api/identity/companies/:companyId", async (req, res) => {
+  try {
+    const identityDb = await connectIdentityDB();
+    const company = await identityDb
+      .collection("companies")
+      .findOne({ customer_company_id: req.params.companyId });
+    if (!company) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+    res.json(company);
+  } catch (err) {
+    console.error("Error fetching company:", err);
+    res.status(500).json({ error: "Failed to fetch company" });
+  }
+});
+
+// Add a user to a company
+app.post("/api/identity/companies/:companyId/users", async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      role,
+      department,
+      manager,
+      backupEmail,
+      customer_user_id_rbac,
+    } = req.body;
+    if (!name || !email || !role || !customer_user_id_rbac) {
+      return res.status(400).json({
+        error:
+          "Missing required fields: name, email, role, customer_user_id_rbac",
+      });
+    }
+
+    // Validate RBAC level exists
+    const identityDb = await connectIdentityDB();
+    const rbac = await identityDb
+      .collection("rbac_policies")
+      .findOne({ customer_user_id_rbac });
+    if (!rbac) {
+      return res
+        .status(400)
+        .json({ error: `Invalid RBAC level: ${customer_user_id_rbac}` });
+    }
+
+    const userId = `usr_${email
+      .split("@")[0]
+      .replace(/[^a-z0-9]/gi, "_")
+      .toLowerCase()}`;
+
+    const newUser = {
+      customer_user_id: userId,
+      name,
+      email: email.toLowerCase(),
+      role,
+      department: department || null,
+      manager: manager || null,
+      backupEmail: backupEmail || null,
+      customer_user_id_rbac,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Check user doesn't already exist in this company
+    const companiesCol = identityDb.collection("companies");
+    const existing = await companiesCol.findOne({
+      customer_company_id: req.params.companyId,
+      "users.email": email.toLowerCase(),
+    });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ error: "User already exists in this company" });
+    }
+
+    const result = await companiesCol.updateOne(
+      { customer_company_id: req.params.companyId },
+      {
+        $push: { users: newUser },
+        $set: { updatedAt: new Date().toISOString() },
+      },
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Company not found" });
+    }
+
+    console.log(
+      `Identity: user ${email} added to ${req.params.companyId} with RBAC: ${customer_user_id_rbac}`,
+    );
+    res.json({ success: true, user: newUser });
+  } catch (err) {
+    console.error("Error adding identity user:", err);
+    res.status(500).json({ error: "Failed to add user" });
+  }
+});
+
+// Get RBAC policies
+app.get("/api/identity/rbac", async (req, res) => {
+  try {
+    const identityDb = await connectIdentityDB();
+    const policies = await identityDb
+      .collection("rbac_policies")
+      .find({})
+      .toArray();
+    res.json(policies);
+  } catch (err) {
+    console.error("Error fetching RBAC policies:", err);
+    res.status(500).json({ error: "Failed to fetch RBAC policies" });
+  }
+});
+
+// Resolve identity for an email (used by frontend on login)
+app.get("/api/identity/resolve/:email", async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+    const identity = await resolveIdentity(email);
+    if (!identity) {
+      return res
+        .status(404)
+        .json({ error: "No identity found for this email" });
+    }
+    res.json(identity);
+  } catch (err) {
+    console.error("Error resolving identity:", err);
+    res.status(500).json({ error: "Failed to resolve identity" });
+  }
+});
+
 // Register PG_Machine as legacy tenant + seed users/roles on startup
 (async () => {
   try {
@@ -2325,6 +2926,10 @@ async function seedUsersAndRoles(database, tenantSlug) {
     const pgDb = await connectDB();
     await seedUsersAndRoles(pgDb, "PG_Machine");
     console.log("PG_Machine users & roles initialized");
+
+    // Seed pg_identity database
+    await seedIdentityDB();
+    console.log("pg_identity database initialized");
   } catch (err) {
     console.error("Failed to initialize platform registry:", err.message);
   }

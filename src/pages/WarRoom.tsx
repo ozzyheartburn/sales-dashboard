@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth, buildAuthHeaders } from "../App";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ReactFlow,
@@ -989,8 +990,11 @@ export function WarRoom() {
       });
   }, [selectedAccount, setNodes, setEdges]);
 
+  const { user } = useAuth();
+  const authHeaders = buildAuthHeaders(user);
+
   useEffect(() => {
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: Account[]) => {
         const sorted = [...data].sort(
@@ -1342,6 +1346,7 @@ export function WarRoom() {
 
               {/* ── Metric Cards Row ── */}
               <div
+                className="responsive-grid-4"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(4, 1fr)",
@@ -1492,6 +1497,7 @@ export function WarRoom() {
                       gap: 14,
                       alignItems: "stretch",
                     }}
+                    className="warroom-pyramid-row"
                   >
                     {/* Row Label */}
                     <div
@@ -2116,7 +2122,10 @@ export function WarRoom() {
 
           {/* ── AI Assistant Tab ─────────────────────────────────── */}
           {activeTab === "ai" && (
-            <div style={{ display: "flex", height: "calc(100vh - 160px)" }}>
+            <div
+              className="warroom-content-area"
+              style={{ display: "flex", height: "calc(100vh - 160px)" }}
+            >
               {/* Chat Area */}
               <div
                 style={{ flex: 1, display: "flex", flexDirection: "column" }}
@@ -2215,6 +2224,7 @@ export function WarRoom() {
 
               {/* AI Insights Sidebar */}
               <div
+                className="warroom-ai-sidebar"
                 style={{
                   width: 320,
                   borderLeft: "1px solid rgba(107,113,148,0.1)",

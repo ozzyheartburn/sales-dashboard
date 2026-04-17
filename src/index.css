@@ -235,3 +235,133 @@ img {
     transform: rotate(360deg);
   }
 }
+
+/* ─── Mobile Responsive ──────────────────────────────────────────────── */
+
+/* Mobile top bar (hidden on desktop, shown on mobile) */
+.mobile-topbar {
+  display: none;
+}
+
+/* Sidebar backdrop overlay on mobile */
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 900;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 260px;
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 899;
+  }
+  .sidebar-backdrop.visible {
+    display: block;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface-container-lowest);
+    border-bottom: 1px solid rgba(167, 176, 222, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .main-content {
+    min-height: calc(100dvh - 52px);
+  }
+
+  /* Make the AI slide-out panel full-width on mobile */
+  .ai-panel-mobile {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+}
+
+/* Responsive page containers */
+@media (max-width: 640px) {
+  .page-container {
+    padding: 1rem !important;
+  }
+}
+
+/* ─── Responsive grid helpers ─────────────────────────────────────────── */
+.responsive-grid-4 {
+  display: grid;
+  gap: 1rem;
+}
+.responsive-grid-alerts {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .responsive-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .responsive-grid-alerts {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  .responsive-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── War Room & Agent Swarm mobile overrides ─────────────────────────── */
+@media (max-width: 768px) {
+  /* War Room: stack main + AI sidebar vertically */
+  .warroom-content-area {
+    flex-direction: column !important;
+  }
+  .warroom-ai-sidebar {
+    width: 100% !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(107, 113, 148, 0.1);
+  }
+  /* Pyramid row grid: stack on mobile */
+  .warroom-pyramid-row {
+    grid-template-columns: 1fr !important;
+  }
+  /* Agent Swarm 3-col layout */
+  .agentswarm-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .agentswarm-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .agentswarm-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+  /* Admin invite rows */
+  .admin-invite-row {
+    grid-template-columns: 1fr !important;
+  }
+}

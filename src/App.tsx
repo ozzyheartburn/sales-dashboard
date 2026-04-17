@@ -6,6 +6,7 @@ import { ResearchHub } from "./pages/ResearchHub";
 import { WarRoom } from "./pages/WarRoom";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
+import { AdminViewSelector } from "./pages/AdminViewSelector";
 
 export interface AuthUser {
   email: string;
@@ -17,6 +18,9 @@ export interface AuthUser {
   tenant: string;
   linkedTenants: string[];
   teamName: string | null;
+  customer_company_id: string | null;
+  customer_user_id: string | null;
+  customer_user_id_rbac: string | null;
 }
 
 interface AuthContextType {
@@ -37,6 +41,22 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+export function buildAuthHeaders(
+  user: AuthUser | null,
+): Record<string, string> {
+  if (!user) return {};
+  const h: Record<string, string> = {};
+  if (user.email) h["x-user-email"] = user.email;
+  if (user.role) h["x-user-role"] = user.role;
+  if (user.tenant) h["x-tenant"] = user.tenant;
+  if (user.teamName) h["x-user-team"] = user.teamName;
+  if (user.customer_company_id)
+    h["x-customer-company-id"] = user.customer_company_id;
+  if (user.customer_user_id_rbac)
+    h["x-customer-user-id-rbac"] = user.customer_user_id_rbac;
+  return h;
 }
 
 function LoadingScreen() {
@@ -134,6 +154,7 @@ export default function App() {
           {user ? (
             <>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/select-view" element={<AdminViewSelector />} />
               <Route path="/dashboard" element={<AppLayout />}>
                 <Route index element={<DashboardHome />} />
                 <Route path="research-hub" element={<ResearchHub />} />
