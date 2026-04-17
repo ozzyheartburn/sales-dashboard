@@ -205,19 +205,48 @@ if [ -n "$TASK_ARN" ] && [ "$TASK_ARN" != "None" ]; then
   fi
 fi
 
+# If task isn't ready yet, wait a bit more and retry
+if [ -z "$PUBLIC_IP" ] || [ "$PUBLIC_IP" = "None" ]; then
+  echo "  Task still starting, waiting 30 more seconds..."
+  sleep 30
+  TASK_ARN=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --region "$REGION" --query 'taskArns[0]' --output text)
+  if [ -n "$TASK_ARN" ] && [ "$TASK_ARN" != "None" ]; then
+    ENI_ID=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --region "$REGION" \
+      --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
+    if [ -n "$ENI_ID" ] && [ "$ENI_ID" != "None" ]; then
+      PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI_ID" --region "$REGION" \
+        --query 'NetworkInterfaces[0].Association.PublicIp' --output text)
+    fi
+  fi
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✅ Deployment complete!"
-echo ""
+
 if [ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "None" ]; then
-  echo "  Backend URL: http://$PUBLIC_IP:$PORT"
-  echo ""
-  echo "  Next steps:"
-  echo "  1. Test: curl http://$PUBLIC_IP:$PORT/api/health"
-  echo "  2. Set VITE_API_URL=http://$PUBLIC_IP:$PORT in Vercel env vars"
-  echo "  3. Redeploy Vercel frontend"
+  echo "  ✅ Backend deployed: http://$PUBLIC_IP:$PORT"
+
+  # ─── Auto-update vercel.json with new backend IP ─────────────────────────
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+  VERCEL_JSON="$PROJECT_ROOT/vercel.json"
+
+  if [ -f "$VERCEL_JSON" ]; then
+    # Replace any IP:4000 in vercel.json with the new one
+    sed -i '' "s|http://[0-9.]*:$PORT|http://$PUBLIC_IP:$PORT|g" "$VERCEL_JSON"
+    echo "  ✅ vercel.json updated → $PUBLIC_IP"
+
+    # Auto-deploy frontend
+    echo ""
+    echo "→ Deploying frontend with updated backend IP..."
+    cd "$PROJECT_ROOT"
+    bash deploy.sh
+  else
+    echo "  ⚠️  vercel.json not found at $VERCEL_JSON — update manually"
+  fi
 else
-  echo "  Task is still starting. Run this to get the IP:"
+  echo "  ⚠️  Could not detect public IP. Task may still be starting."
+  echo "  Run manually:"
   echo "  aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --region $REGION"
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
