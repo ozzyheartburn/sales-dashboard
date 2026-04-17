@@ -50,8 +50,13 @@ export function LoginPage() {
 
       login(data.user, data.credential);
 
-      // If user has multiple roles, go to role selector; otherwise straight to dashboard
-      if (data.user.availableRoles && data.user.availableRoles.length > 1) {
+      // Platform admins always get role selector; others go to dashboard unless multi-role
+      if (data.user.isPlatformAdmin) {
+        navigate("/select-view");
+      } else if (
+        data.user.availableRoles &&
+        data.user.availableRoles.length > 1
+      ) {
         navigate("/select-view");
       } else {
         navigate("/dashboard");

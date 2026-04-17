@@ -2213,14 +2213,30 @@ async function resolveLoginUser(normalizedEmail) {
     }
   }
 
-  // Platform admins always get PG_Machine access
-  if (isPlatformAdmin && !linked.includes("PG_Machine")) {
-    linked.push("PG_Machine");
-    availableRoles.push({
-      tenant: "PG_Machine",
-      role: "platform_admin",
-      teamName: null,
-    });
+  // Platform admins always get platform_admin role for PG_Machine
+  if (isPlatformAdmin) {
+    if (!linked.includes("PG_Machine")) {
+      linked.push("PG_Machine");
+    }
+    // Ensure platform_admin role exists (upgrade if already linked as a lower role)
+    const existingPgAdmin = availableRoles.find(
+      (r) => r.tenant === "PG_Machine" && r.role === "platform_admin",
+    );
+    if (!existingPgAdmin) {
+      // Upgrade existing PG_Machine role entry or add new one
+      const existingIdx = availableRoles.findIndex(
+        (r) => r.tenant === "PG_Machine",
+      );
+      if (existingIdx !== -1) {
+        availableRoles[existingIdx].role = "platform_admin";
+      } else {
+        availableRoles.push({
+          tenant: "PG_Machine",
+          role: "platform_admin",
+          teamName: null,
+        });
+      }
+    }
   }
 
   if (linked.length === 0) {
