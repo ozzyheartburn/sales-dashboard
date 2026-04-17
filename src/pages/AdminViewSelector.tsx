@@ -1,77 +1,82 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../App";
+import { useAuth, type AvailableRole } from "../App";
 import {
   Settings,
   TrendingUp,
   BarChart3,
-  Headphones,
   Users,
-  Lock,
   Brain,
   LogOut,
+  Shield,
 } from "lucide-react";
+import type { FC } from "react";
 
-interface ViewOption {
-  id: string;
+interface RoleMeta {
   label: string;
   description: string;
-  icon: typeof Settings;
-  active: boolean;
-  gradient?: string;
+  icon: FC<{ size?: number; color?: string }>;
+  gradient: string;
 }
 
-const VIEW_OPTIONS: ViewOption[] = [
-  {
-    id: "admin",
-    label: "Admin Account",
-    description: "Manage prompts, assign user permissions, platform settings",
-    icon: Settings,
-    active: true,
+const ROLE_META: Record<string, RoleMeta> = {
+  platform_admin: {
+    label: "Platform Admin",
+    description: "Manage all companies, users and platform settings",
+    icon: Shield,
     gradient:
       "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
   },
-  {
-    id: "sales_leader",
-    label: "Sales Leader View",
+  company_admin: {
+    label: "Company Admin",
+    description: "Full access — manage users & company data",
+    icon: Settings,
+    gradient:
+      "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+  },
+  team_leader: {
+    label: "Team Leader",
     description: "Team performance, pipeline analytics, coaching insights",
     icon: TrendingUp,
-    active: false,
-  },
-  {
-    id: "sales_rep",
-    label: "Sales Rep View",
-    description: "Account research, deal intelligence, war room",
-    icon: BarChart3,
-    active: true,
     gradient: "var(--primary)",
   },
-  {
-    id: "sdr_leader",
-    label: "SDR Leader View",
-    description: "Outbound metrics, team activity, conversion tracking",
-    icon: Users,
-    active: false,
+  end_user: {
+    label: "Sales Rep",
+    description: "Account research, deal intelligence, war room",
+    icon: BarChart3,
+    gradient: "var(--primary)",
   },
-  {
-    id: "sdr",
-    label: "SDR View",
-    description: "Prospecting tools, sequences, meeting booking",
-    icon: Headphones,
-    active: false,
-  },
-];
+};
+
+const DEFAULT_META: RoleMeta = {
+  label: "Dashboard",
+  description: "View your dashboard",
+  icon: Users,
+  gradient: "var(--primary)",
+};
 
 export function AdminViewSelector() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, login, credential, logout } = useAuth();
 
-  const handleSelect = (view: ViewOption) => {
-    if (!view.active) return;
+  const roles = user?.availableRoles || [];
 
-    if (view.id === "admin") {
+  const handleSelectRole = (ar: AvailableRole) => {
+    if (!user || !credential) return;
+
+    const updatedUser = {
+      ...user,
+      role: ar.role,
+      tenant: ar.tenant,
+      teamName: ar.teamName,
+      isPlatformAdmin: ar.role === "platform_admin",
+    };
+
+    login(updatedUser, credential);
+
+    if (ar.role === "platform_admin") {
       navigate("/admin");
-    } else if (view.id === "sales_rep") {
+    } else {
       navigate("/dashboard");
     }
   };
@@ -172,7 +177,7 @@ export function AdminViewSelector() {
           </p>
         </div>
 
-        {/* View Cards */}
+        {/* Role Cards */}
         <div
           className="luminous-shadow"
           style={{
@@ -184,104 +189,78 @@ export function AdminViewSelector() {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}
           >
-            {VIEW_OPTIONS.map((view, index) => (
-              <motion.button
-                key={view.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.06 }}
-                whileHover={view.active ? { scale: 1.01 } : undefined}
-                whileTap={view.active ? { scale: 0.99 } : undefined}
-                onClick={() => handleSelect(view)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.9rem",
-                  padding: "0.9rem 1rem",
-                  borderRadius: 12,
-                  border: view.active
-                    ? "1px solid rgba(107,113,148,0.15)"
-                    : "1px solid rgba(107,113,148,0.08)",
-                  background: view.active
-                    ? "var(--surface-container-low)"
-                    : "transparent",
-                  cursor: view.active ? "pointer" : "default",
-                  opacity: view.active ? 1 : 0.45,
-                  textAlign: "left",
-                  transition: "all 160ms ease",
-                }}
-              >
-                {/* Icon */}
-                <div
+            {roles.map((ar, index) => {
+              const meta = ROLE_META[ar.role] || DEFAULT_META;
+              const Icon = meta.icon;
+
+              return (
+                <motion.button
+                  key={`${ar.tenant}-${ar.role}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.06 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => handleSelectRole(ar)}
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
-                    background: view.active
-                      ? view.gradient || "var(--primary)"
-                      : "var(--surface-container)",
+                    width: "100%",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+                    gap: "0.9rem",
+                    padding: "0.9rem 1rem",
+                    borderRadius: 12,
+                    border: "1px solid rgba(107,113,148,0.15)",
+                    background: "var(--surface-container-low)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 160ms ease",
                   }}
                 >
-                  {view.active ? (
-                    <view.icon size={20} color="white" />
-                  ) : (
-                    <Lock
-                      size={16}
-                      style={{ color: "var(--on-surface-variant)" }}
-                    />
-                  )}
-                </div>
-
-                {/* Text */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Icon */}
                   <div
                     style={{
-                      fontFamily: "var(--font-headline)",
-                      fontWeight: 700,
-                      fontSize: "0.88rem",
-                      color: view.active
-                        ? "var(--on-background)"
-                        : "var(--on-surface-variant)",
-                    }}
-                  >
-                    {view.label}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: "0.72rem",
-                      color: "var(--on-surface-variant)",
-                      marginTop: "0.1rem",
-                    }}
-                  >
-                    {view.description}
-                  </div>
-                </div>
-
-                {/* Badge */}
-                {!view.active && (
-                  <span
-                    style={{
-                      fontSize: "0.6rem",
-                      fontFamily: "var(--font-label)",
-                      fontWeight: 700,
-                      color: "var(--on-surface-variant)",
-                      background: "var(--surface-container)",
-                      borderRadius: 9999,
-                      padding: "0.15rem 0.6rem",
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: meta.gradient,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       flexShrink: 0,
                     }}
                   >
-                    UPCOMING
-                  </span>
-                )}
-              </motion.button>
-            ))}
+                    <Icon size={20} color="white" />
+                  </div>
+
+                  {/* Text */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-headline)",
+                        fontWeight: 700,
+                        fontSize: "0.88rem",
+                        color: "var(--on-background)",
+                      }}
+                    >
+                      {meta.label}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: "0.72rem",
+                        color: "var(--on-surface-variant)",
+                        marginTop: "0.1rem",
+                      }}
+                    >
+                      {meta.description}
+                      {ar.tenant !== "platform" && (
+                        <span style={{ opacity: 0.7 }}> · {ar.tenant}</span>
+                      )}
+                    </div>
+                  </div>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 

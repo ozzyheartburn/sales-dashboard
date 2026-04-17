@@ -8,16 +8,22 @@ import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { AdminViewSelector } from "./pages/AdminViewSelector";
 
+export interface AvailableRole {
+  tenant: string;
+  role: string;
+  teamName: string | null;
+}
+
 export interface AuthUser {
   email: string;
   name: string | null;
   picture: string | null;
-  googleId: string;
   role: string;
   isPlatformAdmin: boolean;
   tenant: string;
   linkedTenants: string[];
   teamName: string | null;
+  availableRoles: AvailableRole[];
   customer_company_id: string | null;
   customer_user_id: string | null;
   customer_user_id_rbac: string | null;

@@ -4,6 +4,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const path = require("path");
 const OpenAI = require("openai");
+const bcrypt = require("bcryptjs");
 const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
 const {
   verifyGoogleToken,
@@ -141,11 +142,9 @@ app.get("/api/accounts", async (req, res) => {
           tenantSlug !== allowedTenant &&
           tenantSlug !== "PG_Machine"
         ) {
-          return res
-            .status(403)
-            .json({
-              error: "Access denied: you cannot access this tenant's data",
-            });
+          return res.status(403).json({
+            error: "Access denied: you cannot access this tenant's data",
+          });
         }
       }
     }
@@ -2172,182 +2171,263 @@ app.get("/api/tenants/:slug/roles", async (req, res) => {
   }
 });
 
-// Google login callback: verify user and return user info + role
-app.post("/api/auth/google", async (req, res) => {
-  try {
-    const { credential, email, name, picture, googleId } = req.body;
-    if (!credential || !email) {
-      return res.status(400).json({ error: "Missing credential or email" });
-    }
+// =========================================================================
+// Auth: email + password login (replaces Google OAuth)
+// Collection: "auth_users" in platform database
+// =========================================================================
 
-    const normalizedEmail = email.toLowerCase();
-    const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(normalizedEmail);
+// Helper: resolve user tenants, roles, and identity for login response
+async function resolveLoginUser(normalizedEmail) {
+  const isPlatformAdmin = PLATFORM_ADMIN_EMAILS.includes(normalizedEmail);
 
-    // Look up which tenant(s) this email belongs to
-    const platformDb = await connectPlatformDB();
-    const tenants = await platformDb
-      .collection("tenants")
-      .find({ status: "active" })
-      .toArray();
+  const platformDb = await connectPlatformDB();
+  const tenants = await platformDb
+    .collection("tenants")
+    .find({ status: "active" })
+    .toArray();
 
-    const linked = [];
-    let userRole = null;
-    let userTenant = null;
-    let teamName = null;
-    let primaryTenant = null;
+  const availableRoles = [];
+  const linked = [];
+  let userName = null;
+  let primaryTenant = null;
 
-    for (const tenant of tenants) {
-      const tenantDb = await connectTenantDB(tenant.databaseName);
-      const result = await tenantDb.collection("users").findOneAndUpdate(
+  for (const tenant of tenants) {
+    const tenantDb = await connectTenantDB(tenant.databaseName);
+    const user = await tenantDb
+      .collection("users")
+      .findOneAndUpdate(
         { email: normalizedEmail },
-        {
-          $set: {
-            googleId: googleId || null,
-            name: name || undefined,
-            picture: picture || null,
-            lastLoginAt: new Date().toISOString(),
-          },
-        },
+        { $set: { lastLoginAt: new Date().toISOString() } },
         { returnDocument: "after" },
       );
-      if (result) {
-        linked.push(tenant.slug);
-        if (!userRole) {
-          userRole = result.role;
-          userTenant = tenant.slug;
-          teamName = result.teamName || null;
-        }
-        if (!primaryTenant && result.primaryTenant)
-          primaryTenant = result.primaryTenant;
-      }
+    if (user) {
+      linked.push(tenant.slug);
+      if (!userName && user.name) userName = user.name;
+      if (!primaryTenant && user.primaryTenant)
+        primaryTenant = user.primaryTenant;
+      availableRoles.push({
+        tenant: tenant.slug,
+        role: user.role || "end_user",
+        teamName: user.teamName || null,
+      });
+    }
+  }
+
+  // Platform admins always get PG_Machine access
+  if (isPlatformAdmin && !linked.includes("PG_Machine")) {
+    linked.push("PG_Machine");
+    availableRoles.push({
+      tenant: "PG_Machine",
+      role: "platform_admin",
+      teamName: null,
+    });
+  }
+
+  if (linked.length === 0) {
+    return null;
+  }
+
+  const resolvedTenant = primaryTenant || linked[0] || "PG_Machine";
+  const identity = await resolveIdentity(normalizedEmail);
+
+  // Pick initial role (platform_admin takes priority, then first available)
+  const adminRole = availableRoles.find((r) => r.role === "platform_admin");
+  const initialRole = adminRole || availableRoles[0];
+
+  return {
+    email: normalizedEmail,
+    name: userName || normalizedEmail.split("@")[0],
+    picture: null,
+    role: isPlatformAdmin ? "platform_admin" : initialRole.role,
+    isPlatformAdmin,
+    tenant: resolvedTenant,
+    linkedTenants: linked,
+    teamName: initialRole.teamName,
+    availableRoles,
+    customer_company_id: identity?.customer_company_id || null,
+    customer_user_id: identity?.customer_user_id || null,
+    customer_user_id_rbac: identity?.customer_user_id_rbac || null,
+  };
+}
+
+// Login with email + password
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Platform admins always get access even if not in any tenant user list
-    if (isPlatformAdmin && linked.length === 0) {
-      linked.push("PG_Machine");
-      userRole = "platform_admin";
-      userTenant = "PG_Machine";
+    const normalizedEmail = email.toLowerCase().trim();
+    const platformDb = await connectPlatformDB();
+    const authUser = await platformDb
+      .collection("auth_users")
+      .findOne({ email: normalizedEmail });
+
+    if (!authUser) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    if (linked.length === 0) {
+    const valid = await bcrypt.compare(password, authUser.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    // Update last login
+    await platformDb
+      .collection("auth_users")
+      .updateOne(
+        { email: normalizedEmail },
+        { $set: { lastLoginAt: new Date().toISOString() } },
+      );
+
+    const userData = await resolveLoginUser(normalizedEmail);
+    if (!userData) {
       return res.status(403).json({
         error: "No tenant found for this email. Ask an admin to invite you.",
       });
     }
 
-    // Use primaryTenant from user record if available
-    const resolvedTenant = primaryTenant || userTenant;
+    // Use name from auth_users if tenant didn't have one
+    if (authUser.name && userData.name === normalizedEmail.split("@")[0]) {
+      userData.name = authUser.name;
+    }
 
-    // Cross-reference pg_identity for RBAC fields
-    const identity = await resolveIdentity(normalizedEmail);
+    const credential = `session-${Date.now()}-${normalizedEmail}`;
 
-    res.json({
-      success: true,
-      user: {
-        email: normalizedEmail,
-        name: name || null,
-        picture: picture || null,
-        googleId: googleId || null,
-        role: isPlatformAdmin ? "platform_admin" : userRole,
-        isPlatformAdmin,
-        tenant: resolvedTenant,
-        linkedTenants: linked,
-        teamName,
-        // pg_identity fields
-        customer_company_id: identity?.customer_company_id || null,
-        customer_user_id: identity?.customer_user_id || null,
-        customer_user_id_rbac: identity?.customer_user_id_rbac || null,
-      },
-      credential,
-    });
+    console.log(
+      `Login: ${normalizedEmail} → tenants: ${userData.linkedTenants.join(", ")}, roles: ${userData.availableRoles.map((r) => `${r.role}@${r.tenant}`).join(", ")}`,
+    );
+
+    res.json({ success: true, user: userData, credential });
   } catch (err) {
-    console.error("Error with Google auth:", err);
+    console.error("Error with login:", err);
     res.status(500).json({ error: "Authentication failed" });
   }
 });
 
-// Dev login for platform admins — email-only, no Google OAuth required
-app.post("/api/auth/dev-login", async (req, res) => {
+// Create a new user (only platform admins can do this)
+app.post("/api/auth/create-user", async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: "Missing email" });
+    const { email, password, name, role, tenant } = req.body;
+    const creatorEmail = req.headers["x-user-email"];
+    const creatorRole = req.headers["x-user-role"];
+
+    // Only platform admins can create users
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(creatorEmail?.toLowerCase()) &&
+      creatorRole !== "platform_admin"
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only platform admins can create users" });
+    }
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters" });
+    }
+
+    // Cannot create platform_admin accounts
+    if (role === "platform_admin") {
+      return res
+        .status(403)
+        .json({ error: "Cannot create platform admin accounts" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    if (!PLATFORM_ADMIN_EMAILS.includes(normalizedEmail)) {
-      return res
-        .status(403)
-        .json({ error: "Not authorized. Platform admin access only." });
+    const platformDb = await connectPlatformDB();
+
+    // Check if already exists
+    const existing = await platformDb
+      .collection("auth_users")
+      .findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({ error: "User already exists" });
     }
 
-    // Look up tenants the same way as Google auth
-    const platformDb = await connectPlatformDB();
-    const tenants = await platformDb
-      .collection("tenants")
-      .find({ status: "active" })
-      .toArray();
+    const passwordHash = await bcrypt.hash(password, 12);
 
-    const linked = [];
-    let userName = null;
-    let primaryTenant = null;
+    await platformDb.collection("auth_users").insertOne({
+      email: normalizedEmail,
+      passwordHash,
+      name: name || normalizedEmail.split("@")[0],
+      createdAt: new Date().toISOString(),
+      createdBy: creatorEmail || "system",
+    });
 
-    for (const tenant of tenants) {
-      const tenantDb = await connectTenantDB(tenant.databaseName);
-      const user = await tenantDb.collection("users").findOneAndUpdate(
+    // If tenant specified, also add user to that tenant's users collection
+    if (tenant) {
+      const tenantDb = await connectTenantDB(tenant);
+      await tenantDb.collection("users").updateOne(
         { email: normalizedEmail },
         {
-          $set: { lastLoginAt: new Date().toISOString() },
+          $set: {
+            email: normalizedEmail,
+            name: name || normalizedEmail.split("@")[0],
+            role: role || "end_user",
+            createdAt: new Date().toISOString(),
+          },
         },
-        { returnDocument: "after" },
+        { upsert: true },
       );
-      if (user) {
-        linked.push(tenant.slug);
-        if (!userName && user.name) userName = user.name;
-        if (!primaryTenant && user.primaryTenant)
-          primaryTenant = user.primaryTenant;
-      }
     }
 
-    // Platform admins always get PG_Machine access
-    if (!linked.includes("PG_Machine")) {
-      linked.push("PG_Machine");
-    }
-
-    // Use primaryTenant from user record, or first linked tenant
-    const resolvedTenant = primaryTenant || linked[0] || "PG_Machine";
-
-    // Cross-reference pg_identity for RBAC fields
-    const identity = await resolveIdentity(normalizedEmail);
-
-    const devCredential = `dev-${Date.now()}-${normalizedEmail}`;
+    console.log(
+      `User created: ${normalizedEmail} (by ${creatorEmail || "system"})${tenant ? ` → tenant: ${tenant}, role: ${role || "end_user"}` : ""}`,
+    );
 
     res.json({
       success: true,
-      user: {
-        email: normalizedEmail,
-        name: userName || normalizedEmail.split("@")[0],
-        picture: null,
-        googleId: null,
-        role: "platform_admin",
-        isPlatformAdmin: true,
-        tenant: resolvedTenant,
-        linkedTenants: linked,
-        teamName: null,
-        // pg_identity fields
-        customer_company_id: identity?.customer_company_id || null,
-        customer_user_id: identity?.customer_user_id || null,
-        customer_user_id_rbac: identity?.customer_user_id_rbac || null,
-      },
-      credential: devCredential,
+      email: normalizedEmail,
+      name: name || normalizedEmail.split("@")[0],
     });
-
-    console.log(
-      `Dev login: ${normalizedEmail} → tenants: ${linked.join(", ")}`,
-    );
   } catch (err) {
-    console.error("Error with dev login:", err);
-    res.status(500).json({ error: "Dev login failed" });
+    console.error("Error creating user:", err);
+    res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+// Seed platform admin accounts (run once)
+app.post("/api/auth/seed-admins", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const col = platformDb.collection("auth_users");
+
+    await col.createIndex(
+      { email: 1 },
+      { unique: true, collation: { locale: "en", strength: 2 } },
+    );
+
+    const results = [];
+    for (const adminEmail of PLATFORM_ADMIN_EMAILS) {
+      const existing = await col.findOne({ email: adminEmail });
+      if (existing) {
+        results.push({ email: adminEmail, status: "already_exists" });
+        continue;
+      }
+
+      const passwordHash = await bcrypt.hash("pilluharja1", 12);
+      await col.insertOne({
+        email: adminEmail,
+        passwordHash,
+        name: adminEmail.split("@")[0],
+        isPlatformAdmin: true,
+        createdAt: new Date().toISOString(),
+        createdBy: "system-seed",
+      });
+      results.push({ email: adminEmail, status: "created" });
+    }
+
+    console.log("Admin seed results:", results);
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error("Error seeding admins:", err);
+    res.status(500).json({ error: "Failed to seed admins" });
   }
 });
 

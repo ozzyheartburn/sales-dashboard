@@ -13,6 +13,10 @@ import {
   Loader2,
   Plus,
   Trash2,
+  Workflow,
+  Play,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -1033,6 +1037,148 @@ export function AdminPanel() {
               ))}
             </div>
           )}
+        </motion.div>
+
+        {/* ============ Section 4: Workflows (Skeleton) ============ */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.21 }}
+          className="luminous-shadow"
+          style={cardStyle}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "1.25rem",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
+              <Workflow size={18} style={{ color: "var(--tertiary)" }} />
+              <h2
+                style={{
+                  fontFamily: "var(--font-headline)",
+                  fontWeight: 700,
+                  fontSize: "1.05rem",
+                  color: "var(--on-background)",
+                  margin: 0,
+                }}
+              >
+                Workflows
+              </h2>
+              <span
+                style={{
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  fontFamily: "var(--font-label)",
+                  color: "var(--on-surface-variant)",
+                  background: "var(--surface-container)",
+                  borderRadius: 9999,
+                  padding: "0.15rem 0.6rem",
+                }}
+              >
+                COMING SOON
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+          >
+            {[
+              {
+                name: "New Account Research",
+                description: "Auto-run agent swarm when a new account is added",
+                icon: Zap,
+                status: "draft",
+              },
+              {
+                name: "Weekly Buying Signal Refresh",
+                description: "Re-score all accounts every Monday at 06:00",
+                icon: Clock,
+                status: "draft",
+              },
+              {
+                name: "Champion Change Alert",
+                description:
+                  "Notify team when champion data changes significantly",
+                icon: Play,
+                status: "draft",
+              },
+            ].map((wf, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  padding: "0.75rem 0.85rem",
+                  borderRadius: 10,
+                  border: "1px solid rgba(107,113,148,0.1)",
+                  backgroundColor: "var(--surface-container-low)",
+                  opacity: 0.6,
+                }}
+              >
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: "var(--surface-container)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <wf.icon
+                    size={15}
+                    style={{ color: "var(--on-surface-variant)" }}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-label)",
+                      fontWeight: 700,
+                      fontSize: "0.82rem",
+                      color: "var(--on-surface)",
+                    }}
+                  >
+                    {wf.name}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--font-body)",
+                      fontSize: "0.7rem",
+                      color: "var(--on-surface-variant)",
+                      marginTop: "0.1rem",
+                    }}
+                  >
+                    {wf.description}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    fontSize: "0.6rem",
+                    fontWeight: 700,
+                    fontFamily: "var(--font-label)",
+                    color: "var(--on-surface-variant)",
+                    backgroundColor: "var(--surface-container)",
+                    borderRadius: 9999,
+                    padding: "0.12rem 0.55rem",
+                    flexShrink: 0,
+                  }}
+                >
+                  DRAFT
+                </span>
+              </div>
+            ))}
+          </div>
         </motion.div>
       </div>
 
