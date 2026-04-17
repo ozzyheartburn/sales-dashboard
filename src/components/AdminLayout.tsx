@@ -15,6 +15,7 @@ import {
   ArrowLeftRight,
   Menu,
   CreditCard,
+  Target,
 } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -34,6 +35,7 @@ const adminNavItems = [
   { icon: CreditCard, label: "Subscriptions", path: "/admin/subscriptions" },
   { icon: Workflow, label: "Workflows", path: "/admin/workflows" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
+  { icon: Target, label: "Sales View", path: "/dashboard" },
 ];
 
 export function AdminLayout() {

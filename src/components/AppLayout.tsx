@@ -69,6 +69,12 @@ const allNavItems = [
     path: "/dashboard/integrations",
     roles: ["platform_admin", "company_admin"],
   },
+  {
+    icon: Settings,
+    label: "Admin Console",
+    path: "/admin",
+    roles: ["platform_admin"],
+  },
 ];
 
 export function AppLayout() {
