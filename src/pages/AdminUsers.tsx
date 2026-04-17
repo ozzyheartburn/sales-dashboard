@@ -147,9 +147,10 @@ export function AdminUsers() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setTenants(data);
-          if (data.length > 0 && !invite.company) {
-            setInvite((p) => ({ ...p, company: data[0].slug }));
+          const mapped = data.map((t: any) => ({ slug: t.slug, name: t.displayName || t.name || t.slug }));
+          setTenants(mapped);
+          if (mapped.length > 0 && !invite.company) {
+            setInvite((p) => ({ ...p, company: mapped[0].slug }));
           }
         }
       })
