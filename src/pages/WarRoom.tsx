@@ -990,8 +990,8 @@ export function WarRoom() {
       });
   }, [selectedAccount, setNodes, setEdges]);
 
-  const { user } = useAuth();
-  const authHeaders = buildAuthHeaders(user);
+  const { user, activeTenant } = useAuth();
+  const authHeaders = buildAuthHeaders(user, activeTenant);
 
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`, { headers: authHeaders })

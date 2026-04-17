@@ -244,6 +244,7 @@ export function AdminWorkflows() {
         body: JSON.stringify({
           account_name: researchAccount.trim(),
           website_url: researchWebsite.trim() || undefined,
+          tenant: selectedTenant || undefined,
         }),
       });
       if (res.ok) {

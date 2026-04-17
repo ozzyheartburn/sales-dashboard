@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth, buildAuthHeaders } from "../App";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -101,6 +102,8 @@ interface Account {
 const API_URL = import.meta.env.VITE_API_URL || "";
 
 export function ResearchHub() {
+  const { user, activeTenant } = useAuth();
+  const authHeaders = buildAuthHeaders(user, activeTenant);
   const [showModal, setShowModal] = useState(false);
   const [accountName, setAccountName] = useState("");
   const [website, setWebsite] = useState("");
@@ -112,7 +115,7 @@ export function ResearchHub() {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/accounts`)
+    fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: Account[]) => {
         const populated = data.filter((a) => a.companyName);
@@ -123,7 +126,7 @@ export function ResearchHub() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [activeTenant]);
 
   const handleInitiateResearch = async () => {
     setIsSubmitting(true);
@@ -131,7 +134,7 @@ export function ResearchHub() {
       // Fire-and-forget: backend triggers n8n asynchronously
       const res = await fetch(`${API_URL}/api/research`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { ...authHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({
           account_name: accountName,
           website_url: website,
@@ -162,12 +165,15 @@ export function ResearchHub() {
       try {
         const res = await fetch(
           `${API_URL}/api/research/status/${encodeURIComponent(pollingAccount)}`,
+          { headers: authHeaders },
         );
         const data = await res.json();
         if (data.status === "completed") {
           setPollingAccount(null);
           // Refresh accounts list
-          const accountsRes = await fetch(`${API_URL}/api/accounts`);
+          const accountsRes = await fetch(`${API_URL}/api/accounts`, {
+            headers: authHeaders,
+          });
           const freshAccounts: Account[] = await accountsRes.json();
           const sorted = freshAccounts
             .filter((a) => a.companyName)

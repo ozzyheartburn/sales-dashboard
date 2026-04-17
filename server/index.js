@@ -1137,17 +1137,21 @@ app.get("/api/org-chart/:accountName", async (req, res) => {
 // Initiate research: fire-and-forget to n8n, return immediately
 app.post("/api/research", async (req, res) => {
   try {
-    const { account_name, website_url } = req.body;
+    const { account_name, website_url, tenant } = req.body;
     if (!account_name) {
       return res.status(400).json({ error: "Missing account_name in payload" });
     }
 
-    console.log(`Research started for ${account_name} (async)...`);
+    const tenantSlug = tenant || req.headers["x-tenant"] || "PG_Machine";
+    console.log(
+      `Research started for ${account_name} (tenant: ${tenantSlug}, async)...`,
+    );
 
-    // Track this research as pending
+    // Track this research as pending (include tenant for later lookup)
     pendingResearch.set(account_name.toLowerCase(), {
       status: "pending",
       startedAt: new Date().toISOString(),
+      tenant: tenantSlug,
     });
 
     // Fire-and-forget: call n8n webhook without awaiting the response
@@ -1156,9 +1160,13 @@ app.post("/api/research", async (req, res) => {
     fetch(n8nUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ account_name, website_url }),
+      body: JSON.stringify({ account_name, website_url, tenant: tenantSlug }),
     })
-      .then(() => console.log(`n8n webhook fired for ${account_name}`))
+      .then(() =>
+        console.log(
+          `n8n webhook fired for ${account_name} (tenant: ${tenantSlug})`,
+        ),
+      )
       .catch((err) =>
         console.error(
           `n8n webhook fire failed for ${account_name}:`,
@@ -1169,6 +1177,7 @@ app.post("/api/research", async (req, res) => {
     res.json({
       success: true,
       message: `Research for "${account_name}" has been started. n8n will call back when done.`,
+      tenant: tenantSlug,
     });
   } catch (err) {
     console.error("Error initiating research:", err);
@@ -1197,9 +1206,17 @@ app.post("/api/research/save", async (req, res) => {
     // Normalize: ensure companyName is set in the data
     researchData.companyName = companyName;
 
-    // Save to MongoDB
-    const database = await connectDB();
+    // Save to MongoDB — route to tenant DB if specified
+    const tenantSlug = researchData.tenant || "PG_Machine";
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
     const collection = database.collection("PG_Machine");
+    // Remove tenant field from stored data to keep it clean
+    delete researchData.tenant;
     const result = await collection.updateOne(
       { companyName },
       {
@@ -1299,7 +1316,14 @@ app.get("/api/research/status/:account", async (req, res) => {
 
   // Check if account exists in DB already
   try {
-    const database = await connectDB();
+    const tenantSlug =
+      pending?.tenant || req.headers["x-tenant"] || "PG_Machine";
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
     const collection = database.collection("PG_Machine");
     const exists = await collection.findOne(
       { companyName: { $regex: new RegExp(`^${account}$`, "i") } },
