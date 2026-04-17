@@ -50,17 +50,8 @@ export function LoginPage() {
 
       login(data.user, data.credential);
 
-      // Platform admins always get role selector; others go to dashboard unless multi-role
-      if (data.user.isPlatformAdmin) {
-        navigate("/select-view");
-      } else if (
-        data.user.availableRoles &&
-        data.user.availableRoles.length > 1
-      ) {
-        navigate("/select-view");
-      } else {
-        navigate("/dashboard");
-      }
+      // Always go to role selector so user picks their view
+      navigate("/select-view");
     } catch {
       setError("Login failed. Please try again.");
     }

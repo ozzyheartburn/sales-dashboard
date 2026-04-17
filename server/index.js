@@ -2213,29 +2213,40 @@ async function resolveLoginUser(normalizedEmail) {
     }
   }
 
-  // Platform admins always get platform_admin role for PG_Machine
+  // Platform admins always get all roles for PG_Machine
   if (isPlatformAdmin) {
     if (!linked.includes("PG_Machine")) {
       linked.push("PG_Machine");
     }
-    // Ensure platform_admin role exists (upgrade if already linked as a lower role)
-    const existingPgAdmin = availableRoles.find(
-      (r) => r.tenant === "PG_Machine" && r.role === "platform_admin",
-    );
-    if (!existingPgAdmin) {
-      // Upgrade existing PG_Machine role entry or add new one
-      const existingIdx = availableRoles.findIndex(
-        (r) => r.tenant === "PG_Machine",
-      );
-      if (existingIdx !== -1) {
-        availableRoles[existingIdx].role = "platform_admin";
-      } else {
+    // Replace any existing PG_Machine roles with the full admin role set
+    const pgRoles = availableRoles.filter((r) => r.tenant === "PG_Machine");
+    const existingRoleNames = pgRoles.map((r) => r.role);
+    const adminRoles = [
+      "platform_admin",
+      "sales_leader",
+      "end_user",
+      "sdr",
+      "sdr_manager",
+    ];
+    for (const roleName of adminRoles) {
+      if (!existingRoleNames.includes(roleName)) {
         availableRoles.push({
           tenant: "PG_Machine",
-          role: "platform_admin",
+          role: roleName,
           teamName: null,
         });
       }
+    }
+    // Ensure platform_admin is present (upgrade if existing entry has lower role)
+    const hasPlatformAdmin = availableRoles.some(
+      (r) => r.tenant === "PG_Machine" && r.role === "platform_admin",
+    );
+    if (!hasPlatformAdmin) {
+      availableRoles.push({
+        tenant: "PG_Machine",
+        role: "platform_admin",
+        teamName: null,
+      });
     }
   }
 

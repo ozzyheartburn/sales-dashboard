@@ -17,10 +17,13 @@ import {
 } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
-  platform_admin: "Platform Admin",
+  platform_admin: "Admin",
   company_admin: "Company Admin",
+  sales_leader: "Sales Leader",
   team_leader: "Team Leader",
   end_user: "Sales Rep",
+  sdr: "SDR",
+  sdr_manager: "SDR Manager",
 };
 
 const adminNavItems = [

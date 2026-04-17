@@ -9,6 +9,8 @@ import {
   Brain,
   LogOut,
   Shield,
+  Phone,
+  UserCheck,
 } from "lucide-react";
 import type { FC } from "react";
 
@@ -21,7 +23,7 @@ interface RoleMeta {
 
 const ROLE_META: Record<string, RoleMeta> = {
   platform_admin: {
-    label: "Platform Admin",
+    label: "Admin",
     description: "Manage all companies, users and platform settings",
     icon: Shield,
     gradient:
@@ -34,6 +36,12 @@ const ROLE_META: Record<string, RoleMeta> = {
     gradient:
       "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
   },
+  sales_leader: {
+    label: "Sales Leader",
+    description: "Team performance, pipeline analytics, coaching insights",
+    icon: TrendingUp,
+    gradient: "linear-gradient(135deg, #06b6d4, var(--primary))",
+  },
   team_leader: {
     label: "Team Leader",
     description: "Team performance, pipeline analytics, coaching insights",
@@ -45,6 +53,18 @@ const ROLE_META: Record<string, RoleMeta> = {
     description: "Account research, deal intelligence, war room",
     icon: BarChart3,
     gradient: "var(--primary)",
+  },
+  sdr: {
+    label: "SDR",
+    description: "Outbound prospecting, lead qualification, outreach",
+    icon: Phone,
+    gradient: "linear-gradient(135deg, #f59e0b, #ef4444)",
+  },
+  sdr_manager: {
+    label: "SDR Manager",
+    description: "SDR team oversight, cadence management, conversion metrics",
+    icon: UserCheck,
+    gradient: "linear-gradient(135deg, #f59e0b, var(--primary))",
   },
 };
 

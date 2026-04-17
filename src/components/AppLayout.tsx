@@ -324,16 +324,15 @@ export function AppLayout() {
             {roleSwitcherOpen &&
               (() => {
                 const availableRoles = user?.availableRoles || [];
-                const otherRoles = availableRoles.filter(
-                  (ar) => ar.role !== user?.role || ar.tenant !== user?.tenant,
-                );
                 const ROLE_LABELS: Record<string, string> = {
-                  platform_admin: "Platform Admin",
+                  platform_admin: "Admin",
                   company_admin: "Company Admin",
+                  sales_leader: "Sales Leader",
                   team_leader: "Team Leader",
                   end_user: "Sales Rep",
+                  sdr: "SDR",
+                  sdr_manager: "SDR Manager",
                 };
-                if (otherRoles.length === 0) return null;
                 return (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -354,92 +353,132 @@ export function AppLayout() {
                       marginBottom: 4,
                     }}
                   >
-                    <p
-                      style={{
-                        fontSize: "0.6rem",
-                        fontWeight: 700,
-                        color: "var(--on-surface-variant)",
-                        padding: "4px 10px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        fontFamily: "var(--font-label)",
-                      }}
-                    >
-                      Switch Role
-                    </p>
-                    {otherRoles.map((ar, i) => (
-                      <button
-                        key={`${ar.tenant}-${ar.role}-${i}`}
-                        onClick={() => {
-                          if (!user || !credential) return;
-                          const updatedUser = {
-                            ...user,
-                            role: ar.role,
-                            tenant: ar.tenant,
-                            teamName: ar.teamName,
-                            isPlatformAdmin: ar.role === "platform_admin",
-                          };
-                          login(updatedUser, credential);
-                          setRoleSwitcherOpen(false);
-                          if (ar.role === "platform_admin") {
-                            navigate("/admin");
-                          } else {
-                            navigate("/dashboard");
-                          }
-                        }}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          width: "100%",
-                          padding: "8px 10px",
-                          border: "none",
-                          background: "transparent",
-                          borderRadius: 8,
-                          cursor: "pointer",
-                          transition: "background 100ms",
-                          textAlign: "left",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background =
-                            "rgba(167,176,222,0.08)")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        <ArrowLeftRight
-                          size={12}
-                          color="var(--on-surface-variant)"
-                        />
-                        <div>
-                          <p
-                            style={{
-                              fontSize: "0.72rem",
-                              fontWeight: 600,
-                              color: "var(--on-surface)",
-                              fontFamily: "var(--font-headline)",
-                            }}
-                          >
-                            {ROLE_LABELS[ar.role] || ar.role}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: "0.6rem",
-                              color: "var(--on-surface-variant)",
-                            }}
-                          >
-                            {ar.tenant}
-                            {ar.teamName ? ` · ${ar.teamName}` : ""}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+                    {availableRoles.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            color: "var(--on-surface-variant)",
+                            padding: "4px 10px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            fontFamily: "var(--font-label)",
+                          }}
+                        >
+                          Switch Role
+                        </p>
+                        {availableRoles.map((ar, i) => {
+                          const isActive =
+                            ar.role === user?.role &&
+                            ar.tenant === user?.tenant;
+                          return (
+                            <button
+                              key={`${ar.tenant}-${ar.role}-${i}`}
+                              onClick={() => {
+                                if (isActive || !user || !credential) {
+                                  setRoleSwitcherOpen(false);
+                                  return;
+                                }
+                                const updatedUser = {
+                                  ...user,
+                                  role: ar.role,
+                                  tenant: ar.tenant,
+                                  teamName: ar.teamName,
+                                  isPlatformAdmin: ar.role === "platform_admin",
+                                };
+                                login(updatedUser, credential);
+                                setRoleSwitcherOpen(false);
+                                if (ar.role === "platform_admin") {
+                                  navigate("/admin");
+                                } else {
+                                  navigate("/dashboard");
+                                }
+                              }}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                width: "100%",
+                                padding: "8px 10px",
+                                border: "none",
+                                background: isActive
+                                  ? "rgba(18,74,241,0.1)"
+                                  : "transparent",
+                                borderRadius: 8,
+                                cursor: isActive ? "default" : "pointer",
+                                transition: "background 100ms",
+                                textAlign: "left",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isActive)
+                                  e.currentTarget.style.background =
+                                    "rgba(167,176,222,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isActive)
+                                  e.currentTarget.style.background =
+                                    "transparent";
+                              }}
+                            >
+                              <ArrowLeftRight
+                                size={12}
+                                color={
+                                  isActive
+                                    ? "var(--primary)"
+                                    : "var(--on-surface-variant)"
+                                }
+                              />
+                              <div style={{ flex: 1 }}>
+                                <p
+                                  style={{
+                                    fontSize: "0.72rem",
+                                    fontWeight: 600,
+                                    color: isActive
+                                      ? "var(--primary)"
+                                      : "var(--on-surface)",
+                                    fontFamily: "var(--font-headline)",
+                                  }}
+                                >
+                                  {ROLE_LABELS[ar.role] || ar.role}
+                                </p>
+                                <p
+                                  style={{
+                                    fontSize: "0.6rem",
+                                    color: "var(--on-surface-variant)",
+                                  }}
+                                >
+                                  {ar.tenant}
+                                  {ar.teamName ? ` · ${ar.teamName}` : ""}
+                                </p>
+                              </div>
+                              {isActive && (
+                                <span
+                                  style={{
+                                    fontSize: "0.55rem",
+                                    fontWeight: 700,
+                                    color: "var(--primary)",
+                                    fontFamily: "var(--font-label)",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.04em",
+                                  }}
+                                >
+                                  Active
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
                     <div
                       style={{
-                        borderTop: "1px solid rgba(167,176,222,0.08)",
-                        marginTop: 4,
-                        paddingTop: 4,
+                        borderTop:
+                          availableRoles.length > 0
+                            ? "1px solid rgba(167,176,222,0.08)"
+                            : "none",
+                        marginTop: availableRoles.length > 0 ? 4 : 0,
+                        paddingTop: availableRoles.length > 0 ? 4 : 0,
                       }}
                     >
                       <button
@@ -547,15 +586,19 @@ export function AppLayout() {
                   fontFamily: "var(--font-label)",
                 }}
               >
-                {user?.role === "platform_admin"
-                  ? "Platform Admin"
-                  : user?.role === "company_admin"
-                    ? "Company Admin"
-                    : user?.role === "team_leader"
-                      ? "Team Leader"
-                      : user?.role === "end_user"
-                        ? "Sales Rep"
-                        : user?.role || "User"}
+                {(
+                  {
+                    platform_admin: "Admin",
+                    company_admin: "Company Admin",
+                    sales_leader: "Sales Leader",
+                    team_leader: "Team Leader",
+                    end_user: "Sales Rep",
+                    sdr: "SDR",
+                    sdr_manager: "SDR Manager",
+                  } as Record<string, string>
+                )[user?.role || ""] ||
+                  user?.role ||
+                  "User"}
               </p>
             </div>
             <ChevronDown
