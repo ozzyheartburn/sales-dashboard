@@ -41,6 +41,8 @@ interface AuthContextType {
   login: (user: AuthUser, credential: string) => void;
   logout: () => void;
   isLoading: boolean;
+  activeTenant: string;
+  setActiveTenant: (tenant: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -49,6 +51,8 @@ export const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
   isLoading: true,
+  activeTenant: "",
+  setActiveTenant: () => {},
 });
 
 export function useAuth() {
@@ -57,12 +61,14 @@ export function useAuth() {
 
 export function buildAuthHeaders(
   user: AuthUser | null,
+  tenantOverride?: string,
 ): Record<string, string> {
   if (!user) return {};
   const h: Record<string, string> = {};
   if (user.email) h["x-user-email"] = user.email;
   if (user.role) h["x-user-role"] = user.role;
-  if (user.tenant) h["x-tenant"] = user.tenant;
+  const tenant = tenantOverride || user.tenant;
+  if (tenant) h["x-tenant"] = tenant;
   if (user.teamName) h["x-user-team"] = user.teamName;
   if (user.customer_company_id)
     h["x-customer-company-id"] = user.customer_company_id;
@@ -135,14 +141,23 @@ export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [credential, setCredential] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTenant, setActiveTenantState] = useState("");
+
+  const setActiveTenant = (tenant: string) => {
+    setActiveTenantState(tenant);
+    localStorage.setItem("active_tenant", tenant);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("auth_user");
     const storedCred = localStorage.getItem("auth_credential");
+    const storedTenant = localStorage.getItem("active_tenant");
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
         setCredential(storedCred);
+        setActiveTenantState(storedTenant || parsed.tenant || "");
       } catch {
         localStorage.removeItem("auth_user");
         localStorage.removeItem("auth_credential");
@@ -154,15 +169,19 @@ export default function App() {
   const login = (u: AuthUser, cred: string) => {
     setUser(u);
     setCredential(cred);
+    setActiveTenantState(u.tenant || "");
     localStorage.setItem("auth_user", JSON.stringify(u));
     localStorage.setItem("auth_credential", cred);
+    localStorage.setItem("active_tenant", u.tenant || "");
   };
 
   const logout = () => {
     setUser(null);
     setCredential(null);
+    setActiveTenantState("");
     localStorage.removeItem("auth_user");
     localStorage.removeItem("auth_credential");
+    localStorage.removeItem("active_tenant");
   };
 
   if (isLoading) {
@@ -171,7 +190,15 @@ export default function App() {
 
   return (
     <AuthContext.Provider
-      value={{ user, credential, login, logout, isLoading }}
+      value={{
+        user,
+        credential,
+        login,
+        logout,
+        isLoading,
+        activeTenant,
+        setActiveTenant,
+      }}
     >
       <BrowserRouter>
         <Routes>

@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ArrowLeftRight,
   LogOut,
+  Building2,
 } from "lucide-react";
 
 const allNavItems = [
@@ -74,7 +75,8 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, login, credential } = useAuth();
-  const authHeaders = buildAuthHeaders(user);
+  const { activeTenant, setActiveTenant } = useAuth();
+  const authHeaders = buildAuthHeaders(user, activeTenant);
   const role = user?.role || "end_user";
   const navItems = allNavItems.filter((item) => item.roles.includes(role));
   const [aiOpen, setAiOpen] = useState(false);
@@ -94,10 +96,22 @@ export function AppLayout() {
   >([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
+  const [tenants, setTenants] = useState<
+    { slug: string; displayName: string }[]
+  >([]);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
 
-  // Fetch top 5 accounts by signal score for sidebar
+  // Fetch tenants for impersonation (platform_admin only)
+  useEffect(() => {
+    if (!user?.isPlatformAdmin) return;
+    fetch(`${API_URL}/api/tenants`, { headers: authHeaders })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setTenants(data))
+      .catch(() => {});
+  }, []);
+
+  // Fetch top 5 accounts by signal score for sidebar (re-fetch when tenant changes)
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
@@ -119,7 +133,7 @@ export function AppLayout() {
         },
       )
       .catch(() => {});
-  }, []);
+  }, [activeTenant]);
 
   const handleAiSubmit = async () => {
     if (!aiQuery.trim() || aiLoading) return;
@@ -253,6 +267,79 @@ export function AppLayout() {
             Nordic Enterprise Sales
           </p>
         </div>
+
+        {/* Tenant Impersonation Switcher (platform_admin only) */}
+        {user?.isPlatformAdmin && tenants.length > 0 && (
+          <div
+            style={{
+              padding: "10px 16px",
+              borderBottom: "1px solid rgba(167,176,222,0.08)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 6,
+              }}
+            >
+              <Building2 size={12} color="var(--on-surface-variant)" />
+              <span
+                style={{
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  color: "var(--on-surface-variant)",
+                  textTransform: "uppercase",
+                  fontFamily: "var(--font-label)",
+                }}
+              >
+                Viewing as
+              </span>
+            </div>
+            <select
+              value={activeTenant}
+              onChange={(e) => setActiveTenant(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "7px 10px",
+                borderRadius: 8,
+                border: "1px solid rgba(167,176,222,0.15)",
+                background: "var(--surface-container-low)",
+                color: "var(--on-surface)",
+                fontSize: "0.75rem",
+                fontFamily: "var(--font-label)",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer",
+              }}
+            >
+              {tenants.map((t) => (
+                <option key={t.slug} value={t.slug}>
+                  {t.displayName}
+                </option>
+              ))}
+            </select>
+            {activeTenant && activeTenant !== user?.tenant && (
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: "0.6rem",
+                  color: "var(--tertiary)",
+                  fontFamily: "var(--font-label)",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <ArrowLeftRight size={9} />
+                Impersonating tenant
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 0" }}>
