@@ -1,13 +1,27 @@
 #!/bin/bash
 set -e
 
+# ─── Usage ──────────────────────────────────────────────────────────────────
+# ./deploy-ecs.sh <env>
+# env: dev | test | prod   (required)
+#
+# Secrets are loaded from server/.env.<env> (git-ignored).
+# All AWS resources are namespaced by environment so dev/test/prod are fully
+# isolated clusters, services, ECR repos, and security groups.
+
+ENV="${1:-}"
+if [[ "$ENV" != "dev" && "$ENV" != "test" && "$ENV" != "prod" ]]; then
+  echo "❌ Usage: $0 <env>   (env must be dev, test, or prod)"
+  exit 1
+fi
+
 # ─── Configuration ──────────────────────────────────────────────────────────
 REGION="eu-north-1"                    # Stockholm — closest to Nordics
-CLUSTER_NAME="pg-machine"
-SERVICE_NAME="pg-machine-backend"
-TASK_FAMILY="pg-machine-backend"
-REPO_NAME="pg-machine-backend"
-CONTAINER_NAME="pg-machine-backend"
+CLUSTER_NAME="pg-machine-${ENV}"
+SERVICE_NAME="pg-machine-backend-${ENV}"
+TASK_FAMILY="pg-machine-backend-${ENV}"
+REPO_NAME="pg-machine-backend-${ENV}"
+CONTAINER_NAME="pg-machine-backend-${ENV}"
 PORT=4000
 CPU=256                                 # 0.25 vCPU
 MEMORY=512                              # 0.5 GB
@@ -33,6 +47,7 @@ ECR_URI="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO_NAME"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  PG Machine Backend → AWS Fargate"
+echo "  Environment: $ENV"
 echo "  Region: $REGION"
 echo "  Account: $ACCOUNT_ID"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -84,28 +99,29 @@ if [ -z "$ROLE_ARN" ] || [ "$ROLE_ARN" = "None" ]; then
 fi
 echo "  ✓ Execution role: $ROLE_ARN"
 
-# ─── Step 5: Check for MONGODB_URI ─────────────────────────────────────────
-if [ -f .env ]; then
+# ─── Step 5: Load secrets from .env.<env> ──────────────────────────────────
+ENV_FILE="$(dirname "$0")/.env.${ENV}"
+if [ -f "$ENV_FILE" ]; then
+  echo ""
+  echo "→ Loading secrets from .env.${ENV}"
   while IFS='=' read -r key value; do
-    # Skip comments and empty lines
     [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
-    # Remove surrounding quotes if present
     value="${value%\"}"
     value="${value#\"}"
     value="${value%\'}"
     value="${value#\'}"
     export "$key=$value"
-  done < .env
+  done < "$ENV_FILE"
 fi
 if [ -z "$MONGODB_URI" ]; then
   echo ""
-  echo "❌ MONGODB_URI not set. Export it or add to server/.env"
+  echo "❌ MONGODB_URI not set. Add it to server/.env.${ENV} or export it."
   echo "   export MONGODB_URI='mongodb+srv://...'"
   exit 1
 fi
 if [ -z "$OPENAI_API_KEY" ]; then
   echo ""
-  echo "❌ OPENAI_API_KEY not set. Export it or add to server/.env"
+  echo "❌ OPENAI_API_KEY not set. Add it to server/.env.${ENV} or export it."
   exit 1
 fi
 
@@ -127,7 +143,8 @@ TASK_DEF=$(cat <<EOF
     "environment": [
       {"name": "MONGODB_URI", "value": "$MONGODB_URI"},
       {"name": "OPENAI_API_KEY", "value": "$OPENAI_API_KEY"},
-      {"name": "PORT", "value": "$PORT"}
+      {"name": "PORT", "value": "$PORT"},
+      {"name": "NODE_ENV", "value": "$ENV"}
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
@@ -153,7 +170,7 @@ VPC_ID=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --region "
 SUBNETS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" --region "$REGION" --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
 
 # Create or get security group
-SG_NAME="pg-machine-backend-sg"
+SG_NAME="pg-machine-backend-${ENV}-sg"
 SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=$SG_NAME" "Name=vpc-id,Values=$VPC_ID" --region "$REGION" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || true)
 if [ -z "$SG_ID" ] || [ "$SG_ID" = "None" ]; then
   SG_ID=$(aws ec2 create-security-group --group-name "$SG_NAME" --description "PG Machine backend" --vpc-id "$VPC_ID" --region "$REGION" --query 'GroupId' --output text)

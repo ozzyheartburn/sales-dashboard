@@ -69,6 +69,8 @@ async function connectPlatformDB() {
 }
 
 // Middleware: resolve tenant DB and attach to request
+// Picks the environment database from tenant.databases[NODE_ENV] (dev/test/prod).
+// Falls back to tenant.databaseName for legacy tenants that predate the multi-env schema.
 async function attachTenantDB(req, res, next) {
   try {
     const tenantSlug =
@@ -86,8 +88,15 @@ async function attachTenantDB(req, res, next) {
         .json({ error: `Tenant "${tenantSlug}" not found or inactive` });
     }
 
-    req.tenantDb = await connectTenantDB(tenant.databaseName);
+    // Resolve the database name for the current environment.
+    // NODE_ENV is set to "dev", "test", or "prod" via the per-environment .env file.
+    const env = process.env.NODE_ENV || "prod";
+    const resolvedDbName =
+      (tenant.databases && tenant.databases[env]) || tenant.databaseName;
+
+    req.tenantDb = await connectTenantDB(resolvedDbName);
     req.tenantInfo = tenant;
+    req.tenantEnv = env;
     next();
   } catch (err) {
     console.error("Tenant resolution error:", err);

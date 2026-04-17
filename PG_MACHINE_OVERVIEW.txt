@@ -158,7 +158,44 @@ Each account document in PG_Machine follows this canonical shape:
 
 7. DEPLOYMENT
 -------------
-  - Frontend deployed to Vercel (auto-deploy on git push to main)
-  - Backend runs as a standalone Node.js server (port 4000)
-  - MongoDB Atlas handles all persistent data
-  - Environment variables stored in server/.env (MONGODB_URI, PORT)
+  Three fully isolated environments — dev, test, prod — run in parallel.
+
+  Backend (AWS Fargate, eu-north-1 / Stockholm):
+    Each environment has its own ECS cluster, service, ECR repo, and security group:
+      pg-machine-dev    / pg-machine-backend-dev    / pg-machine-backend-dev-sg
+      pg-machine-test   / pg-machine-backend-test   / pg-machine-backend-test-sg
+      pg-machine-prod   / pg-machine-backend-prod   / pg-machine-backend-prod-sg
+
+    Deploy a specific environment:
+      bash server/deploy-ecs.sh dev
+      bash server/deploy-ecs.sh test
+      bash server/deploy-ecs.sh prod
+
+    Secrets are loaded from server/.env.<env> (git-ignored).
+    NODE_ENV is injected into the ECS task so the server routes each request
+    to the correct per-environment tenant database.
+
+  Frontend (Vercel):
+    Branch-based deployments — set BACKEND_URL in Vercel per-branch env vars:
+      main  branch → prod  project → BACKEND_URL = prod  Fargate public IP/ALB
+      test  branch → test  preview → BACKEND_URL = test  Fargate public IP/ALB
+      dev   branch → dev   preview → BACKEND_URL = dev   Fargate public IP/ALB
+
+  MongoDB Atlas:
+    Each tenant has three databases, one per environment:
+      <tenant_slug>_dev, <tenant_slug>_test, <tenant_slug>_prod
+    The legacy PG_Machine tenant uses: PG_Machine_dev, PG_Machine_test, PG_Machine (prod).
+    Provision a new tenant (all three environments in one command):
+      node server/provision-tenant.js <slug> "<Display Name>" [admin@email.com]
+
+  CI/CD (GitHub Actions):
+    .github/workflows/deploy-dev.yml   — triggered on push to dev   branch
+    .github/workflows/deploy-test.yml  — triggered on push to test  branch
+    .github/workflows/deploy-prod.yml  — triggered on push to main  branch
+    Each workflow builds and pushes Docker to the environment's ECR repo,
+    updates the ECS service, and re-provisions tenant databases.
+
+  Required GitHub Secrets (per environment):
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+    MONGODB_URI_DEV, MONGODB_URI_TEST, MONGODB_URI_PROD
+    OPENAI_API_KEY, GOOGLE_CLIENT_ID

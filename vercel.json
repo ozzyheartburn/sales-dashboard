@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com/api/:path*"
+      "destination": "$BACKEND_URL/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

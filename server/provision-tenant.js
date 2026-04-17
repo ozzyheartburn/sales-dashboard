@@ -1,6 +1,11 @@
 // Provision a new tenant database with all required collections, indexes, and seed data
 // Usage: node provision-tenant.js <tenant_slug> <display_name> [admin_email]
 // Example: node provision-tenant.js 6G_Nordics "6G Nordics" admin@6gnordics.com
+//
+// Each tenant gets three environment databases:
+//   <tenant_slug>_dev, <tenant_slug>_test, <tenant_slug>_prod
+// All three receive the same collections, indexes, and seed roles.
+// The admin user is seeded into every environment.
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const path = require("path");
@@ -92,6 +97,111 @@ const DEFAULT_ROLES = [
   },
 ];
 
+// The three environments every tenant gets
+const ENVIRONMENTS = ["dev", "test", "prod"];
+
+// Build the database name for a given tenant + environment
+function dbName(tenantSlug, env) {
+  return `${tenantSlug}_${env}`;
+}
+
+// Provision a single environment database (collections, indexes, seed data)
+async function provisionEnvironmentDB(client, tenantSlug, env, adminEmail) {
+  const name = dbName(tenantSlug, env);
+  const tenantDb = client.db(name);
+  console.log(`\n  [${env}] Database: ${name}`);
+
+  // Collections
+  for (const collName of COLLECTIONS) {
+    try {
+      await tenantDb.createCollection(collName);
+      console.log(`    ✅ Created collection: ${collName}`);
+    } catch (err) {
+      if (err.codeName === "NamespaceExists") {
+        console.log(`    ⏭️  Collection already exists: ${collName}`);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  // Indexes
+  const accountsCol = tenantDb.collection("accounts");
+  await accountsCol.createIndex(
+    { companyName: 1 },
+    { unique: true, collation: { locale: "en", strength: 2 } },
+  );
+  console.log(`    ✅ Index: accounts.companyName (unique, case-insensitive)`);
+
+  const usersCol = tenantDb.collection("users");
+  await usersCol.createIndex({ googleId: 1 }, { unique: true, sparse: true });
+  await usersCol.createIndex(
+    { email: 1 },
+    { unique: true, collation: { locale: "en", strength: 2 } },
+  );
+  console.log(`    ✅ Index: users.googleId (unique)`);
+  console.log(`    ✅ Index: users.email (unique, case-insensitive)`);
+
+  const rolesCol = tenantDb.collection("roles");
+  await rolesCol.createIndex({ name: 1 }, { unique: true });
+  console.log(`    ✅ Index: roles.name (unique)`);
+
+  const intelCol = tenantDb.collection("intelligence_documents");
+  await intelCol.createIndex({ companyName: 1, docType: 1 });
+  await intelCol.createIndex({ createdAt: -1 });
+  console.log(`    ✅ Index: intelligence_documents.companyName+docType`);
+  console.log(`    ✅ Index: intelligence_documents.createdAt`);
+
+  const saCol = tenantDb.collection("sales_activities");
+  await saCol.createIndex(
+    { companyName: 1 },
+    { collation: { locale: "en", strength: 2 } },
+  );
+  console.log(`    ✅ Index: sales_activities.companyName`);
+
+  const orgCol = tenantDb.collection("org_charts");
+  await orgCol.createIndex(
+    { companyName: 1 },
+    { unique: true, collation: { locale: "en", strength: 2 } },
+  );
+  console.log(`    ✅ Index: org_charts.companyName (unique)`);
+
+  // Seed default roles
+  for (const role of DEFAULT_ROLES) {
+    await rolesCol.updateOne(
+      { name: role.name },
+      {
+        $set: { ...role, updatedAt: new Date().toISOString() },
+        $setOnInsert: { createdAt: new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+  }
+  console.log(`    ✅ Seeded ${DEFAULT_ROLES.length} default roles`);
+
+  // Admin user
+  if (adminEmail) {
+    await usersCol.updateOne(
+      { email: adminEmail.toLowerCase() },
+      {
+        $set: {
+          email: adminEmail.toLowerCase(),
+          role: "company_admin",
+          tenantSlug,
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: {
+          googleId: null, // Will be linked on first login
+          name: null,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+    console.log(`    ✅ Admin user pre-registered: ${adminEmail}`);
+  }
+}
+
 async function provisionTenant(tenantSlug, displayName, adminEmail) {
   const client = new MongoClient(process.env.MONGODB_URI, {
     serverApi: {
@@ -105,7 +215,7 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
     await client.connect();
     console.log(`\nProvisioning tenant: ${tenantSlug} ("${displayName}")\n`);
 
-    // 1. Register tenant in platform database
+    // 1. Register tenant in platform database with all three environment DBs
     const platformDb = client.db("platform");
     const tenantsCollection = platformDb.collection("tenants");
 
@@ -116,13 +226,20 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
       );
     }
 
+    const databases = Object.fromEntries(
+      ENVIRONMENTS.map((env) => [env, dbName(tenantSlug, env)]),
+    );
+
     await tenantsCollection.updateOne(
       { slug: tenantSlug },
       {
         $set: {
           slug: tenantSlug,
           displayName,
-          databaseName: tenantSlug,
+          // databases map used by the server to route requests per NODE_ENV
+          databases,
+          // databaseName kept for backward compatibility (points to prod)
+          databaseName: databases.prod,
           status: "active",
           updatedAt: new Date().toISOString(),
         },
@@ -133,101 +250,17 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
       { upsert: true },
     );
     console.log(`  ✅ Registered in platform.tenants`);
+    console.log(`     dev  → ${databases.dev}`);
+    console.log(`     test → ${databases.test}`);
+    console.log(`     prod → ${databases.prod}`);
 
-    // 2. Create tenant database and collections
-    const tenantDb = client.db(tenantSlug);
-
-    for (const collName of COLLECTIONS) {
-      try {
-        await tenantDb.createCollection(collName);
-        console.log(`  ✅ Created collection: ${collName}`);
-      } catch (err) {
-        if (err.codeName === "NamespaceExists") {
-          console.log(`  ⏭️  Collection already exists: ${collName}`);
-        } else {
-          throw err;
-        }
-      }
-    }
-
-    // 3. Create indexes
-    const accountsCol = tenantDb.collection("accounts");
-    await accountsCol.createIndex(
-      { companyName: 1 },
-      { unique: true, collation: { locale: "en", strength: 2 } },
-    );
-    console.log(`  ✅ Index: accounts.companyName (unique, case-insensitive)`);
-
-    const usersCol = tenantDb.collection("users");
-    await usersCol.createIndex({ googleId: 1 }, { unique: true, sparse: true });
-    await usersCol.createIndex(
-      { email: 1 },
-      { unique: true, collation: { locale: "en", strength: 2 } },
-    );
-    console.log(`  ✅ Index: users.googleId (unique)`);
-    console.log(`  ✅ Index: users.email (unique, case-insensitive)`);
-
-    const rolesCol = tenantDb.collection("roles");
-    await rolesCol.createIndex({ name: 1 }, { unique: true });
-    console.log(`  ✅ Index: roles.name (unique)`);
-
-    const intelCol = tenantDb.collection("intelligence_documents");
-    await intelCol.createIndex({ companyName: 1, docType: 1 });
-    await intelCol.createIndex({ createdAt: -1 });
-    console.log(`  ✅ Index: intelligence_documents.companyName+docType`);
-    console.log(`  ✅ Index: intelligence_documents.createdAt`);
-
-    const saCol = tenantDb.collection("sales_activities");
-    await saCol.createIndex(
-      { companyName: 1 },
-      { collation: { locale: "en", strength: 2 } },
-    );
-    console.log(`  ✅ Index: sales_activities.companyName`);
-
-    const orgCol = tenantDb.collection("org_charts");
-    await orgCol.createIndex(
-      { companyName: 1 },
-      { unique: true, collation: { locale: "en", strength: 2 } },
-    );
-    console.log(`  ✅ Index: org_charts.companyName (unique)`);
-
-    // 4. Seed default roles
-    for (const role of DEFAULT_ROLES) {
-      await rolesCol.updateOne(
-        { name: role.name },
-        {
-          $set: { ...role, updatedAt: new Date().toISOString() },
-          $setOnInsert: { createdAt: new Date().toISOString() },
-        },
-        { upsert: true },
-      );
-    }
-    console.log(`  ✅ Seeded ${DEFAULT_ROLES.length} default roles`);
-
-    // 5. Create admin user if email provided
-    if (adminEmail) {
-      await usersCol.updateOne(
-        { email: adminEmail.toLowerCase() },
-        {
-          $set: {
-            email: adminEmail.toLowerCase(),
-            role: "company_admin",
-            tenantSlug,
-            updatedAt: new Date().toISOString(),
-          },
-          $setOnInsert: {
-            googleId: null, // Will be linked on first login
-            name: null,
-            createdAt: new Date().toISOString(),
-          },
-        },
-        { upsert: true },
-      );
-      console.log(`  ✅ Admin user pre-registered: ${adminEmail}`);
+    // 2. Provision each environment database
+    for (const env of ENVIRONMENTS) {
+      await provisionEnvironmentDB(client, tenantSlug, env, adminEmail);
     }
 
     console.log(`\n🎉 Tenant "${displayName}" (${tenantSlug}) provisioned!\n`);
-    console.log(`Database: ${tenantSlug}`);
+    console.log(`Environments: ${ENVIRONMENTS.join(", ")}`);
     console.log(`Collections: ${COLLECTIONS.join(", ")}`);
     console.log(`Roles: platform_admin, company_admin, team_leader, end_user`);
     if (adminEmail) console.log(`Admin: ${adminEmail}\n`);
@@ -239,7 +272,9 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
   }
 }
 
-// Also register PG_Machine as a tenant if not already
+// Register PG_Machine as a legacy tenant with three environment databases.
+// The existing "PG_Machine" database is preserved as the prod environment;
+// PG_Machine_dev and PG_Machine_test are created fresh.
 async function registerExistingTenant() {
   const client = new MongoClient(process.env.MONGODB_URI, {
     serverApi: {
@@ -254,13 +289,21 @@ async function registerExistingTenant() {
     const platformDb = client.db("platform");
     const tenantsCollection = platformDb.collection("tenants");
 
+    // Legacy prod DB stays as "PG_Machine"; dev/test get suffixed names.
+    const databases = {
+      dev: "PG_Machine_dev",
+      test: "PG_Machine_test",
+      prod: "PG_Machine",
+    };
+
     await tenantsCollection.updateOne(
       { slug: "PG_Machine" },
       {
         $set: {
           slug: "PG_Machine",
           displayName: "PG Machine",
-          databaseName: "PG_Machine",
+          databases,
+          databaseName: databases.prod, // backward compat
           status: "active",
           isLegacy: true,
           updatedAt: new Date().toISOString(),
@@ -274,6 +317,12 @@ async function registerExistingTenant() {
     console.log(
       "✅ PG_Machine registered as legacy tenant in platform.tenants",
     );
+
+    // Provision dev and test databases with the same schema as prod
+    for (const env of ["dev", "test"]) {
+      await provisionEnvironmentDB(client, "PG_Machine", env, null);
+    }
+    console.log("✅ PG_Machine dev and test databases provisioned");
   } finally {
     await client.close();
   }
@@ -300,6 +349,9 @@ if (require.main === module) {
 module.exports = {
   provisionTenant,
   registerExistingTenant,
+  provisionEnvironmentDB,
   COLLECTIONS,
   DEFAULT_ROLES,
+  ENVIRONMENTS,
+  dbName,
 };

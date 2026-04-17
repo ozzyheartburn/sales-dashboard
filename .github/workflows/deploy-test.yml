@@ -1,0 +1,64 @@
+name: Deploy — Test
+
+on:
+  push:
+    branches: [test]
+
+jobs:
+  deploy-backend:
+    name: Build & deploy backend (test)
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Write .env.test
+        run: |
+          cat > server/.env.test <<EOF
+          NODE_ENV=test
+          PORT=4000
+          MONGODB_URI=${{ secrets.MONGODB_URI_TEST }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          EOF
+
+      - name: Deploy to ECS (test)
+        run: bash server/deploy-ecs.sh test
+
+  provision-tenants:
+    name: Provision tenant databases (test)
+    runs-on: ubuntu-latest
+    environment: test
+    needs: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Write .env.test
+        run: |
+          cat > server/.env.test <<EOF
+          NODE_ENV=test
+          PORT=4000
+          MONGODB_URI=${{ secrets.MONGODB_URI_TEST }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          EOF
+
+      - name: Re-provision all tenants for test environment
+        run: node server/provision-tenant.js PG_Machine "PG Machine"
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI_TEST }}
