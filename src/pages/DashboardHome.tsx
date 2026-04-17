@@ -215,7 +215,17 @@ export function DashboardHome() {
               letterSpacing: "-0.02em",
             }}
           >
-            Good morning, Alex
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting =
+                hour < 12
+                  ? "Good morning"
+                  : hour < 18
+                    ? "Good afternoon"
+                    : "Good evening";
+              const firstName = user?.name?.split(" ")[0] || "there";
+              return `${greeting}, ${firstName}`;
+            })()}
           </h1>
           <p
             style={{
