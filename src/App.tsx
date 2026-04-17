@@ -9,6 +9,10 @@ import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminViewSelector } from "./pages/AdminViewSelector";
+import { AdminCompanies } from "./pages/AdminCompanies";
+import { AdminUsers } from "./pages/AdminUsers";
+import { AdminSubscriptions } from "./pages/AdminSubscriptions";
+import { AdminWorkflows } from "./pages/AdminWorkflows";
 
 export interface AvailableRole {
   tenant: string;
@@ -168,9 +172,13 @@ export default function App() {
               {user.isPlatformAdmin && (
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<AdminPanel />} />
-                  <Route path="tenants" element={<AdminPanel />} />
-                  <Route path="workflows" element={<AdminPanel />} />
+                  <Route path="companies" element={<AdminCompanies />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route
+                    path="subscriptions"
+                    element={<AdminSubscriptions />}
+                  />
+                  <Route path="workflows" element={<AdminWorkflows />} />
                   <Route path="settings" element={<AdminPanel />} />
                 </Route>
               )}

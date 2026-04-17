@@ -2171,6 +2171,53 @@ app.get("/api/tenants/:slug/roles", async (req, res) => {
   }
 });
 
+// Get prompt overrides for a tenant
+app.get("/api/tenants/:slug/prompts", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const config = await platformDb
+      .collection("tenant_prompts")
+      .findOne({ slug: req.params.slug });
+    if (!config) {
+      return res.json({ slug: req.params.slug, agents: [] });
+    }
+    res.json(config);
+  } catch (err) {
+    console.error("Error fetching tenant prompts:", err);
+    res.status(500).json({ error: "Failed to fetch prompts" });
+  }
+});
+
+// Save prompt overrides for a tenant
+app.put("/api/tenants/:slug/prompts", async (req, res) => {
+  try {
+    const { agents } = req.body;
+    if (!Array.isArray(agents)) {
+      return res.status(400).json({ error: "agents must be an array" });
+    }
+    const platformDb = await connectPlatformDB();
+    await platformDb.collection("tenant_prompts").updateOne(
+      { slug: req.params.slug },
+      {
+        $set: {
+          slug: req.params.slug,
+          agents,
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: { createdAt: new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+    console.log(
+      `Prompts saved for tenant ${req.params.slug} (${agents.length} agents)`,
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error saving tenant prompts:", err);
+    res.status(500).json({ error: "Failed to save prompts" });
+  }
+});
+
 // =========================================================================
 // Auth: email + password login (replaces Google OAuth)
 // Collection: "auth_users" in platform database

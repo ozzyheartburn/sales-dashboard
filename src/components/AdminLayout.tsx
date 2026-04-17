@@ -14,6 +14,7 @@ import {
   LogOut,
   ArrowLeftRight,
   Menu,
+  CreditCard,
 } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -28,8 +29,9 @@ const ROLE_LABELS: Record<string, string> = {
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+  { icon: Building2, label: "Companies", path: "/admin/companies" },
   { icon: Users, label: "Users & Roles", path: "/admin/users" },
-  { icon: Building2, label: "Tenants", path: "/admin/tenants" },
+  { icon: CreditCard, label: "Subscriptions", path: "/admin/subscriptions" },
   { icon: Workflow, label: "Workflows", path: "/admin/workflows" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
