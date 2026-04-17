@@ -12,6 +12,9 @@ import {
   AlertCircle,
   Building2,
   Loader2,
+  Play,
+  Globe,
+  CheckCircle2,
 } from "lucide-react";
 
 interface AgentPrompt {
@@ -218,6 +221,76 @@ export function AdminWorkflows() {
   };
 
   const customizedCount = prompts.filter((p) => p.isCustomized).length;
+
+  // --- Run Initial Research ---
+  const [researchAccount, setResearchAccount] = useState("");
+  const [researchWebsite, setResearchWebsite] = useState("");
+  const [researchRunning, setResearchRunning] = useState(false);
+  const [researchStatus, setResearchStatus] = useState<
+    "idle" | "polling" | "completed"
+  >("idle");
+
+  const handleRunResearch = async () => {
+    if (!researchAccount.trim()) {
+      showToast("Account name is required", "error");
+      return;
+    }
+    setResearchRunning(true);
+    setResearchStatus("idle");
+    try {
+      const res = await fetch(`${API_URL}/api/research`, {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          account_name: researchAccount.trim(),
+          website_url: researchWebsite.trim() || undefined,
+        }),
+      });
+      if (res.ok) {
+        showToast(
+          `Research started for "${researchAccount}" — n8n workflow triggered`,
+          "success",
+        );
+        setResearchStatus("polling");
+        // Poll for completion
+        const pollName = researchAccount.trim();
+        const interval = setInterval(async () => {
+          try {
+            const statusRes = await fetch(
+              `${API_URL}/api/research/status/${encodeURIComponent(pollName)}`,
+            );
+            const statusData = await statusRes.json();
+            if (statusData.status === "completed") {
+              clearInterval(interval);
+              setResearchStatus("completed");
+              setResearchRunning(false);
+              showToast(
+                `Research for "${pollName}" completed — results are ready`,
+                "success",
+              );
+            }
+          } catch {
+            /* ignore polling errors */
+          }
+        }, 10000);
+        // Stop polling after 5 minutes
+        setTimeout(() => {
+          clearInterval(interval);
+          if (researchRunning) {
+            setResearchRunning(false);
+            setResearchStatus("idle");
+          }
+        }, 300000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || "Failed to start research", "error");
+        setResearchRunning(false);
+      }
+    } catch {
+      showToast("Failed to start research", "error");
+      setResearchRunning(false);
+    }
+  };
 
   return (
     <div style={{ padding: "2rem", maxWidth: 1100, margin: "0 auto" }}>
@@ -455,6 +528,180 @@ export function AdminWorkflows() {
             accounts in this tenant.
           </div>
         </div>
+      </motion.div>
+
+      {/* Run Initial Research */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.18 }}
+        className="luminous-shadow"
+        style={{
+          borderRadius: "1rem",
+          padding: "1.25rem",
+          backgroundColor: "var(--surface-container-lowest)",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 14,
+            fontFamily: "var(--font-headline)",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+            color: "var(--on-background)",
+          }}
+        >
+          <Play size={18} color="var(--primary)" />
+          Run Initial Research
+        </div>
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--on-surface-variant)",
+            fontFamily: "var(--font-body)",
+            lineHeight: 1.5,
+            marginBottom: 14,
+          }}
+        >
+          Trigger the n8n deep research workflow for a specific account. Results
+          will appear in the Research Hub once processing is complete.
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "flex-end",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                color: "var(--on-surface-variant)",
+                fontFamily: "var(--font-label)",
+                marginBottom: 4,
+                display: "block",
+              }}
+            >
+              Account Name *
+            </label>
+            <input
+              value={researchAccount}
+              onChange={(e) => setResearchAccount(e.target.value)}
+              placeholder="e.g. Kasten Finland"
+              style={inputStyle}
+              disabled={researchRunning}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <label
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                color: "var(--on-surface-variant)",
+                fontFamily: "var(--font-label)",
+                marginBottom: 4,
+                display: "block",
+              }}
+            >
+              Website URL
+            </label>
+            <div style={{ position: "relative" }}>
+              <Globe
+                size={14}
+                color="var(--on-surface-variant)"
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
+              />
+              <input
+                value={researchWebsite}
+                onChange={(e) => setResearchWebsite(e.target.value)}
+                placeholder="https://www.example.com"
+                style={{ ...inputStyle, paddingLeft: 32 }}
+                disabled={researchRunning}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleRunResearch}
+            disabled={researchRunning || !researchAccount.trim()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 20px",
+              borderRadius: 10,
+              border: "none",
+              background: researchRunning
+                ? "rgba(167,176,222,0.1)"
+                : researchStatus === "completed"
+                  ? "rgba(34,197,94,0.15)"
+                  : "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+              color: researchRunning
+                ? "var(--on-surface-variant)"
+                : researchStatus === "completed"
+                  ? "#22c55e"
+                  : "#fff",
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              fontFamily: "var(--font-label)",
+              cursor:
+                researchRunning || !researchAccount.trim()
+                  ? "default"
+                  : "pointer",
+              opacity: !researchAccount.trim() ? 0.5 : 1,
+              whiteSpace: "nowrap",
+              height: 42,
+            }}
+          >
+            {researchRunning ? (
+              <Loader2
+                size={14}
+                style={{ animation: "spin 0.8s linear infinite" }}
+              />
+            ) : researchStatus === "completed" ? (
+              <CheckCircle2 size={14} />
+            ) : (
+              <Play size={14} />
+            )}
+            {researchRunning
+              ? researchStatus === "polling"
+                ? "Researching..."
+                : "Starting..."
+              : researchStatus === "completed"
+                ? "Completed"
+                : "Run Research"}
+          </button>
+        </div>
+        {researchStatus === "polling" && (
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: "0.72rem",
+              color: "var(--on-surface-variant)",
+              fontFamily: "var(--font-body)",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Loader2
+              size={12}
+              style={{ animation: "spin 0.8s linear infinite" }}
+            />
+            n8n workflow is processing — polling for results every 10s...
+          </div>
+        )}
       </motion.div>
 
       {/* Agent Prompt Cards */}
