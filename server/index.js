@@ -5,6 +5,7 @@ const { MongoClient, ServerApiVersion } = require("mongodb");
 const path = require("path");
 const OpenAI = require("openai");
 const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
 const {
   verifyGoogleToken,
@@ -2502,6 +2503,143 @@ app.post("/api/auth/seed-admins", async (req, res) => {
   } catch (err) {
     console.error("Error seeding admins:", err);
     res.status(500).json({ error: "Failed to seed admins" });
+  }
+});
+
+// ─── Invite user (create account + send email) ───────────────────────────────
+app.post("/api/invite", async (req, res) => {
+  try {
+    const { email, name, role, tenant } = req.body;
+    const creatorEmail = req.headers["x-user-email"];
+    const creatorRole = req.headers["x-user-role"];
+
+    // Only platform admins can invite users
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(creatorEmail?.toLowerCase()) &&
+      creatorRole !== "platform_admin"
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only platform admins can invite users" });
+    }
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Generate a random temporary password
+    const tempPassword = Array.from(crypto.getRandomValues(new Uint8Array(12)))
+      .map(
+        (b) =>
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%"[
+            b % 66
+          ],
+      )
+      .join("");
+
+    const platformDb = await connectPlatformDB();
+
+    // Check if already exists
+    const existing = await platformDb
+      .collection("auth_users")
+      .findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({ error: "User already exists" });
+    }
+
+    // Create auth record
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+    await platformDb.collection("auth_users").insertOne({
+      email: normalizedEmail,
+      passwordHash,
+      name: name || normalizedEmail.split("@")[0],
+      status: "invited",
+      createdAt: new Date().toISOString(),
+      createdBy: creatorEmail || "system",
+    });
+
+    // Add to tenant if specified
+    if (tenant) {
+      const tenantDb = await connectTenantDB(tenant);
+      await tenantDb.collection("users").updateOne(
+        { email: normalizedEmail },
+        {
+          $set: {
+            email: normalizedEmail,
+            name: name || normalizedEmail.split("@")[0],
+            role: role || "end_user",
+            status: "invited",
+            createdAt: new Date().toISOString(),
+          },
+        },
+        { upsert: true },
+      );
+    }
+
+    // Send invite email via Gmail SMTP
+    let emailSent = false;
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
+
+        const loginUrl = "https://sales-dashboard-liard.vercel.app/login";
+
+        await transporter.sendMail({
+          from: `"PG Machine" <${process.env.SMTP_USER}>`,
+          to: normalizedEmail,
+          subject: "You're invited to PG Machine",
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+              <h2 style="color: #124af1; margin-bottom: 8px;">Welcome to PG Machine</h2>
+              <p style="color: #333; font-size: 15px; line-height: 1.6;">
+                Hi ${name || normalizedEmail.split("@")[0]},
+              </p>
+              <p style="color: #333; font-size: 15px; line-height: 1.6;">
+                You've been invited to join PG Machine${tenant ? ` as ${role || "end_user"}` : ""}. Use the credentials below to log in:
+              </p>
+              <div style="background: #f5f7ff; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0 0 8px; font-size: 14px;"><strong>Email:</strong> ${normalizedEmail}</p>
+                <p style="margin: 0; font-size: 14px;"><strong>Temporary password:</strong> ${tempPassword}</p>
+              </div>
+              <a href="${loginUrl}" style="display: inline-block; background: #124af1; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                Sign in to PG Machine
+              </a>
+              <p style="color: #888; font-size: 12px; margin-top: 24px;">
+                Please change your password after your first login.
+              </p>
+            </div>
+          `,
+        });
+        emailSent = true;
+      } catch (emailErr) {
+        console.error("Failed to send invite email:", emailErr.message);
+      }
+    } else {
+      console.warn("SMTP_USER/SMTP_PASS not set — skipping invite email");
+    }
+
+    console.log(
+      `User invited: ${normalizedEmail} (by ${creatorEmail || "system"})${tenant ? ` → tenant: ${tenant}, role: ${role || "end_user"}` : ""} | email: ${emailSent ? "sent" : "skipped"}`,
+    );
+
+    res.json({
+      success: true,
+      email: normalizedEmail,
+      name: name || normalizedEmail.split("@")[0],
+      emailSent,
+      tempPassword: emailSent ? undefined : tempPassword,
+    });
+  } catch (err) {
+    console.error("Error inviting user:", err);
+    res.status(500).json({ error: "Failed to invite user" });
   }
 });
 

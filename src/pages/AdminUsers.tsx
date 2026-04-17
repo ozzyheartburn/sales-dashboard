@@ -120,21 +120,41 @@ const MOCK_USERS: MockUser[] = [
 ];
 
 export function AdminUsers() {
+  const { user } = useAuth();
+  const authHeaders = buildAuthHeaders(user);
+  const API_URL = import.meta.env.VITE_API_URL || "";
   const [users, setUsers] = useState<MockUser[]>(MOCK_USERS);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
   const [showInvite, setShowInvite] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [tenants, setTenants] = useState<{ slug: string; name: string }[]>([]);
   const [invite, setInvite] = useState({
     email: "",
     name: "",
     role: "end_user",
-    company: "PG Machine",
+    company: "",
   });
   const [toast, setToast] = useState<{
     msg: string;
     type: "success" | "error";
   } | null>(null);
+
+  // Fetch real tenants for company dropdown
+  useEffect(() => {
+    fetch(`${API_URL}/api/tenants`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setTenants(data);
+          if (data.length > 0 && !invite.company) {
+            setInvite((p) => ({ ...p, company: data[0].slug }));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const companies = [...new Set(users.map((u) => u.company))];
 
@@ -150,28 +170,63 @@ export function AdminUsers() {
     return true;
   });
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     if (!invite.email) {
       setToast({ msg: "Email is required", type: "error" });
       setTimeout(() => setToast(null), 3000);
       return;
     }
-    setUsers((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        email: invite.email,
-        name: invite.name || invite.email.split("@")[0],
-        role: invite.role,
-        company: invite.company,
-        status: "invited",
-        lastLogin: "—",
-      },
-    ]);
-    setShowInvite(false);
-    setInvite({ email: "", name: "", role: "end_user", company: "PG Machine" });
-    setToast({ msg: `Invitation sent to ${invite.email}`, type: "success" });
-    setTimeout(() => setToast(null), 3000);
+    setInviting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/invite`, {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: invite.email,
+          name: invite.name,
+          role: invite.role,
+          tenant: invite.company,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast({ msg: data.error || "Failed to invite user", type: "error" });
+        setTimeout(() => setToast(null), 4000);
+        return;
+      }
+      // Add to local list
+      const tenantName =
+        tenants.find((t) => t.slug === invite.company)?.name || invite.company;
+      setUsers((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          email: data.email,
+          name: data.name,
+          role: invite.role,
+          company: tenantName,
+          status: "invited",
+          lastLogin: "—",
+        },
+      ]);
+      setShowInvite(false);
+      setInvite({
+        email: "",
+        name: "",
+        role: "end_user",
+        company: tenants[0]?.slug || "",
+      });
+      const emailMsg = data.emailSent
+        ? `Invitation emailed to ${data.email}`
+        : `User created: ${data.email} (email not configured — temp password: ${data.tempPassword})`;
+      setToast({ msg: emailMsg, type: "success" });
+      setTimeout(() => setToast(null), 8000);
+    } catch (err) {
+      setToast({ msg: "Network error — could not invite user", type: "error" });
+      setTimeout(() => setToast(null), 4000);
+    } finally {
+      setInviting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -699,9 +754,9 @@ export function AdminUsers() {
                     }
                     style={{ ...inputStyle, cursor: "pointer" }}
                   >
-                    {companies.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
+                    {tenants.map((t) => (
+                      <option key={t.slug} value={t.slug}>
+                        {t.name}
                       </option>
                     ))}
                   </select>
@@ -735,20 +790,24 @@ export function AdminUsers() {
                 </div>
                 <button
                   onClick={handleInvite}
+                  disabled={inviting}
                   style={{
                     marginTop: 4,
                     padding: "12px 0",
                     borderRadius: 10,
                     border: "none",
-                    background: "var(--primary)",
+                    background: inviting
+                      ? "var(--on-surface-variant)"
+                      : "var(--primary)",
                     color: "#fff",
                     fontSize: "0.85rem",
                     fontWeight: 700,
                     fontFamily: "var(--font-label)",
-                    cursor: "pointer",
+                    cursor: inviting ? "not-allowed" : "pointer",
+                    opacity: inviting ? 0.7 : 1,
                   }}
                 >
-                  Send Invitation
+                  {inviting ? "Sending..." : "Send Invitation"}
                 </button>
               </div>
             </motion.div>
