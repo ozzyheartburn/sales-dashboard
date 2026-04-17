@@ -234,7 +234,22 @@ export function DashboardHome() {
               marginTop: "0.25rem",
             }}
           >
-            Here's what needs your attention today.
+            {(() => {
+              const role = user?.role || "end_user";
+              const subtitles: Record<string, string> = {
+                platform_admin:
+                  "Platform overview — all tenants and system health.",
+                company_admin: "Your company's pipeline and team performance.",
+                sales_leader: "Here's what needs your attention today.",
+                team_leader: "Your team's territory and active deals.",
+                end_user: "Your accounts and upcoming tasks.",
+                sdr: "Your outreach pipeline and activity targets.",
+                sdr_manager: "SDR team performance and outreach metrics.",
+              };
+              return (
+                subtitles[role] || "Here's what needs your attention today."
+              );
+            })()}
           </p>
         </div>
         <button

@@ -12,7 +12,34 @@ import {
   X,
   Check,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
+
+const ALL_MODULES = [
+  "Territory Overview",
+  "Research Hub",
+  "War Room",
+  "Agent Swarm",
+  "Analytics & Automation",
+] as const;
+
+const PLAN_DEFAULT_MODULES: Record<Plan, string[]> = {
+  Free: ["Territory Overview"],
+  Starter: ["Territory Overview", "Research Hub"],
+  Pro: [
+    "Territory Overview",
+    "Research Hub",
+    "War Room",
+    "Analytics & Automation",
+  ],
+  Enterprise: [
+    "Territory Overview",
+    "Research Hub",
+    "War Room",
+    "Agent Swarm",
+    "Analytics & Automation",
+  ],
+};
 
 const PLANS = ["Free", "Starter", "Pro", "Enterprise"] as const;
 type Plan = (typeof PLANS)[number];
@@ -82,6 +109,7 @@ export function AdminCompanies() {
     slug: "",
     plan: "Starter" as Plan,
     billingEmail: "",
+    modules: [...PLAN_DEFAULT_MODULES["Starter"]] as string[],
   });
   const [toast, setToast] = useState<{
     msg: string;
@@ -144,11 +172,17 @@ export function AdminCompanies() {
         mrr: 0,
         activeUsers: 0,
         totalUsers: 0,
-        activeModules: [],
+        activeModules: newCompany.modules,
         billingEmail: newCompany.billingEmail,
       };
       setShowAdd(false);
-      setNewCompany({ name: "", slug: "", plan: "Starter", billingEmail: "" });
+      setNewCompany({
+        name: "",
+        slug: "",
+        plan: "Starter",
+        billingEmail: "",
+        modules: [...PLAN_DEFAULT_MODULES["Starter"]],
+      });
       setToast({
         msg: `${newCompany.name} provisioned successfully`,
         type: "success",
@@ -691,24 +725,113 @@ export function AdminCompanies() {
                       display: "block",
                     }}
                   >
-                    Plan
+                    Subscription Plan
                   </label>
-                  <select
-                    value={newCompany.plan}
-                    onChange={(e) =>
-                      setNewCompany((p) => ({
-                        ...p,
-                        plan: e.target.value as Plan,
-                      }))
-                    }
-                    style={{ ...inputStyle, cursor: "pointer" }}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gap: 6,
+                    }}
                   >
-                    {PLANS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                    {PLANS.map((p) => {
+                      const pc = PLAN_COLORS[p];
+                      const isSelected = newCompany.plan === p;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() =>
+                            setNewCompany((prev) => ({
+                              ...prev,
+                              plan: p,
+                              modules: [...PLAN_DEFAULT_MODULES[p]],
+                            }))
+                          }
+                          style={{
+                            padding: "8px 0",
+                            borderRadius: 8,
+                            border: isSelected
+                              ? `2px solid ${pc.color}`
+                              : "2px solid rgba(167,176,222,0.1)",
+                            background: isSelected ? pc.bg : "transparent",
+                            color: isSelected
+                              ? pc.color
+                              : "var(--on-surface-variant)",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            fontFamily: "var(--font-label)",
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                          }}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      color: "var(--on-surface-variant)",
+                      fontFamily: "var(--font-label)",
+                      marginBottom: 6,
+                      display: "block",
+                    }}
+                  >
+                    Active Modules
+                  </label>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                  >
+                    {ALL_MODULES.map((mod) => {
+                      const checked = newCompany.modules.includes(mod);
+                      return (
+                        <label
+                          key={mod}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 10px",
+                            borderRadius: 8,
+                            background: checked
+                              ? "rgba(78,69,228,0.06)"
+                              : "transparent",
+                            cursor: "pointer",
+                            fontSize: "0.78rem",
+                            fontFamily: "var(--font-body)",
+                            color: checked
+                              ? "var(--on-surface)"
+                              : "var(--on-surface-variant)",
+                            transition: "background 0.15s",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setNewCompany((prev) => ({
+                                ...prev,
+                                modules: checked
+                                  ? prev.modules.filter((m) => m !== mod)
+                                  : [...prev.modules, mod],
+                              }))
+                            }
+                            style={{
+                              accentColor: "var(--secondary-brand)",
+                              width: 14,
+                              height: 14,
+                            }}
+                          />
+                          {mod}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
                   <label

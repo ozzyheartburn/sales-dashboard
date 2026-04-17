@@ -116,6 +116,21 @@ function LoadingScreen() {
   );
 }
 
+function RoleGuard({
+  children,
+  allowed,
+  role,
+}: {
+  children: React.ReactNode;
+  allowed: string[];
+  role: string;
+}) {
+  if (!allowed.includes(role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [credential, setCredential] = useState<string | null>(null);
@@ -166,8 +181,39 @@ export default function App() {
               <Route path="/select-view" element={<AdminViewSelector />} />
               <Route path="/dashboard" element={<AppLayout />}>
                 <Route index element={<DashboardHome />} />
-                <Route path="research-hub" element={<ResearchHub />} />
-                <Route path="war-room" element={<WarRoom />} />
+                <Route
+                  path="research-hub"
+                  element={
+                    <RoleGuard
+                      allowed={[
+                        "platform_admin",
+                        "company_admin",
+                        "sales_leader",
+                        "team_leader",
+                        "end_user",
+                      ]}
+                      role={user.role}
+                    >
+                      <ResearchHub />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="war-room"
+                  element={
+                    <RoleGuard
+                      allowed={[
+                        "platform_admin",
+                        "company_admin",
+                        "sales_leader",
+                        "team_leader",
+                      ]}
+                      role={user.role}
+                    >
+                      <WarRoom />
+                    </RoleGuard>
+                  }
+                />
               </Route>
               {user.isPlatformAdmin && (
                 <Route path="/admin" element={<AdminLayout />}>
