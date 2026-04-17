@@ -18,6 +18,9 @@ import {
   X,
   ExternalLink,
   Menu,
+  ChevronDown,
+  ArrowLeftRight,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -35,7 +38,7 @@ const navItems = [
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, login, credential } = useAuth();
   const authHeaders = buildAuthHeaders(user);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
@@ -53,6 +56,7 @@ export function AppLayout() {
     { companyName: string; buyingSignalScore: number; priority: string }[]
   >([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -308,71 +312,262 @@ export function AppLayout() {
           })}
         </nav>
 
-        {/* User */}
+        {/* User + Role Switcher */}
         <div
           style={{
-            padding: "12px 16px",
             borderTop: "1px solid rgba(167,176,222,0.08)",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
+            position: "relative",
           }}
         >
-          <div
+          {/* Role Switcher Dropdown */}
+          <AnimatePresence>
+            {roleSwitcherOpen &&
+              (() => {
+                const availableRoles = user?.availableRoles || [];
+                const otherRoles = availableRoles.filter(
+                  (ar) => ar.role !== user?.role || ar.tenant !== user?.tenant,
+                );
+                const ROLE_LABELS: Record<string, string> = {
+                  platform_admin: "Platform Admin",
+                  company_admin: "Company Admin",
+                  team_leader: "Team Leader",
+                  end_user: "Sales Rep",
+                };
+                if (otherRoles.length === 0) return null;
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      position: "absolute",
+                      bottom: "100%",
+                      left: 8,
+                      right: 8,
+                      background: "var(--surface-container-lowest)",
+                      border: "1px solid rgba(167,176,222,0.15)",
+                      borderRadius: 12,
+                      padding: 6,
+                      boxShadow: "0 -4px 24px rgba(0,0,0,0.3)",
+                      zIndex: 100,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "0.6rem",
+                        fontWeight: 700,
+                        color: "var(--on-surface-variant)",
+                        padding: "4px 10px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        fontFamily: "var(--font-label)",
+                      }}
+                    >
+                      Switch Role
+                    </p>
+                    {otherRoles.map((ar, i) => (
+                      <button
+                        key={`${ar.tenant}-${ar.role}-${i}`}
+                        onClick={() => {
+                          if (!user || !credential) return;
+                          const updatedUser = {
+                            ...user,
+                            role: ar.role,
+                            tenant: ar.tenant,
+                            teamName: ar.teamName,
+                            isPlatformAdmin: ar.role === "platform_admin",
+                          };
+                          login(updatedUser, credential);
+                          setRoleSwitcherOpen(false);
+                          if (ar.role === "platform_admin") {
+                            navigate("/admin");
+                          } else {
+                            navigate("/dashboard");
+                          }
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          width: "100%",
+                          padding: "8px 10px",
+                          border: "none",
+                          background: "transparent",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          transition: "background 100ms",
+                          textAlign: "left",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "rgba(167,176,222,0.08)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
+                      >
+                        <ArrowLeftRight
+                          size={12}
+                          color="var(--on-surface-variant)"
+                        />
+                        <div>
+                          <p
+                            style={{
+                              fontSize: "0.72rem",
+                              fontWeight: 600,
+                              color: "var(--on-surface)",
+                              fontFamily: "var(--font-headline)",
+                            }}
+                          >
+                            {ROLE_LABELS[ar.role] || ar.role}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "0.6rem",
+                              color: "var(--on-surface-variant)",
+                            }}
+                          >
+                            {ar.tenant}
+                            {ar.teamName ? ` · ${ar.teamName}` : ""}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                    <div
+                      style={{
+                        borderTop: "1px solid rgba(167,176,222,0.08)",
+                        marginTop: 4,
+                        paddingTop: 4,
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          logout();
+                          navigate("/");
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          width: "100%",
+                          padding: "8px 10px",
+                          border: "none",
+                          background: "transparent",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          transition: "background 100ms",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "rgba(211,47,47,0.08)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
+                      >
+                        <LogOut size={12} color="var(--error)" />
+                        <span
+                          style={{
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            color: "var(--error)",
+                            fontFamily: "var(--font-headline)",
+                          }}
+                        >
+                          Sign Out
+                        </span>
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })()}
+          </AnimatePresence>
+
+          <button
+            onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              background:
-                "linear-gradient(135deg, var(--primary), var(--secondary-brand))",
+              width: "100%",
+              padding: "12px 16px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-label)",
-              fontWeight: 700,
-              fontSize: "0.65rem",
-              color: "#fff",
-              flexShrink: 0,
+              gap: 10,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              textAlign: "left",
             }}
           >
-            {user?.name
-              ? user.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase()
-              : "?"}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p
+            <div
               style={{
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                color: "var(--on-surface)",
-                fontFamily: "var(--font-headline)",
-              }}
-              className="truncate"
-            >
-              {user?.name || user?.email || "User"}
-            </p>
-            <p
-              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(135deg, var(--primary), var(--secondary-brand))",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "var(--font-label)",
+                fontWeight: 700,
                 fontSize: "0.65rem",
-                color: "var(--on-surface-variant)",
+                color: "#fff",
+                flexShrink: 0,
               }}
-              className="truncate"
             >
-              {user?.role === "platform_admin"
-                ? "Platform Admin"
-                : user?.role || "User"}
-            </p>
-          </div>
-          <Settings
-            size={14}
-            color="var(--on-surface-variant)"
-            style={{ flexShrink: 0 }}
-          />
+              {user?.name
+                ? user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()
+                : "?"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p
+                style={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: "var(--on-surface)",
+                  fontFamily: "var(--font-headline)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {user?.name || user?.email || "User"}
+              </p>
+              <p
+                style={{
+                  fontSize: "0.65rem",
+                  color: "var(--on-surface-variant)",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-label)",
+                }}
+              >
+                {user?.role === "platform_admin"
+                  ? "Platform Admin"
+                  : user?.role === "company_admin"
+                    ? "Company Admin"
+                    : user?.role === "team_leader"
+                      ? "Team Leader"
+                      : user?.role === "end_user"
+                        ? "Sales Rep"
+                        : user?.role || "User"}
+              </p>
+            </div>
+            <ChevronDown
+              size={14}
+              color="var(--on-surface-variant)"
+              style={{
+                flexShrink: 0,
+                transform: roleSwitcherOpen ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s",
+              }}
+            />
+          </button>
         </div>
       </aside>
 

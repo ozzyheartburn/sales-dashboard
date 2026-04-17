@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect, createContext, useContext } from "react";
 import { AppLayout } from "./components/AppLayout";
+import { AdminLayout } from "./components/AdminLayout";
 import { DashboardHome } from "./pages/DashboardHome";
 import { ResearchHub } from "./pages/ResearchHub";
 import { WarRoom } from "./pages/WarRoom";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
+import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminViewSelector } from "./pages/AdminViewSelector";
 
 export interface AvailableRole {
@@ -154,9 +156,6 @@ export default function App() {
     >
       <BrowserRouter>
         <Routes>
-          {/* Admin panel — standalone, always accessible */}
-          <Route path="/admin" element={<AdminPanel />} />
-
           {user ? (
             <>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -166,6 +165,15 @@ export default function App() {
                 <Route path="research-hub" element={<ResearchHub />} />
                 <Route path="war-room" element={<WarRoom />} />
               </Route>
+              {user.isPlatformAdmin && (
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminPanel />} />
+                  <Route path="tenants" element={<AdminPanel />} />
+                  <Route path="workflows" element={<AdminPanel />} />
+                  <Route path="settings" element={<AdminPanel />} />
+                </Route>
+              )}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
           ) : (
