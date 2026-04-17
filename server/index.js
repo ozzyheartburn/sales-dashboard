@@ -90,7 +90,7 @@ async function attachTenantDB(req, res, next) {
 
     // Resolve the database name for the current environment.
     // NODE_ENV is set to "dev", "test", or "prod" via the per-environment .env file.
-    const env = process.env.NODE_ENV || "prod";
+    const env = process.env.NODE_ENV || "dev";
     const resolvedDbName =
       (tenant.databases && tenant.databases[env]) || tenant.databaseName;
 

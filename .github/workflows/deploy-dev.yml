@@ -9,6 +9,8 @@ jobs:
     name: Build & deploy backend (dev)
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +38,8 @@ jobs:
     name: Provision tenant databases (dev)
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      contents: read
     needs: deploy-backend
     steps:
       - uses: actions/checkout@v4

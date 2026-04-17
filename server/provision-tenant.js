@@ -98,7 +98,7 @@ const DEFAULT_ROLES = [
 ];
 
 // The three environments every tenant gets
-const ENVIRONMENTS = ["dev", "test", "prod"];
+const TENANT_ENVIRONMENTS = ["dev", "test", "prod"];
 
 // Build the database name for a given tenant + environment
 function dbName(tenantSlug, env) {
@@ -227,7 +227,7 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
     }
 
     const databases = Object.fromEntries(
-      ENVIRONMENTS.map((env) => [env, dbName(tenantSlug, env)]),
+      TENANT_ENVIRONMENTS.map((env) => [env, dbName(tenantSlug, env)]),
     );
 
     await tenantsCollection.updateOne(
@@ -255,12 +255,12 @@ async function provisionTenant(tenantSlug, displayName, adminEmail) {
     console.log(`     prod → ${databases.prod}`);
 
     // 2. Provision each environment database
-    for (const env of ENVIRONMENTS) {
+    for (const env of TENANT_ENVIRONMENTS) {
       await provisionEnvironmentDB(client, tenantSlug, env, adminEmail);
     }
 
     console.log(`\n🎉 Tenant "${displayName}" (${tenantSlug}) provisioned!\n`);
-    console.log(`Environments: ${ENVIRONMENTS.join(", ")}`);
+    console.log(`Environments: ${TENANT_ENVIRONMENTS.join(", ")}`);
     console.log(`Collections: ${COLLECTIONS.join(", ")}`);
     console.log(`Roles: platform_admin, company_admin, team_leader, end_user`);
     if (adminEmail) console.log(`Admin: ${adminEmail}\n`);
@@ -319,7 +319,7 @@ async function registerExistingTenant() {
     );
 
     // Provision dev and test databases with the same schema as prod
-    for (const env of ["dev", "test"]) {
+    for (const env of TENANT_ENVIRONMENTS.filter((e) => e !== "prod")) {
       await provisionEnvironmentDB(client, "PG_Machine", env, null);
     }
     console.log("✅ PG_Machine dev and test databases provisioned");
@@ -352,6 +352,6 @@ module.exports = {
   provisionEnvironmentDB,
   COLLECTIONS,
   DEFAULT_ROLES,
-  ENVIRONMENTS,
+  ENVIRONMENTS: TENANT_ENVIRONMENTS,
   dbName,
 };
