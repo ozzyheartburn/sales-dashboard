@@ -29,51 +29,37 @@ const allNavItems = [
     icon: LayoutDashboard,
     label: "Territory Overview",
     path: "/dashboard",
-    roles: [
-      "platform_admin",
-      "company_admin",
-      "sales_leader",
-      "team_leader",
-      "end_user",
-      "sdr",
-      "sdr_manager",
-    ],
+    moduleKey: "dashboard",
   },
   {
     icon: Search,
     label: "Research Hub",
     path: "/dashboard/research-hub",
-    roles: [
-      "platform_admin",
-      "company_admin",
-      "sales_leader",
-      "team_leader",
-      "end_user",
-    ],
+    moduleKey: "research-hub",
   },
   {
     icon: Target,
     label: "War Room",
     path: "/dashboard/war-room",
-    roles: ["platform_admin", "company_admin", "sales_leader", "team_leader"],
+    moduleKey: "war-room",
   },
   {
     icon: BarChart3,
     label: "Analytics & Automation",
     path: "/dashboard/analytics",
-    roles: ["platform_admin", "company_admin", "sales_leader", "sdr_manager"],
+    moduleKey: "analytics",
   },
   {
     icon: Briefcase,
     label: "Integrations",
     path: "/dashboard/integrations",
-    roles: ["platform_admin", "company_admin"],
+    moduleKey: "integrations",
   },
   {
     icon: Settings,
     label: "Admin Console",
     path: "/admin",
-    roles: ["platform_admin"],
+    moduleKey: "admin",
   },
 ];
 
@@ -81,10 +67,13 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, login, credential } = useAuth();
-  const { activeTenant, setActiveTenant } = useAuth();
+  const { activeTenant, setActiveTenant, modulePermissions } = useAuth();
   const authHeaders = buildAuthHeaders(user, activeTenant);
   const role = user?.role || "end_user";
-  const navItems = allNavItems.filter((item) => item.roles.includes(role));
+  const allowedModules = modulePermissions[role] || [];
+  const navItems = allNavItems.filter((item) =>
+    allowedModules.includes(item.moduleKey),
+  );
   const [aiOpen, setAiOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");

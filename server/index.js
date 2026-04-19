@@ -2041,6 +2041,89 @@ app.get("/api/sales-activities/:companyName/summary", async (req, res) => {
 });
 
 // =========================================================================
+// Module Permissions — configurable module access per role
+// =========================================================================
+
+const DEFAULT_MODULE_PERMISSIONS = {
+  platform_admin: [
+    "dashboard",
+    "research-hub",
+    "war-room",
+    "analytics",
+    "integrations",
+    "admin",
+  ],
+  company_admin: [
+    "dashboard",
+    "research-hub",
+    "war-room",
+    "analytics",
+    "integrations",
+  ],
+  sales_leader: ["dashboard", "research-hub", "war-room", "analytics"],
+  team_leader: ["dashboard", "research-hub", "war-room"],
+  end_user: ["dashboard", "research-hub"],
+  sdr: ["dashboard"],
+  sdr_manager: ["dashboard", "analytics"],
+};
+
+// GET module permissions (public — needed by all authenticated users)
+app.get("/api/module-permissions", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const doc = await platformDb
+      .collection("module_permissions")
+      .findOne({ _key: "global" });
+    res.json(doc?.permissions || DEFAULT_MODULE_PERMISSIONS);
+  } catch (err) {
+    console.error("Error fetching module permissions:", err);
+    res.json(DEFAULT_MODULE_PERMISSIONS);
+  }
+});
+
+// PUT module permissions (platform admin only)
+app.put("/api/module-permissions", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only platform admins can update module permissions" });
+    }
+
+    const { permissions } = req.body;
+    if (!permissions || typeof permissions !== "object") {
+      return res.status(400).json({ error: "permissions object is required" });
+    }
+
+    const platformDb = await connectPlatformDB();
+    await platformDb
+      .collection("module_permissions")
+      .updateOne(
+        { _key: "global" },
+        {
+          $set: {
+            _key: "global",
+            permissions,
+            updatedAt: new Date().toISOString(),
+            updatedBy: callerEmail,
+          },
+        },
+        { upsert: true },
+      );
+
+    res.json({ success: true, permissions });
+  } catch (err) {
+    console.error("Error updating module permissions:", err);
+    res.status(500).json({ error: "Failed to update module permissions" });
+  }
+});
+
+// =========================================================================
 // Tenant Management — provisioning, listing, user management
 // =========================================================================
 

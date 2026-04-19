@@ -13,6 +13,7 @@ import { AdminCompanies } from "./pages/AdminCompanies";
 import { AdminUsers } from "./pages/AdminUsers";
 import { AdminSubscriptions } from "./pages/AdminSubscriptions";
 import { AdminWorkflows } from "./pages/AdminWorkflows";
+import { AdminModules } from "./pages/AdminModules";
 
 export interface AvailableRole {
   tenant: string;
@@ -35,6 +36,8 @@ export interface AuthUser {
   customer_user_id_rbac: string | null;
 }
 
+export type ModulePermissions = Record<string, string[]>;
+
 interface AuthContextType {
   user: AuthUser | null;
   credential: string | null;
@@ -43,7 +46,31 @@ interface AuthContextType {
   isLoading: boolean;
   activeTenant: string;
   setActiveTenant: (tenant: string) => void;
+  modulePermissions: ModulePermissions;
 }
+
+const DEFAULT_MODULE_PERMISSIONS: ModulePermissions = {
+  platform_admin: [
+    "dashboard",
+    "research-hub",
+    "war-room",
+    "analytics",
+    "integrations",
+    "admin",
+  ],
+  company_admin: [
+    "dashboard",
+    "research-hub",
+    "war-room",
+    "analytics",
+    "integrations",
+  ],
+  sales_leader: ["dashboard", "research-hub", "war-room", "analytics"],
+  team_leader: ["dashboard", "research-hub", "war-room"],
+  end_user: ["dashboard", "research-hub"],
+  sdr: ["dashboard"],
+  sdr_manager: ["dashboard", "analytics"],
+};
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -53,6 +80,7 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   activeTenant: "",
   setActiveTenant: () => {},
+  modulePermissions: DEFAULT_MODULE_PERMISSIONS,
 });
 
 export function useAuth() {
@@ -122,16 +150,19 @@ function LoadingScreen() {
   );
 }
 
-function RoleGuard({
+function ModuleGuard({
   children,
-  allowed,
+  moduleKey,
   role,
+  modulePermissions,
 }: {
   children: React.ReactNode;
-  allowed: string[];
+  moduleKey: string;
   role: string;
+  modulePermissions: ModulePermissions;
 }) {
-  if (!allowed.includes(role)) {
+  const allowed = modulePermissions[role] || [];
+  if (!allowed.includes(moduleKey)) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
@@ -142,11 +173,24 @@ export default function App() {
   const [credential, setCredential] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTenant, setActiveTenantState] = useState("");
+  const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(
+    DEFAULT_MODULE_PERMISSIONS,
+  );
 
   const setActiveTenant = (tenant: string) => {
     setActiveTenantState(tenant);
     localStorage.setItem("active_tenant", tenant);
   };
+
+  const API_URL = import.meta.env.VITE_API_URL || "";
+
+  // Load module permissions from backend
+  useEffect(() => {
+    fetch(`${API_URL}/api/module-permissions`)
+      .then((r) => (r.ok ? r.json() : DEFAULT_MODULE_PERMISSIONS))
+      .then((data) => setModulePermissions(data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("auth_user");
@@ -198,6 +242,7 @@ export default function App() {
         isLoading,
         activeTenant,
         setActiveTenant,
+        modulePermissions,
       }}
     >
       <BrowserRouter>
@@ -211,34 +256,25 @@ export default function App() {
                 <Route
                   path="research-hub"
                   element={
-                    <RoleGuard
-                      allowed={[
-                        "platform_admin",
-                        "company_admin",
-                        "sales_leader",
-                        "team_leader",
-                        "end_user",
-                      ]}
+                    <ModuleGuard
+                      moduleKey="research-hub"
                       role={user.role}
+                      modulePermissions={modulePermissions}
                     >
                       <ResearchHub />
-                    </RoleGuard>
+                    </ModuleGuard>
                   }
                 />
                 <Route
                   path="war-room"
                   element={
-                    <RoleGuard
-                      allowed={[
-                        "platform_admin",
-                        "company_admin",
-                        "sales_leader",
-                        "team_leader",
-                      ]}
+                    <ModuleGuard
+                      moduleKey="war-room"
                       role={user.role}
+                      modulePermissions={modulePermissions}
                     >
                       <WarRoom />
-                    </RoleGuard>
+                    </ModuleGuard>
                   }
                 />
               </Route>
@@ -252,6 +288,7 @@ export default function App() {
                     element={<AdminSubscriptions />}
                   />
                   <Route path="workflows" element={<AdminWorkflows />} />
+                  <Route path="modules" element={<AdminModules />} />
                   <Route path="settings" element={<AdminPanel />} />
                 </Route>
               )}
