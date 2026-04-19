@@ -226,24 +226,9 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 if [ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "None" ]; then
   echo "  ✅ Backend deployed: http://$PUBLIC_IP:$PORT"
 
-  # ─── Auto-update vercel.json with new backend IP ─────────────────────────
-  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-  VERCEL_JSON="$PROJECT_ROOT/vercel.json"
-
-  if [ -f "$VERCEL_JSON" ]; then
-    # Replace any IP:4000 in vercel.json with the new one
-    sed -i '' "s|http://[0-9.]*:$PORT|http://$PUBLIC_IP:$PORT|g" "$VERCEL_JSON"
-    echo "  ✅ vercel.json updated → $PUBLIC_IP"
-
-    # Auto-deploy frontend
-    echo ""
-    echo "→ Deploying frontend with updated backend IP..."
-    cd "$PROJECT_ROOT"
-    bash deploy.sh
-  else
-    echo "  ⚠️  vercel.json not found at $VERCEL_JSON — update manually"
-  fi
+  # ─── ALB provides stable DNS — no need to update vercel.json ──────────────
+  ALB_DNS="pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com"
+  echo "  ℹ️  ALB DNS: $ALB_DNS (vercel.json already uses this — no update needed)"
 else
   echo "  ⚠️  Could not detect public IP. Task may still be starting."
   echo "  Run manually:"
