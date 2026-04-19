@@ -47,6 +47,7 @@ interface AuthContextType {
   activeTenant: string;
   setActiveTenant: (tenant: string) => void;
   modulePermissions: ModulePermissions;
+  userModules: string[];
 }
 
 const DEFAULT_MODULE_PERMISSIONS: ModulePermissions = {
@@ -81,6 +82,7 @@ export const AuthContext = createContext<AuthContextType>({
   activeTenant: "",
   setActiveTenant: () => {},
   modulePermissions: DEFAULT_MODULE_PERMISSIONS,
+  userModules: [],
 });
 
 export function useAuth() {
@@ -153,16 +155,12 @@ function LoadingScreen() {
 function ModuleGuard({
   children,
   moduleKey,
-  role,
-  modulePermissions,
 }: {
   children: React.ReactNode;
   moduleKey: string;
-  role: string;
-  modulePermissions: ModulePermissions;
 }) {
-  const allowed = modulePermissions[role] || [];
-  if (!allowed.includes(moduleKey)) {
+  const { userModules } = useAuth();
+  if (!userModules.includes(moduleKey)) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
@@ -176,6 +174,7 @@ export default function App() {
   const [modulePermissions, setModulePermissions] = useState<ModulePermissions>(
     DEFAULT_MODULE_PERMISSIONS,
   );
+  const [userModules, setUserModules] = useState<string[]>([]);
 
   const setActiveTenant = (tenant: string) => {
     setActiveTenantState(tenant);
@@ -188,9 +187,37 @@ export default function App() {
   useEffect(() => {
     fetch(`${API_URL}/api/module-permissions`)
       .then((r) => (r.ok ? r.json() : DEFAULT_MODULE_PERMISSIONS))
-      .then((data) => setModulePermissions(data))
+      .then((data) => {
+        setModulePermissions(data);
+        // Set default userModules from role if user is already loaded
+        if (user) {
+          setUserModules(data[user.role] || []);
+        }
+      })
       .catch(() => {});
   }, []);
+
+  // Fetch per-user module overrides
+  useEffect(() => {
+    if (!user) return;
+    const headers: Record<string, string> = {};
+    if (user.email) headers["x-user-email"] = user.email;
+    if (user.role) headers["x-user-role"] = user.role;
+    if (user.tenant) headers["x-tenant"] = user.tenant;
+    fetch(`${API_URL}/api/module-permissions/me`, { headers })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.modules)) {
+          setUserModules(data.modules);
+        } else {
+          // Fall back to role-based
+          setUserModules(modulePermissions[user.role] || []);
+        }
+      })
+      .catch(() => {
+        setUserModules(modulePermissions[user.role] || []);
+      });
+  }, [user, modulePermissions]);
 
   useEffect(() => {
     const stored = localStorage.getItem("auth_user");
@@ -243,6 +270,7 @@ export default function App() {
         activeTenant,
         setActiveTenant,
         modulePermissions,
+        userModules,
       }}
     >
       <BrowserRouter>
@@ -256,11 +284,7 @@ export default function App() {
                 <Route
                   path="research-hub"
                   element={
-                    <ModuleGuard
-                      moduleKey="research-hub"
-                      role={user.role}
-                      modulePermissions={modulePermissions}
-                    >
+                    <ModuleGuard moduleKey="research-hub">
                       <ResearchHub />
                     </ModuleGuard>
                   }
@@ -268,11 +292,7 @@ export default function App() {
                 <Route
                   path="war-room"
                   element={
-                    <ModuleGuard
-                      moduleKey="war-room"
-                      role={user.role}
-                      modulePermissions={modulePermissions}
-                    >
+                    <ModuleGuard moduleKey="war-room">
                       <WarRoom />
                     </ModuleGuard>
                   }

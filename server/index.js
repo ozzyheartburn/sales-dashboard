@@ -2101,25 +2101,163 @@ app.put("/api/module-permissions", async (req, res) => {
     }
 
     const platformDb = await connectPlatformDB();
-    await platformDb
-      .collection("module_permissions")
-      .updateOne(
-        { _key: "global" },
-        {
-          $set: {
-            _key: "global",
-            permissions,
-            updatedAt: new Date().toISOString(),
-            updatedBy: callerEmail,
-          },
+    await platformDb.collection("module_permissions").updateOne(
+      { _key: "global" },
+      {
+        $set: {
+          _key: "global",
+          permissions,
+          updatedAt: new Date().toISOString(),
+          updatedBy: callerEmail,
         },
-        { upsert: true },
-      );
+      },
+      { upsert: true },
+    );
 
     res.json({ success: true, permissions });
   } catch (err) {
     console.error("Error updating module permissions:", err);
     res.status(500).json({ error: "Failed to update module permissions" });
+  }
+});
+
+// GET per-user module overrides (returns all user overrides)
+app.get("/api/module-permissions/users", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Admin only" });
+    }
+    const platformDb = await connectPlatformDB();
+    const overrides = await platformDb
+      .collection("user_module_overrides")
+      .find({})
+      .toArray();
+    res.json(overrides);
+  } catch (err) {
+    console.error("Error fetching user module overrides:", err);
+    res.status(500).json({ error: "Failed to fetch user module overrides" });
+  }
+});
+
+// GET module permissions for current user (merges role defaults + user overrides)
+app.get("/api/module-permissions/me", async (req, res) => {
+  try {
+    const email = (req.headers["x-user-email"] || "").toLowerCase();
+    const role = req.headers["x-user-role"] || "end_user";
+    const platformDb = await connectPlatformDB();
+
+    // Get role-based defaults
+    const globalDoc = await platformDb
+      .collection("module_permissions")
+      .findOne({ _key: "global" });
+    const roleModules =
+      (globalDoc?.permissions || DEFAULT_MODULE_PERMISSIONS)[role] || [];
+
+    // Get user-specific overrides
+    const userOverride = await platformDb
+      .collection("user_module_overrides")
+      .findOne({ email });
+
+    if (userOverride) {
+      // Merge: start with role defaults, add user additions, remove user removals
+      const added = userOverride.addedModules || [];
+      const removed = userOverride.removedModules || [];
+      const merged = [...new Set([...roleModules, ...added])].filter(
+        (m) => !removed.includes(m),
+      );
+      res.json({ modules: merged, hasOverride: true });
+    } else {
+      res.json({ modules: roleModules, hasOverride: false });
+    }
+  } catch (err) {
+    console.error("Error fetching user module permissions:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// PUT per-user module override (platform admin only)
+app.put("/api/module-permissions/users/:email", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Admin only" });
+    }
+
+    const targetEmail = decodeURIComponent(req.params.email).toLowerCase();
+    const { modules } = req.body;
+    if (!Array.isArray(modules)) {
+      return res.status(400).json({ error: "modules array is required" });
+    }
+
+    const platformDb = await connectPlatformDB();
+    await platformDb.collection("user_module_overrides").updateOne(
+      { email: targetEmail },
+      {
+        $set: {
+          email: targetEmail,
+          modules,
+          updatedAt: new Date().toISOString(),
+          updatedBy: callerEmail,
+        },
+      },
+      { upsert: true },
+    );
+
+    res.json({ success: true, email: targetEmail, modules });
+  } catch (err) {
+    console.error("Error updating user module override:", err);
+    res.status(500).json({ error: "Failed to update user module override" });
+  }
+});
+
+// DELETE per-user module override (reverts to role defaults)
+app.delete("/api/module-permissions/users/:email", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Admin only" });
+    }
+
+    const targetEmail = decodeURIComponent(req.params.email).toLowerCase();
+    const platformDb = await connectPlatformDB();
+    await platformDb
+      .collection("user_module_overrides")
+      .deleteOne({ email: targetEmail });
+
+    res.json({ success: true, email: targetEmail });
+  } catch (err) {
+    console.error("Error deleting user module override:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// List all auth users (platform admin only)
+app.get("/api/auth/list-users", async (req, res) => {
+  try {
+    const platformDb = await connectPlatformDB();
+    const users = await platformDb
+      .collection("auth_users")
+      .find({}, { projection: { password: 0 } })
+      .toArray();
+    res.json(
+      users.map((u) => ({ email: u.email, name: u.name, role: u.role })),
+    );
+  } catch (err) {
+    console.error("Error listing auth users:", err);
+    res.status(500).json({ error: "Failed" });
   }
 });
 

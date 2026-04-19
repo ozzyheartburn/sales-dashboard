@@ -67,12 +67,10 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, login, credential } = useAuth();
-  const { activeTenant, setActiveTenant, modulePermissions } = useAuth();
+  const { activeTenant, setActiveTenant, userModules } = useAuth();
   const authHeaders = buildAuthHeaders(user, activeTenant);
-  const role = user?.role || "end_user";
-  const allowedModules = modulePermissions[role] || [];
   const navItems = allNavItems.filter((item) =>
-    allowedModules.includes(item.moduleKey),
+    userModules.includes(item.moduleKey),
   );
   const [aiOpen, setAiOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
