@@ -37,6 +37,7 @@ import {
   Plus,
   RefreshCw,
   Loader2,
+  ExternalLink as LinkedinIcon,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ interface ChampionCandidate {
   engagement_strategy?: string;
   risk_notes?: string;
   linkedin_indicators?: string[];
+  linkedin_url?: string;
   confidence?: string;
 }
 
@@ -55,6 +57,7 @@ interface Detractor {
   title_role: string;
   reason_for_resistance?: string;
   mitigation_strategy?: string;
+  linkedin_url?: string;
 }
 
 interface Account {
@@ -285,6 +288,7 @@ function PersonaNode({
     painHypothesis?: string;
     engagementStrategy?: string;
     confidence?: string;
+    linkedinUrl?: string;
     isChampion?: boolean;
     isVerified?: boolean;
     onToggleChampion?: () => void;
@@ -342,21 +346,45 @@ function PersonaNode({
       >
         {data.role}
       </div>
-      <span
-        style={{
-          display: "inline-block",
-          marginTop: 6,
-          fontSize: "0.6rem",
-          fontWeight: 700,
-          fontFamily: "var(--font-label)",
-          padding: "0.15rem 0.5rem",
-          borderRadius: 9999,
-          background: typeColors[data.type] || "var(--on-surface-variant)",
-          color: "#fff",
-        }}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}
       >
-        {typeLabels[data.type] || "Unknown"}
-      </span>
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: "0.6rem",
+            fontWeight: 700,
+            fontFamily: "var(--font-label)",
+            padding: "0.15rem 0.5rem",
+            borderRadius: 9999,
+            background: typeColors[data.type] || "var(--on-surface-variant)",
+            color: "#fff",
+          }}
+        >
+          {(typeLabels[data.type] || "Unknown") +
+            (!data.isVerified &&
+            (data.type === "champion" || data.type === "economic-buyer")
+              ? " Candidate"
+              : "")}
+        </span>
+        {data.linkedinUrl && (
+          <a
+            href={data.linkedinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              color: "#0a66c2",
+              transition: "opacity 0.15s",
+            }}
+            title="View LinkedIn Profile"
+          >
+            <LinkedinIcon size={13} />
+          </a>
+        )}
+      </div>
 
       {/* Champion + Verified toggles */}
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -536,6 +564,7 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        linkedinUrl: c.linkedin_url || "",
         isChampion: false,
         isVerified: false,
       },
@@ -559,6 +588,7 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        linkedinUrl: c.linkedin_url || "",
         isChampion: true,
         isVerified: false,
       },
@@ -592,6 +622,7 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: c.pain_hypothesis || "",
         engagementStrategy: c.engagement_strategy || "",
         confidence: c.confidence || "",
+        linkedinUrl: c.linkedin_url || "",
         isChampion: false,
         isVerified: false,
       },
@@ -624,6 +655,7 @@ function buildOrgChartFromChampions(account: Account | null): {
         painHypothesis: "",
         engagementStrategy: d.mitigation_strategy || "",
         confidence: "",
+        linkedinUrl: d.linkedin_url || "",
         isChampion: false,
         isVerified: false,
       },
@@ -827,6 +859,7 @@ export function WarRoom() {
     name: "",
     role: "",
     type: "unknown" as string,
+    linkedinUrl: "",
   });
 
   // React Flow state
@@ -904,6 +937,7 @@ export function WarRoom() {
         role: newPerson.role.trim() || "Unknown Role",
         type: newPerson.type,
         notes: "",
+        linkedinUrl: newPerson.linkedinUrl.trim() || "",
         isChampion: false,
         isVerified: false,
         onToggleChampion: () => toggleChampion(id),
@@ -912,7 +946,7 @@ export function WarRoom() {
     };
 
     setNodes((nds) => [...nds, newNode]);
-    setNewPerson({ name: "", role: "", type: "unknown" });
+    setNewPerson({ name: "", role: "", type: "unknown", linkedinUrl: "" });
     setShowAddPerson(false);
   }, [newPerson, nodes, setNodes, toggleChampion, toggleVerified]);
 
@@ -2092,6 +2126,44 @@ export function WarRoom() {
                             <option value="influencer">Influencer</option>
                             <option value="blocker">Blocker</option>
                           </select>
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              fontSize: "0.75rem",
+                              fontFamily: "var(--font-label)",
+                              fontWeight: 600,
+                              color: "var(--on-surface-variant)",
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            LinkedIn Profile URL
+                          </label>
+                          <input
+                            type="url"
+                            value={newPerson.linkedinUrl}
+                            onChange={(e) =>
+                              setNewPerson((p) => ({
+                                ...p,
+                                linkedinUrl: e.target.value,
+                              }))
+                            }
+                            placeholder="https://linkedin.com/in/..."
+                            style={{
+                              width: "100%",
+                              padding: "0.5rem 0.75rem",
+                              borderRadius: 8,
+                              border: "1.5px solid rgba(107,113,148,0.25)",
+                              background: "var(--surface-container-low)",
+                              color: "var(--on-surface)",
+                              fontFamily: "var(--font-body)",
+                              fontSize: "0.85rem",
+                              outline: "none",
+                              boxSizing: "border-box",
+                            }}
+                          />
                         </div>
 
                         <button
