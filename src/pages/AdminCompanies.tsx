@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth, buildAuthHeaders } from "../App";
 import {
@@ -98,6 +99,7 @@ interface Tenant {
 
 export function AdminCompanies() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const authHeaders = buildAuthHeaders(user);
   const API_URL = import.meta.env.VITE_API_URL || "";
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -578,6 +580,9 @@ export function AdminCompanies() {
                     </td>
                     <td style={{ padding: "12px 14px" }}>
                       <button
+                        onClick={() =>
+                          navigate(`/admin/companies/${tenant.slug}`)
+                        }
                         style={{
                           background: "none",
                           border: "none",

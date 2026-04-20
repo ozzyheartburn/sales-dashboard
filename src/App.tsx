@@ -14,6 +14,7 @@ import { AdminUsers } from "./pages/AdminUsers";
 import { AdminSubscriptions } from "./pages/AdminSubscriptions";
 import { AdminWorkflows } from "./pages/AdminWorkflows";
 import { AdminModules } from "./pages/AdminModules";
+import { AdminCompanyDetail } from "./pages/AdminCompanyDetail";
 
 export interface AvailableRole {
   tenant: string;
@@ -302,6 +303,10 @@ export default function App() {
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="companies" element={<AdminCompanies />} />
+                  <Route
+                    path="companies/:slug"
+                    element={<AdminCompanyDetail />}
+                  />
                   <Route path="users" element={<AdminUsers />} />
                   <Route
                     path="subscriptions"
