@@ -7,6 +7,7 @@ import { WarRoom } from "./pages/WarRoom";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { AdminViewSelector } from "./pages/AdminViewSelector";
+import { AnalyticsDashboard } from "./pages/AnalyticsDashboard";
 
 export interface AvailableRole {
   tenant: string;
@@ -156,6 +157,7 @@ export default function App() {
         <Routes>
           {/* Admin panel — standalone, always accessible */}
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
 
           {user ? (
             <>

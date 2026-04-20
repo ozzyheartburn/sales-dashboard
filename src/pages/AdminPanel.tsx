@@ -17,6 +17,7 @@ import {
   Play,
   Clock,
   Zap,
+  BarChart3,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -402,6 +403,26 @@ export function AdminPanel() {
               Platform Admin
             </span>
           </div>
+          <button
+            onClick={() => navigate("/admin/analytics")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.45rem 1rem",
+              borderRadius: "0.75rem",
+              backgroundColor: "rgba(211,166,255,0.07)",
+              border: "1px solid rgba(211,166,255,0.15)",
+              color: "var(--tertiary)",
+              fontSize: "0.8rem",
+              fontFamily: "var(--font-headline)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <BarChart3 size={14} />
+            Analytics
+          </button>
         </div>
       </div>
 
