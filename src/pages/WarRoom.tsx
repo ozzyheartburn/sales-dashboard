@@ -993,6 +993,13 @@ export function WarRoom() {
   const { user, activeTenant } = useAuth();
   const authHeaders = buildAuthHeaders(user, activeTenant);
 
+  // Only platform_admin, company_admin, and sales_leader can trigger research & run swarms
+  const canRunResearch =
+    user?.isPlatformAdmin ||
+    ["platform_admin", "company_admin", "sales_leader"].includes(
+      user?.role || "",
+    );
+
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
@@ -1247,9 +1254,9 @@ export function WarRoom() {
                   <FileText size={14} /> Export Blueprint
                 </button>
                 <button
-                  disabled={refreshing || !selectedAccount}
+                  disabled={refreshing || !selectedAccount || !canRunResearch}
                   onClick={async () => {
-                    if (!selectedAccount) return;
+                    if (!selectedAccount || !canRunResearch) return;
                     setRefreshing(true);
                     try {
                       // 1. Fire n8n monolith research

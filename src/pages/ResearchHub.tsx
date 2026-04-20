@@ -104,6 +104,14 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 export function ResearchHub() {
   const { user, activeTenant } = useAuth();
   const authHeaders = buildAuthHeaders(user, activeTenant);
+
+  // Only platform_admin, company_admin, and sales_leader can trigger research & run swarms
+  const canRunResearch =
+    user?.isPlatformAdmin ||
+    ["platform_admin", "company_admin", "sales_leader"].includes(
+      user?.role || "",
+    );
+
   const [showModal, setShowModal] = useState(false);
   const [accountName, setAccountName] = useState("");
   const [website, setWebsite] = useState("");
@@ -232,24 +240,26 @@ export function ResearchHub() {
         >
           Research Hub
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            background: "linear-gradient(135deg, #8720de, #14b8a6)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "0.7rem 1.5rem",
-            fontFamily: "var(--font-label)",
-            fontWeight: 700,
-            fontSize: "1rem",
-            cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(135,32,222,0.08)",
-          }}
-        >
-          <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} />{" "}
-          Initiate Deep Research
-        </button>
+        {canRunResearch && (
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              background: "linear-gradient(135deg, #8720de, #14b8a6)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              padding: "0.7rem 1.5rem",
+              fontFamily: "var(--font-label)",
+              fontWeight: 700,
+              fontSize: "1rem",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(135,32,222,0.08)",
+            }}
+          >
+            <Plus size={18} style={{ marginRight: 8, verticalAlign: -2 }} />{" "}
+            Initiate Deep Research
+          </button>
+        )}
       </div>
       <div
         style={{
@@ -816,7 +826,7 @@ export function ResearchHub() {
       </div>
 
       {/* --- MODAL --- */}
-      {showModal && (
+      {showModal && canRunResearch && (
         <div
           style={{
             position: "fixed",
@@ -944,61 +954,68 @@ export function ResearchHub() {
             description:
               "360-view into Champion Building through deeply understanding what your champions care about, and how to uniquely position yourself in every situation to further build and test your champions",
           },
-        ].map((widget, i) => (
-          <motion.div
-            key={widget.name}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: i * 0.07 }}
-            style={{
-              ...glassCard,
-              display: "flex",
-              gap: 14,
-              alignItems: "flex-start",
-              cursor: "pointer",
-              transition: "transform 0.15s, box-shadow 0.15s",
-            }}
-            whileHover={{ scale: 1.02 }}
-            onClick={() => setActivePanel(widget.name)}
-          >
-            <div
+        ].map((widget, i) => {
+          const isLocked = widget.name === "Agent Swarm" && !canRunResearch;
+          return (
+            <motion.div
+              key={widget.name}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: i * 0.07 }}
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, #8720de, #14b8a6)",
+                ...glassCard,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
+                gap: 14,
+                alignItems: "flex-start",
+                cursor: isLocked ? "not-allowed" : "pointer",
+                transition: "transform 0.15s, box-shadow 0.15s",
+                opacity: isLocked ? 0.5 : 1,
+              }}
+              whileHover={{ scale: isLocked ? 1 : 1.02 }}
+              onClick={() => {
+                if (isLocked) return;
+                setActivePanel(widget.name);
               }}
             >
-              {widget.icon}
-            </div>
-            <div>
               <div
                 style={{
-                  fontFamily: "var(--font-headline)",
-                  fontWeight: 700,
-                  fontSize: "1.05rem",
-                  color: "#fff",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #8720de, #14b8a6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
-                {widget.name}
+                {widget.icon}
               </div>
-              <div
-                style={{
-                  fontSize: "0.88rem",
-                  color: "rgba(255,255,255,0.7)",
-                  marginTop: 4,
-                  lineHeight: 1.45,
-                }}
-              >
-                {widget.description}
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 700,
+                    fontSize: "1.05rem",
+                    color: "#fff",
+                  }}
+                >
+                  {widget.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.88rem",
+                    color: "rgba(255,255,255,0.7)",
+                    marginTop: 4,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {widget.description}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
 
         {/* Dynamic Research Insights & Workflows widget */}
         <motion.div

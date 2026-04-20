@@ -770,11 +770,24 @@ Tone: coaching-style, psychologically astute, deal-stage-aware. This brief is fo
  * @param {Object} accountContext - { companyName, website, industry, knownStack, notes }
  * @returns {string} Complete prompt ready for LLM
  */
-function buildAgentPrompt(agentId, templateId, accountContext) {
-  const base = basePrompts[agentId];
+/**
+ * Builds the agent prompt, optionally merging tenant-specific overrides.
+ * @param {string} agentId
+ * @param {string|null} templateId
+ * @param {Object} accountContext
+ * @param {Object} [overrides] - tenant workflow overrides
+ * @param {Object} [overrides.agent_prompt_overrides] - { agentId: "custom prompt" }
+ * @param {Object} [overrides.template_injection_overrides] - { templateId: { agentId: "custom injection" } }
+ */
+function buildAgentPrompt(agentId, templateId, accountContext, overrides) {
+  const base =
+    overrides?.agent_prompt_overrides?.[agentId] || basePrompts[agentId];
   if (!base) throw new Error(`Unknown agent: ${agentId}`);
 
-  const injection = templateInjections[agentId]?.[templateId] ?? "";
+  const injection =
+    overrides?.template_injection_overrides?.[templateId]?.[agentId] ??
+    templateInjections[agentId]?.[templateId] ??
+    "";
 
   const context = `
 // ---------------------------------------------------------------------------
@@ -796,10 +809,19 @@ Additional Notes: ${accountContext.notes ?? "None"}
  * @param {string} templateId - e.g. "lower-tco"
  * @param {Object} accountContext - { companyName, website }
  * @param {Object} agentOutputs - keyed by agentId, values are structured agent output objects
+ * @param {Object} [overrides] - tenant workflow overrides
+ * @param {Object} [overrides.synthesis_overrides] - { templateId: "custom synthesis prompt" }
  * @returns {string} Complete synthesis prompt ready for LLM
  */
-function buildSynthesisPrompt(templateId, accountContext, agentOutputs) {
-  const synthesis = synthesisByTemplate[templateId];
+function buildSynthesisPrompt(
+  templateId,
+  accountContext,
+  agentOutputs,
+  overrides,
+) {
+  const synthesis =
+    overrides?.synthesis_overrides?.[templateId] ||
+    synthesisByTemplate[templateId];
   if (!synthesis) throw new Error(`Unknown template: ${templateId}`);
 
   const outputsBlock = Object.entries(agentOutputs)

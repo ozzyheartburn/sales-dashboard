@@ -70,6 +70,21 @@ async function connectPlatformDB() {
   return client.db("platform");
 }
 
+// Default n8n webhook URL (PG_Machine / GTM Baltics)
+const DEFAULT_N8N_WEBHOOK =
+  "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d";
+
+// Tenant workflow config cache (1-min TTL)
+const workflowCache = new Map();
+async function getTenantWorkflow(slug) {
+  const cached = workflowCache.get(slug);
+  if (cached && Date.now() - cached.ts < 60_000) return cached.data;
+  const platformDb = await connectPlatformDB();
+  const doc = await platformDb.collection("tenant_workflows").findOne({ slug });
+  workflowCache.set(slug, { data: doc, ts: Date.now() });
+  return doc;
+}
+
 // Connect to pg_identity database (central identity + RBAC)
 async function connectIdentityDB() {
   await ensureConnected();
@@ -396,8 +411,21 @@ async function runAgenticExtraIterations(
 }
 
 // Run Agent Swarm: execute agents in parallel via GPT-4o, synthesize buying signal brief
+// Access: platform_admin, company_admin, sales_leader only
 app.post("/api/swarm/run", async (req, res) => {
   try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    const RESEARCH_ROLES = ["platform_admin", "company_admin", "sales_leader"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      !RESEARCH_ROLES.includes(callerRole)
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only sales leaders and above can run agent swarms" });
+    }
+
     const { account_name, agents, template, instructions } = req.body;
     if (!account_name || !agents || agents.length === 0) {
       return res
@@ -423,6 +451,18 @@ app.post("/api/swarm/run", async (req, res) => {
       try {
         const database = await connectDB();
         const collection = database.collection("PG_Machine");
+
+        // Load tenant workflow overrides
+        const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
+        const workflow = await getTenantWorkflow(tenantSlug);
+        const overrides = workflow
+          ? {
+              agent_prompt_overrides: workflow.agent_prompt_overrides,
+              template_injection_overrides:
+                workflow.template_injection_overrides,
+              synthesis_overrides: workflow.synthesis_overrides,
+            }
+          : undefined;
 
         // Fetch existing account data for context
         const account = await collection.findOne({
@@ -465,6 +505,7 @@ app.post("/api/swarm/run", async (req, res) => {
               agentId,
               template || null,
               accountContext,
+              overrides,
             );
 
             const completion = await openai.chat.completions.create({
@@ -532,6 +573,7 @@ app.post("/api/swarm/run", async (req, res) => {
               template,
               accountContext,
               agentOutputs,
+              overrides,
             );
 
             const synthCompletion = await openai.chat.completions.create({
@@ -720,8 +762,21 @@ app.post("/api/swarm/run", async (req, res) => {
 });
 
 // Run agents on ALL accounts (batch mode, sequential to avoid rate limits)
+// Access: platform_admin, company_admin, sales_leader only
 app.post("/api/swarm/run-all", async (req, res) => {
   try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    const RESEARCH_ROLES = ["platform_admin", "company_admin", "sales_leader"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      !RESEARCH_ROLES.includes(callerRole)
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only sales leaders and above can run batch swarms" });
+    }
+
     const {
       agents,
       template,
@@ -1135,8 +1190,21 @@ app.get("/api/org-chart/:accountName", async (req, res) => {
 });
 
 // Initiate research: fire-and-forget to n8n, return immediately
+// Access: platform_admin, company_admin, sales_leader only
 app.post("/api/research", async (req, res) => {
   try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    const RESEARCH_ROLES = ["platform_admin", "company_admin", "sales_leader"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      !RESEARCH_ROLES.includes(callerRole)
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Only sales leaders and above can trigger research" });
+    }
+
     const { account_name, website_url, tenant } = req.body;
     if (!account_name) {
       return res.status(400).json({ error: "Missing account_name in payload" });
@@ -1154,9 +1222,9 @@ app.post("/api/research", async (req, res) => {
       tenant: tenantSlug,
     });
 
-    // Fire-and-forget: call n8n webhook without awaiting the response
-    const n8nUrl =
-      "https://gtmbaltics.app.n8n.cloud/webhook/002eb43f-96f4-4046-86f3-d0129f19819d";
+    // Fire-and-forget: call tenant's n8n webhook without awaiting the response
+    const workflow = await getTenantWorkflow(tenantSlug);
+    const n8nUrl = workflow?.n8n?.webhook_url || DEFAULT_N8N_WEBHOOK;
     fetch(n8nUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2461,6 +2529,125 @@ app.put("/api/tenants/:slug/prompts", async (req, res) => {
   } catch (err) {
     console.error("Error saving tenant prompts:", err);
     res.status(500).json({ error: "Failed to save prompts" });
+  }
+});
+
+// =========================================================================
+// Tenant Workflow Configuration (n8n, agent overrides, templates)
+// Collection: "tenant_workflows" in platform database
+// =========================================================================
+
+// Get workflow config for a tenant
+app.get("/api/tenants/:slug/workflow", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin" &&
+      callerRole !== "company_admin"
+    ) {
+      return res.status(403).json({ error: "Insufficient permissions" });
+    }
+
+    const workflow = await getTenantWorkflow(req.params.slug);
+    if (!workflow) {
+      return res.json({
+        slug: req.params.slug,
+        n8n: { webhook_url: "" },
+        enabled_agents: [],
+        enabled_templates: [],
+        agent_prompt_overrides: {},
+        template_injection_overrides: {},
+        synthesis_overrides: {},
+      });
+    }
+    res.json(workflow);
+  } catch (err) {
+    console.error("Error fetching tenant workflow:", err);
+    res.status(500).json({ error: "Failed to fetch workflow config" });
+  }
+});
+
+// Save workflow config for a tenant
+app.put("/api/tenants/:slug/workflow", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Platform admin required" });
+    }
+
+    const {
+      n8n,
+      enabled_agents,
+      enabled_templates,
+      agent_prompt_overrides,
+      template_injection_overrides,
+      synthesis_overrides,
+    } = req.body;
+
+    // Validate n8n webhook URL if provided
+    if (n8n?.webhook_url && !n8n.webhook_url.startsWith("https://")) {
+      return res.status(400).json({ error: "n8n webhook URL must use HTTPS" });
+    }
+
+    const slug = req.params.slug;
+    const platformDb = await connectPlatformDB();
+    await platformDb.collection("tenant_workflows").updateOne(
+      { slug },
+      {
+        $set: {
+          slug,
+          n8n: n8n || { webhook_url: "" },
+          enabled_agents: enabled_agents || [],
+          enabled_templates: enabled_templates || [],
+          agent_prompt_overrides: agent_prompt_overrides || {},
+          template_injection_overrides: template_injection_overrides || {},
+          synthesis_overrides: synthesis_overrides || {},
+          updatedAt: new Date().toISOString(),
+        },
+        $setOnInsert: { createdAt: new Date().toISOString() },
+      },
+      { upsert: true },
+    );
+
+    // Bust cache
+    workflowCache.delete(slug);
+
+    console.log(`Workflow config saved for tenant ${slug}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error saving tenant workflow:", err);
+    res.status(500).json({ error: "Failed to save workflow config" });
+  }
+});
+
+// Delete workflow config for a tenant (revert to platform defaults)
+app.delete("/api/tenants/:slug/workflow", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "";
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Platform admin required" });
+    }
+
+    const slug = req.params.slug;
+    const platformDb = await connectPlatformDB();
+    await platformDb.collection("tenant_workflows").deleteOne({ slug });
+    workflowCache.delete(slug);
+
+    console.log(`Workflow config deleted for tenant ${slug}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting tenant workflow:", err);
+    res.status(500).json({ error: "Failed to delete workflow config" });
   }
 });
 
