@@ -2329,6 +2329,256 @@ app.get("/api/auth/list-users", async (req, res) => {
   }
 });
 
+// List all users across all tenants (platform admin only)
+// Returns each user with their tenant, role, status, and auth status
+app.get("/api/admin/all-users", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    if (
+      !PLATFORM_ADMIN_EMAILS.includes(callerEmail) &&
+      callerRole !== "platform_admin"
+    ) {
+      return res.status(403).json({ error: "Platform admin only" });
+    }
+
+    const platformDb = await connectPlatformDB();
+    const tenants = await platformDb
+      .collection("tenants")
+      .find({ status: "active" })
+      .toArray();
+
+    // Get all auth_users for status lookup
+    const authUsers = await platformDb
+      .collection("auth_users")
+      .find({}, { projection: { passwordHash: 0 } })
+      .toArray();
+    const authMap = new Map(authUsers.map((u) => [u.email?.toLowerCase(), u]));
+
+    const allUsers = [];
+    for (const tenant of tenants) {
+      try {
+        const tenantDb = await connectTenantDB(
+          tenant.databaseName || tenant.slug,
+        );
+        const users = await tenantDb.collection("users").find({}).toArray();
+        for (const u of users) {
+          const authRecord = authMap.get(u.email?.toLowerCase());
+          allUsers.push({
+            _id: u._id,
+            email: u.email,
+            name: u.name || authRecord?.name || null,
+            role: u.role || "end_user",
+            teamName: u.teamName || null,
+            tenant: tenant.slug,
+            tenantDisplayName: tenant.displayName || tenant.slug,
+            status: u.status || authRecord?.status || "active",
+            hasAuthRecord: !!authRecord,
+            lastLoginAt: u.lastLoginAt || null,
+            createdAt: u.createdAt || authRecord?.createdAt || null,
+          });
+        }
+      } catch (tenantErr) {
+        console.error(
+          `Error reading users from ${tenant.slug}:`,
+          tenantErr.message,
+        );
+      }
+    }
+
+    res.json(allUsers);
+  } catch (err) {
+    console.error("Error listing all users:", err);
+    res.status(500).json({ error: "Failed to list users" });
+  }
+});
+
+// =========================================================================
+// Per-Tenant Role Permissions — configurable per-tenant RBAC overrides
+// =========================================================================
+
+// Default role permissions (what each role can do)
+const DEFAULT_ROLE_PERMISSIONS = {
+  company_admin: {
+    canInviteUsers: true,
+    canEditRoles: true,
+    canRunResearch: true,
+    canRunAgents: true,
+    canViewAnalytics: true,
+    canManageWorkflows: false,
+    canAccessWarRoom: true,
+    canExportData: true,
+  },
+  sales_leader: {
+    canInviteUsers: false,
+    canEditRoles: false,
+    canRunResearch: true,
+    canRunAgents: true,
+    canViewAnalytics: true,
+    canManageWorkflows: false,
+    canAccessWarRoom: true,
+    canExportData: true,
+  },
+  team_leader: {
+    canInviteUsers: false,
+    canEditRoles: false,
+    canRunResearch: true,
+    canRunAgents: false,
+    canViewAnalytics: false,
+    canManageWorkflows: false,
+    canAccessWarRoom: true,
+    canExportData: false,
+  },
+  end_user: {
+    canInviteUsers: false,
+    canEditRoles: false,
+    canRunResearch: false,
+    canRunAgents: false,
+    canViewAnalytics: false,
+    canManageWorkflows: false,
+    canAccessWarRoom: false,
+    canExportData: false,
+  },
+  sdr: {
+    canInviteUsers: false,
+    canEditRoles: false,
+    canRunResearch: false,
+    canRunAgents: false,
+    canViewAnalytics: false,
+    canManageWorkflows: false,
+    canAccessWarRoom: false,
+    canExportData: false,
+  },
+  sdr_manager: {
+    canInviteUsers: false,
+    canEditRoles: false,
+    canRunResearch: false,
+    canRunAgents: false,
+    canViewAnalytics: true,
+    canManageWorkflows: false,
+    canAccessWarRoom: false,
+    canExportData: false,
+  },
+};
+
+// GET role permissions for a tenant (returns merged defaults + overrides)
+app.get("/api/tenants/:slug/role-permissions", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    const isPlatAdmin =
+      PLATFORM_ADMIN_EMAILS.includes(callerEmail) ||
+      callerRole === "platform_admin";
+    // company_admins can view their own tenant's permissions
+    if (!isPlatAdmin && callerRole !== "company_admin") {
+      return res.status(403).json({ error: "Admin only" });
+    }
+
+    const platformDb = await connectPlatformDB();
+    const doc = await platformDb
+      .collection("tenant_role_permissions")
+      .findOne({ slug: req.params.slug });
+
+    // Merge: start with defaults, overlay tenant overrides
+    const merged = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+    if (doc?.permissions) {
+      for (const [role, perms] of Object.entries(doc.permissions)) {
+        if (merged[role]) {
+          Object.assign(merged[role], perms);
+        } else {
+          merged[role] = perms;
+        }
+      }
+    }
+
+    res.json({ permissions: merged, hasOverrides: !!doc });
+  } catch (err) {
+    console.error("Error fetching role permissions:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// PUT role permissions for a tenant (platform admin only, or company_admin for their own tenant)
+app.put("/api/tenants/:slug/role-permissions", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"];
+    const isPlatAdmin =
+      PLATFORM_ADMIN_EMAILS.includes(callerEmail) ||
+      callerRole === "platform_admin";
+
+    if (!isPlatAdmin) {
+      return res
+        .status(403)
+        .json({ error: "Only platform admins can update role permissions" });
+    }
+
+    const { permissions } = req.body;
+    if (!permissions || typeof permissions !== "object") {
+      return res.status(400).json({ error: "permissions object is required" });
+    }
+
+    const platformDb = await connectPlatformDB();
+    await platformDb.collection("tenant_role_permissions").updateOne(
+      { slug: req.params.slug },
+      {
+        $set: {
+          slug: req.params.slug,
+          permissions,
+          updatedAt: new Date().toISOString(),
+          updatedBy: callerEmail,
+        },
+      },
+      { upsert: true },
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating role permissions:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// GET current user's effective permissions for a tenant
+app.get("/api/tenants/:slug/my-permissions", async (req, res) => {
+  try {
+    const callerEmail = (req.headers["x-user-email"] || "").toLowerCase();
+    const callerRole = req.headers["x-user-role"] || "end_user";
+    const isPlatAdmin =
+      PLATFORM_ADMIN_EMAILS.includes(callerEmail) ||
+      callerRole === "platform_admin";
+
+    // Platform admins get all permissions
+    if (isPlatAdmin) {
+      const allTrue = {};
+      for (const key of Object.keys(DEFAULT_ROLE_PERMISSIONS.company_admin)) {
+        allTrue[key] = true;
+      }
+      allTrue.canManageWorkflows = true;
+      return res.json({
+        permissions: allTrue,
+        role: "platform_admin",
+        isOverride: true,
+      });
+    }
+
+    const platformDb = await connectPlatformDB();
+    const doc = await platformDb
+      .collection("tenant_role_permissions")
+      .findOne({ slug: req.params.slug });
+
+    const defaults =
+      DEFAULT_ROLE_PERMISSIONS[callerRole] || DEFAULT_ROLE_PERMISSIONS.end_user;
+    const overrides = doc?.permissions?.[callerRole] || {};
+    const merged = { ...defaults, ...overrides };
+
+    res.json({ permissions: merged, role: callerRole, isOverride: !!doc });
+  } catch (err) {
+    console.error("Error fetching user permissions:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
 // =========================================================================
 // Tenant Management — provisioning, listing, user management
 // =========================================================================
@@ -2418,8 +2668,11 @@ app.post("/api/tenants/:slug/users", async (req, res) => {
     const allowedRoles = [
       "platform_admin",
       "company_admin",
+      "sales_leader",
       "team_leader",
       "end_user",
+      "sdr",
+      "sdr_manager",
     ];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({
