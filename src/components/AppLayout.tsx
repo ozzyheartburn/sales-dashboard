@@ -84,8 +84,14 @@ export function AppLayout() {
     }[]
   >([]);
   const [aiLoading, setAiLoading] = useState(false);
-  const [top5Accounts, setTop5Accounts] = useState<
-    { companyName: string; buyingSignalScore: number; priority: string }[]
+  const [topAccounts, setTopAccounts] = useState<
+    {
+      companyName: string;
+      buyingSignalScore: number;
+      priority: string;
+      status?: string;
+      updatedAt?: string;
+    }[]
   >([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
@@ -104,7 +110,7 @@ export function AppLayout() {
       .catch(() => {});
   }, []);
 
-  // Fetch top 5 accounts by signal score for sidebar (re-fetch when tenant changes)
+  // Fetch sidebar accounts: prioritize pending/new research, then top signal.
   useEffect(() => {
     fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
@@ -114,15 +120,27 @@ export function AppLayout() {
             companyName: string;
             buyingSignalScore: number;
             priority: string;
+            status?: string;
+            updatedAt?: string;
           }[],
         ) => {
           const sorted = [...data]
-            .filter((a) => a.companyName && a.buyingSignalScore != null)
-            .sort(
-              (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
-            )
-            .slice(0, 5);
-          setTop5Accounts(sorted);
+            .filter((a) => a.companyName)
+            .sort((a, b) => {
+              const aPending = a.status === "pending_research" ? 1 : 0;
+              const bPending = b.status === "pending_research" ? 1 : 0;
+              if (aPending !== bPending) return bPending - aPending;
+
+              const scoreDiff =
+                (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0);
+              if (scoreDiff !== 0) return scoreDiff;
+
+              const aUpdated = new Date(a.updatedAt || 0).getTime();
+              const bUpdated = new Date(b.updatedAt || 0).getTime();
+              return bUpdated - aUpdated;
+            })
+            .slice(0, 10);
+          setTopAccounts(sorted);
         },
       )
       .catch(() => {});
@@ -370,9 +388,9 @@ export function AppLayout() {
                 {/* Top 5 accounts under War Room */}
                 {item.path === "/dashboard/war-room" &&
                   isActive &&
-                  top5Accounts.length > 0 && (
+                  topAccounts.length > 0 && (
                     <div style={{ padding: "2px 0 6px 0" }}>
-                      {top5Accounts.map((acc, i) => (
+                      {topAccounts.map((acc, i) => (
                         <button
                           key={acc.companyName}
                           onClick={() => navigate("/dashboard/war-room")}
@@ -413,12 +431,17 @@ export function AppLayout() {
                               fontSize: "0.68rem",
                               fontWeight: 800,
                               fontFamily: "var(--font-label)",
-                              color: "var(--primary)",
+                              color:
+                                acc.status === "pending_research"
+                                  ? "var(--tertiary)"
+                                  : "var(--primary)",
                               flexShrink: 0,
                               marginLeft: 6,
                             }}
                           >
-                            {acc.buyingSignalScore}
+                            {acc.status === "pending_research"
+                              ? "new"
+                              : acc.buyingSignalScore}
                           </span>
                         </button>
                       ))}
