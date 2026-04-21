@@ -1274,14 +1274,8 @@ app.post("/api/research/save", async (req, res) => {
     // Normalize: ensure companyName is set in the data
     researchData.companyName = companyName;
 
-    // Save to MongoDB — route to tenant DB if specified
-    const tenantSlug = researchData.tenant || "PG_Machine";
-    let database;
-    if (tenantSlug && tenantSlug !== "PG_Machine") {
-      database = await connectTenantDB(tenantSlug);
-    } else {
-      database = await connectDB();
-    }
+    // Save to legacy MongoDB only (temporary): always write to PG_Machine DB
+    const database = await connectDB();
     const collection = database.collection("PG_Machine");
     // Remove tenant field from stored data to keep it clean
     delete researchData.tenant;
