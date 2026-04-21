@@ -6,6 +6,7 @@ const path = require("path");
 const OpenAI = require("openai");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 const { buildAgentPrompt, buildSynthesisPrompt } = require("./agent-prompts");
 const {
   verifyGoogleToken,
@@ -3044,7 +3045,119 @@ async function resolveLoginUser(normalizedEmail) {
   };
 }
 
-// Login with email + password
+// Helper: Generate random 6-digit code
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Helper: Send verification code email
+async function sendVerificationEmail(email, code, name = null) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn(
+      "SMTP_USER/SMTP_PASS not set — cannot send verification email",
+    );
+    return false;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"PG Machine" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Your PG Machine login verification code",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h2 style="color: #124af1; margin-bottom: 8px;">Verify your login</h2>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            Hi ${name || email.split("@")[0]},
+          </p>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            Use this code to verify your login to PG Machine. This code expires in 10 minutes.
+          </p>
+          <div style="background: #f5f7ff; border-radius: 12px; padding: 32px 20px; margin: 24px 0; text-align: center;">
+            <p style="margin: 0; font-size: 12px; color: #888; text-transform: uppercase;">Verification code</p>
+            <p style="margin: 12px 0 0; font-size: 48px; font-weight: 700; color: #124af1; letter-spacing: 4px; font-family: 'Courier New', monospace;">${code}</p>
+          </div>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            If you didn't request this code, you can safely ignore this email.
+          </p>
+          <p style="color: #888; font-size: 12px; margin-top: 24px;">
+            This code is valid for 10 minutes only.
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (err) {
+    console.error("Failed to send verification email:", err.message);
+    return false;
+  }
+}
+
+// Helper: Send password reset email
+async function sendPasswordResetEmail(email, resetToken, name = null) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn(
+      "SMTP_USER/SMTP_PASS not set — cannot send password reset email",
+    );
+    return false;
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const resetUrl = `https://sales-dashboard-liard.vercel.app/reset-password?token=${resetToken}`;
+
+    await transporter.sendMail({
+      from: `"PG Machine" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "Reset your PG Machine password",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h2 style="color: #124af1; margin-bottom: 8px;">Reset your password</h2>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            Hi ${name || email.split("@")[0]},
+          </p>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            Click the button below to reset your password. This link expires in 1 hour.
+          </p>
+          <a href="${resetUrl}" style="display: inline-block; background: #124af1; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; margin: 20px 0;">
+            Reset Password
+          </a>
+          <p style="color: #333; font-size: 15px; line-height: 1.6; margin-top: 20px;">
+            Or copy this link:<br/>
+            <code style="background: #f5f7ff; padding: 8px 12px; border-radius: 4px; word-break: break-all; font-size: 12px;">${resetUrl}</code>
+          </p>
+          <p style="color: #333; font-size: 15px; line-height: 1.6;">
+            If you didn't request a password reset, you can safely ignore this email.
+          </p>
+          <p style="color: #888; font-size: 12px; margin-top: 24px;">
+            This link is valid for 1 hour only.
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (err) {
+    console.error("Failed to send password reset email:", err.message);
+    return false;
+  }
+}
+
+// Login with email + password (step 1: send verification code)
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -3067,6 +3180,93 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    // Generate verification code
+    const verificationCode = generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store verification code
+    await platformDb.collection("verification_codes").updateOne(
+      { email: normalizedEmail },
+      {
+        $set: {
+          email: normalizedEmail,
+          code: verificationCode,
+          expiresAt,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+
+    // Send verification email
+    const emailSent = await sendVerificationEmail(
+      normalizedEmail,
+      verificationCode,
+      authUser.name,
+    );
+
+    if (!emailSent) {
+      return res
+        .status(500)
+        .json({ error: "Failed to send verification email" });
+    }
+
+    console.log(`Login attempt: ${normalizedEmail} — verification code sent`);
+
+    res.json({
+      success: true,
+      step: "verify_email",
+      message: "Verification code sent to your email",
+      email: normalizedEmail,
+    });
+  } catch (err) {
+    console.error("Error with login:", err);
+    res.status(500).json({ error: "Authentication failed" });
+  }
+});
+
+// Verify email code (step 2: complete login)
+app.post("/api/auth/verify-email", async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email and code are required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const platformDb = await connectPlatformDB();
+
+    // Find and validate code
+    const verificationDoc = await platformDb
+      .collection("verification_codes")
+      .findOne({ email: normalizedEmail });
+
+    if (!verificationDoc) {
+      return res
+        .status(401)
+        .json({ error: "Verification code not found or expired" });
+    }
+
+    if (new Date() > new Date(verificationDoc.expiresAt)) {
+      await platformDb
+        .collection("verification_codes")
+        .deleteOne({ email: normalizedEmail });
+      return res.status(401).json({ error: "Verification code expired" });
+    }
+
+    if (verificationDoc.code !== code) {
+      return res.status(401).json({ error: "Invalid verification code" });
+    }
+
+    // Code is valid — complete login
+    const authUser = await platformDb
+      .collection("auth_users")
+      .findOne({ email: normalizedEmail });
+
+    if (!authUser) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
     // Update last login
     await platformDb
       .collection("auth_users")
@@ -3074,6 +3274,11 @@ app.post("/api/auth/login", async (req, res) => {
         { email: normalizedEmail },
         { $set: { lastLoginAt: new Date().toISOString() } },
       );
+
+    // Delete used verification code
+    await platformDb
+      .collection("verification_codes")
+      .deleteOne({ email: normalizedEmail });
 
     const userData = await resolveLoginUser(normalizedEmail);
     if (!userData) {
@@ -3090,13 +3295,146 @@ app.post("/api/auth/login", async (req, res) => {
     const credential = `session-${Date.now()}-${normalizedEmail}`;
 
     console.log(
-      `Login: ${normalizedEmail} → tenants: ${userData.linkedTenants.join(", ")}, roles: ${userData.availableRoles.map((r) => `${r.role}@${r.tenant}`).join(", ")}`,
+      `Login verified: ${normalizedEmail} → tenants: ${userData.linkedTenants.join(", ")}, roles: ${userData.availableRoles.map((r) => `${r.role}@${r.tenant}`).join(", ")}`,
     );
 
     res.json({ success: true, user: userData, credential });
   } catch (err) {
-    console.error("Error with login:", err);
-    res.status(500).json({ error: "Authentication failed" });
+    console.error("Error verifying email:", err);
+    res.status(500).json({ error: "Verification failed" });
+  }
+});
+
+// Forgot password: send reset email
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const platformDb = await connectPlatformDB();
+
+    // Check if user exists (don't reveal whether email exists for security)
+    const authUser = await platformDb
+      .collection("auth_users")
+      .findOne({ email: normalizedEmail });
+
+    if (!authUser) {
+      // Still return success to prevent email enumeration
+      return res.json({
+        success: true,
+        message:
+          "If an account exists with this email, you will receive a reset link",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Store reset token
+    await platformDb.collection("password_resets").updateOne(
+      { email: normalizedEmail },
+      {
+        $set: {
+          email: normalizedEmail,
+          resetToken,
+          expiresAt,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+
+    // Send reset email
+    const emailSent = await sendPasswordResetEmail(
+      normalizedEmail,
+      resetToken,
+      authUser.name,
+    );
+
+    if (!emailSent) {
+      return res.status(500).json({ error: "Failed to send reset email" });
+    }
+
+    console.log(`Password reset requested: ${normalizedEmail}`);
+
+    res.json({
+      success: true,
+      message:
+        "If an account exists with this email, you will receive a reset link",
+    });
+  } catch (err) {
+    console.error("Error with forgot password:", err);
+    res.status(500).json({ error: "Failed to process request" });
+  }
+});
+
+// Reset password: set new password with reset token
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters" });
+    }
+
+    const platformDb = await connectPlatformDB();
+
+    // Find reset token
+    const resetDoc = await platformDb
+      .collection("password_resets")
+      .findOne({ resetToken: token });
+
+    if (!resetDoc) {
+      return res.status(401).json({ error: "Invalid or expired reset token" });
+    }
+
+    if (new Date() > new Date(resetDoc.expiresAt)) {
+      await platformDb
+        .collection("password_resets")
+        .deleteOne({ resetToken: token });
+      return res.status(401).json({ error: "Reset token expired" });
+    }
+
+    // Hash new password and update
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await platformDb.collection("auth_users").updateOne(
+      { email: resetDoc.email },
+      {
+        $set: {
+          passwordHash,
+          passwordResetAt: new Date().toISOString(),
+        },
+      },
+    );
+
+    // Delete used reset token
+    await platformDb
+      .collection("password_resets")
+      .deleteOne({ resetToken: token });
+
+    console.log(`Password reset completed: ${resetDoc.email}`);
+
+    res.json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (err) {
+    console.error("Error with password reset:", err);
+    res.status(500).json({ error: "Failed to reset password" });
   }
 });
 

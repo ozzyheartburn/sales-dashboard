@@ -1,17 +1,14 @@
 import { motion } from "motion/react";
 import {
-  Shield,
-  Sparkles,
-  BarChart3,
-  Brain,
-  LogIn,
+  Lock,
   Eye,
   EyeOff,
+  CheckCircle,
+  AlertCircle,
   ArrowLeft,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../App";
-import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import heroImage from "../assets/hero.png";
 
 const RAW_API_BASE = import.meta.env.VITE_API_URL || "";
@@ -22,21 +19,45 @@ const API_BASE =
     ? ""
     : RAW_API_BASE;
 
-export function LoginPage() {
+export function ResetPasswordPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [step, setStep] = useState<"credentials" | "verify">("credentials");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!token) {
+      setError("Invalid reset link. Please request a new password reset.");
+    }
+  }, [token]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please enter your email and password.");
+
+    if (!newPassword || !confirmPassword) {
+      setError("Please enter and confirm your new password.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (!token) {
+      setError("Invalid reset link.");
       return;
     }
 
@@ -44,59 +65,23 @@ export function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ token, newPassword }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || "Failed to reset password");
         setIsLoading(false);
         return;
       }
 
-      if (data.step === "verify_email") {
-        setStep("verify");
-        setError(null);
-      }
+      setSubmitted(true);
     } catch {
-      setError("Login failed. Please try again.");
-    }
-    setIsLoading(false);
-  };
-
-  const handleVerifyEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!verificationCode) {
-      setError("Please enter the verification code.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: verificationCode }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Verification failed");
-        setIsLoading(false);
-        return;
-      }
-
-      login(data.user, data.credential);
-      navigate("/select-view");
-    } catch {
-      setError("Verification failed. Please try again.");
+      setError("Failed to reset password. Please try again.");
     }
     setIsLoading(false);
   };
@@ -204,7 +189,7 @@ export function LoginPage() {
           }}
         >
           <div>
-            {step === "credentials" && (
+            {!submitted ? (
               <>
                 <h2
                   style={{
@@ -214,7 +199,7 @@ export function LoginPage() {
                     marginBottom: "0.5rem",
                   }}
                 >
-                  Sign in
+                  Create new password
                 </h2>
                 <p
                   style={{
@@ -222,10 +207,35 @@ export function LoginPage() {
                     marginBottom: "2rem",
                   }}
                 >
-                  Enter your credentials to continue
+                  Enter a new password for your account
                 </p>
 
-                <form onSubmit={handleLoginSubmit}>
+                {!token && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: "8px",
+                      padding: "12px 16px",
+                      marginBottom: "1rem",
+                      fontSize: "14px",
+                      color: "var(--error)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <AlertCircle size={16} />
+                    Invalid reset link
+                  </motion.div>
+                )}
+
+                <form
+                  onSubmit={handleSubmit}
+                  style={{ opacity: token ? 1 : 0.5 }}
+                >
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, y: -8 }}
@@ -254,44 +264,15 @@ export function LoginPage() {
                         marginBottom: "8px",
                       }}
                     >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "1px solid rgba(167,176,222,0.3)",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        background: "var(--surface-container-lowest)",
-                        color: "var(--on-surface)",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: "2rem" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "var(--on-surface)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Password
+                      New password
                     </label>
                     <div style={{ position: "relative" }}>
                       <input
                         type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
+                        disabled={!token}
                         style={{
                           width: "100%",
                           padding: "12px 16px",
@@ -301,11 +282,13 @@ export function LoginPage() {
                           background: "var(--surface-container-lowest)",
                           color: "var(--on-surface)",
                           boxSizing: "border-box",
+                          opacity: token ? 1 : 0.5,
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={!token}
                         style={{
                           position: "absolute",
                           right: "12px",
@@ -313,7 +296,7 @@ export function LoginPage() {
                           transform: "translateY(-50%)",
                           background: "none",
                           border: "none",
-                          cursor: "pointer",
+                          cursor: token ? "pointer" : "not-allowed",
                           color: "var(--on-surface-variant)",
                           padding: "4px",
                         }}
@@ -327,100 +310,6 @@ export function LoginPage() {
                     </div>
                   </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: isLoading
-                        ? "rgba(18,74,241,0.5)"
-                        : "var(--primary)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <LogIn size={18} />
-                    {isLoading ? "Signing in..." : "Sign in"}
-                  </motion.button>
-                </form>
-
-                <div
-                  style={{
-                    marginTop: "1.5rem",
-                    paddingTop: "1.5rem",
-                    borderTop: "1px solid rgba(167,176,222,0.2)",
-                    textAlign: "center",
-                  }}
-                >
-                  <button
-                    onClick={() => navigate("/forgot-password")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--primary)",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Forgot your password?
-                  </button>
-                </div>
-              </>
-            )}
-
-            {step === "verify" && (
-              <>
-                <h2
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    color: "var(--on-background)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Verify your email
-                </h2>
-                <p
-                  style={{
-                    color: "var(--on-surface-variant)",
-                    marginBottom: "2rem",
-                  }}
-                >
-                  We sent a code to <strong>{email}</strong>
-                </p>
-
-                <form onSubmit={handleVerifyEmail}>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        background: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.3)",
-                        borderRadius: "8px",
-                        padding: "12px 16px",
-                        marginBottom: "1rem",
-                        fontSize: "14px",
-                        color: "var(--error)",
-                      }}
-                    >
-                      {error}
-                    </motion.div>
-                  )}
-
                   <div style={{ marginBottom: "2rem" }}>
                     <label
                       style={{
@@ -431,75 +320,81 @@ export function LoginPage() {
                         marginBottom: "8px",
                       }}
                     >
-                      Verification code
+                      Confirm password
                     </label>
-                    <input
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="000000"
-                      maxLength={6}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "1px solid rgba(167,176,222,0.3)",
-                        borderRadius: "8px",
-                        fontSize: "24px",
-                        fontWeight: 700,
-                        letterSpacing: "8px",
-                        textAlign: "center",
-                        background: "var(--surface-container-lowest)",
-                        color: "var(--on-surface)",
-                        boxSizing: "border-box",
-                        fontFamily: "'Courier New', monospace",
-                      }}
-                    />
-                    <p
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--on-surface-variant)",
-                        marginTop: "8px",
-                      }}
-                    >
-                      Check your email for the code. It expires in 10 minutes.
-                    </p>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type={showConfirm ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        disabled={!token}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "1px solid rgba(167,176,222,0.3)",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          background: "var(--surface-container-lowest)",
+                          color: "var(--on-surface)",
+                          boxSizing: "border-box",
+                          opacity: token ? 1 : 0.5,
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        disabled={!token}
+                        style={{
+                          position: "absolute",
+                          right: "12px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          cursor: token ? "pointer" : "not-allowed",
+                          color: "var(--on-surface-variant)",
+                          padding: "4px",
+                        }}
+                      >
+                        {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || !token}
                     style={{
                       width: "100%",
                       padding: "12px 16px",
-                      background: isLoading
-                        ? "rgba(18,74,241,0.5)"
-                        : "var(--primary)",
+                      background:
+                        isLoading || !token
+                          ? "rgba(18,74,241,0.5)"
+                          : "var(--primary)",
                       color: "#fff",
                       border: "none",
                       borderRadius: "8px",
                       fontSize: "14px",
                       fontWeight: 600,
-                      cursor: isLoading ? "not-allowed" : "pointer",
+                      cursor: isLoading || !token ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "8px",
                     }}
                   >
-                    {isLoading ? "Verifying..." : "Verify"}
+                    <Lock size={18} />
+                    {isLoading ? "Resetting..." : "Reset password"}
                   </motion.button>
 
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     type="button"
-                    onClick={() => {
-                      setStep("credentials");
-                      setVerificationCode("");
-                      setError(null);
-                    }}
+                    onClick={() => navigate("/login")}
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -522,6 +417,73 @@ export function LoginPage() {
                   </motion.button>
                 </form>
               </>
+            ) : (
+              <>
+                <div style={{ textAlign: "center" }}>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15,
+                    }}
+                    style={{
+                      display: "inline-block",
+                      marginBottom: "1.5rem",
+                    }}
+                  >
+                    <CheckCircle
+                      size={64}
+                      style={{ color: "var(--primary)" }}
+                    />
+                  </motion.div>
+
+                  <h2
+                    style={{
+                      fontSize: "1.5rem",
+                      fontWeight: 700,
+                      color: "var(--on-background)",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    Password reset successful
+                  </h2>
+                  <p
+                    style={{
+                      color: "var(--on-surface-variant)",
+                      marginBottom: "2rem",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Your password has been changed. You can now sign in with
+                    your new password.
+                  </p>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate("/login")}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "var(--primary)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    Go to login
+                  </motion.button>
+                </div>
+              </>
             )}
           </div>
         </motion.div>
@@ -538,4 +500,3 @@ export function LoginPage() {
     </div>
   );
 }
-
