@@ -334,6 +334,12 @@ img {
 
 /* ─── War Room & Agent Swarm mobile overrides ─────────────────────────── */
 @media (max-width: 768px) {
+  .warroom-pyramid-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .warroom-pyramid-sidebar {
+    position: static !important;
+  }
   /* War Room: stack main + AI sidebar vertically */
   .warroom-content-area {
     flex-direction: column !important;

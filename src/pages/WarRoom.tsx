@@ -1223,603 +1223,845 @@ export function WarRoom() {
           {/* ── Value Pyramid Tab ───────────────────────────────── */}
           {activeTab === "pyramid" && (
             <div
-              style={{ padding: "1.5rem", maxWidth: 1200, margin: "0 auto" }}
+              style={{ padding: "1.5rem", maxWidth: 1400, margin: "0 auto" }}
             >
-              {/* ── Section Header ── */}
               <div
+                className="warroom-pyramid-layout"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 24,
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) 320px",
+                  gap: 20,
+                  alignItems: "start",
                 }}
               >
-                <div style={{ flex: 1 }}>
+                <div>
+                  {/* ── Section Header ── */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 24,
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: "0.65rem",
+                            fontWeight: 700,
+                            fontFamily: "var(--font-label)",
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "var(--primary)",
+                          }}
+                        >
+                          Active Strategic Target
+                        </span>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: "#22c55e",
+                            display: "inline-block",
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-headline)",
+                          fontWeight: 800,
+                          fontSize: "1.45rem",
+                          color: "var(--on-background)",
+                        }}
+                      >
+                        {selectedAccount?.companyName || "Select an Account"}
+                      </div>
+                    </div>
+                    <button
+                      style={{
+                        padding: "0.5rem 1rem",
+                        borderRadius: 8,
+                        border: "1.5px solid var(--primary)",
+                        background: "transparent",
+                        color: "var(--primary)",
+                        fontFamily: "var(--font-label)",
+                        fontWeight: 700,
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <FileText size={14} /> Export Blueprint
+                    </button>
+                    <button
+                      disabled={
+                        refreshing || !selectedAccount || !canRunResearch
+                      }
+                      onClick={async () => {
+                        if (!selectedAccount || !canRunResearch) return;
+                        setRefreshing(true);
+                        try {
+                          // 1. Fire n8n monolith research
+                          await fetch(`${API_URL}/api/research`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              account_name: selectedAccount.companyName,
+                              website_url: selectedAccount.website,
+                            }),
+                          });
+                          // 2. Run all agents via swarm
+                          const allAgents = [
+                            "financial-agent",
+                            "tech-stack-agent",
+                            "hiring-agent",
+                            "initiative-agent",
+                            "category-complexity-agent",
+                            "competitor-agent",
+                            "sentiment-agent",
+                            "leadership-agent",
+                            "earnings-call-agent",
+                            "vendor-tenure-agent",
+                            "champion-building-agent",
+                            "risk-flagger-agent",
+                            "market-research-agent",
+                          ];
+                          await fetch(`${API_URL}/api/swarm/run`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              account_name: selectedAccount.companyName,
+                              agents: allAgents,
+                              template: "full-refresh",
+                            }),
+                          });
+                        } catch (err) {
+                          console.error("Refresh failed:", err);
+                        } finally {
+                          setRefreshing(false);
+                        }
+                      }}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        borderRadius: 8,
+                        border: "none",
+                        background: refreshing
+                          ? "var(--on-surface-variant)"
+                          : "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                        color: "#fff",
+                        fontFamily: "var(--font-label)",
+                        fontWeight: 700,
+                        fontSize: "0.8rem",
+                        cursor: refreshing ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        opacity: refreshing ? 0.7 : 1,
+                      }}
+                    >
+                      {refreshing ? (
+                        <Loader2
+                          size={14}
+                          style={{ animation: "spin 1s linear infinite" }}
+                        />
+                      ) : (
+                        <RefreshCw size={14} />
+                      )}
+                      {refreshing ? "Refreshing..." : "Refresh"}
+                    </button>
+                  </div>
+
+                  {/* ── Previous research timestamp ── */}
+                  {selectedAccount && (
+                    <p
+                      style={{
+                        fontSize: "0.72rem",
+                        color: "var(--on-surface-variant)",
+                        fontFamily: "var(--font-body)",
+                        marginTop: -4,
+                        marginBottom: 16,
+                      }}
+                    >
+                      Previous research completed:{" "}
+                      {selectedAccount.metadata?.lastSwarmRun
+                        ? new Date(
+                            selectedAccount.metadata.lastSwarmRun,
+                          ).toLocaleString()
+                        : selectedAccount.timestamp
+                          ? new Date(selectedAccount.timestamp).toLocaleString()
+                          : "No research run yet"}
+                    </p>
+                  )}
+
+                  {/* ── Metric Cards Row ── */}
+                  <div
+                    className="responsive-grid-4"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gap: 12,
+                      marginBottom: 24,
+                    }}
+                  >
+                    {[
+                      {
+                        label: "Primary Industry",
+                        value: "Enterprise SaaS",
+                        icon: (
+                          <Briefcase
+                            size={16}
+                            color="var(--on-surface-variant)"
+                          />
+                        ),
+                      },
+                      {
+                        label: "Annual Revenue",
+                        value: "$14.2B USD",
+                        icon: (
+                          <TrendingUp
+                            size={16}
+                            color="var(--on-surface-variant)"
+                          />
+                        ),
+                      },
+                      {
+                        label: "Employee Count",
+                        value: "42,500+",
+                        icon: (
+                          <UsersRound
+                            size={16}
+                            color="var(--on-surface-variant)"
+                          />
+                        ),
+                      },
+                      {
+                        label: "Revenue Growth Target",
+                        value: "8.5% YoY",
+                        icon: (
+                          <TrendingUp
+                            size={16}
+                            color="var(--on-surface-variant)"
+                          />
+                        ),
+                      },
+                    ].map((metric, i) => (
+                      <motion.div
+                        key={metric.label}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.06 }}
+                        className="luminous-shadow"
+                        style={{
+                          borderRadius: "0.75rem",
+                          padding: "0.8rem 0.95rem",
+                          backgroundColor: "var(--surface-container-lowest)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "0.68rem",
+                              fontWeight: 700,
+                              fontFamily: "var(--font-label)",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.06em",
+                              color: "var(--on-surface-variant)",
+                            }}
+                          >
+                            {metric.label}
+                          </span>
+                          {metric.icon}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: "var(--font-headline)",
+                            fontWeight: 800,
+                            fontSize: "1rem",
+                            color: "var(--on-background)",
+                          }}
+                        >
+                          {metric.value}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* ── Strategic Value Pyramid Heading ── */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 4,
+                        height: 28,
+                        borderRadius: 2,
+                        background: "var(--on-background)",
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontFamily: "var(--font-headline)",
+                        fontWeight: 700,
+                        fontSize: "1.2rem",
+                        color: "var(--on-background)",
+                      }}
+                    >
+                      Strategic Value Pyramid
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.6rem",
+                        fontWeight: 700,
+                        fontFamily: "var(--font-label)",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        padding: "0.2rem 0.6rem",
+                        borderRadius: 4,
+                        background: "rgba(18,74,241,0.08)",
+                        color: "var(--primary)",
+                      }}
+                    >
+                      Dynamic Framework
+                    </span>
+                  </div>
+
+                  {/* ── Pyramid Rows ── */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                      marginBottom: 20,
+                    }}
+                  >
+                    {buildPyramidRows(selectedAccount).map((row, rowIdx) => (
+                      <motion.div
+                        key={row.label}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, delay: rowIdx * 0.07 }}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "140px 1fr 1fr 1fr",
+                          gap: 10,
+                          alignItems: "stretch",
+                        }}
+                        className="warroom-pyramid-row"
+                      >
+                        {/* Row Label */}
+                        <div
+                          style={{
+                            background: row.gradient || row.color,
+                            borderRadius: "0.75rem",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0.75rem 0.65rem",
+                            minHeight: 74,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: "#fff",
+                              fontFamily: "var(--font-headline)",
+                              fontWeight: 700,
+                              fontSize: "0.78rem",
+                              textAlign: "center",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {row.label}
+                          </span>
+                        </div>
+
+                        {/* 3 Detail Cards */}
+                        {row.cards.map((card, cardIdx) => {
+                          return (
+                            <div
+                              key={card.title}
+                              style={{
+                                borderRadius: "0.75rem",
+                                padding: "0.9rem 0.8rem",
+                                backgroundColor: "#1e2230",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 10,
+                                minHeight: 118,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontSize: "0.66rem",
+                                  fontWeight: 700,
+                                  fontFamily: "var(--font-headline)",
+                                  color: "rgba(167,176,222,0.7)",
+                                  lineHeight: 1.45,
+                                  textTransform: "uppercase",
+                                  textAlign: "center",
+                                  letterSpacing: "0.03em",
+                                }}
+                              >
+                                {card.title}
+                              </span>
+                              {card.description && (
+                                <button
+                                  onClick={() =>
+                                    setDetailInsight({
+                                      title: card.title,
+                                      description: card.description,
+                                    })
+                                  }
+                                  style={{
+                                    background: "rgba(167,176,222,0.12)",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "0.68rem",
+                                    fontWeight: 600,
+                                    fontFamily: "var(--font-label)",
+                                    color: "rgba(167,176,222,0.6)",
+                                    padding: "0.3rem 1rem",
+                                    borderRadius: 9999,
+                                    marginTop: "auto",
+                                  }}
+                                >
+                                  expand
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* ── Insight Detail Widget ── */}
+                  <AnimatePresence>
+                    {detailInsight && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={() => setDetailInsight(null)}
+                        style={{
+                          position: "fixed",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: "rgba(0,0,0,0.25)",
+                          zIndex: 1000,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="luminous-shadow"
+                          style={{
+                            backgroundColor: "var(--surface-container-lowest)",
+                            borderRadius: "1rem",
+                            padding: "1.75rem",
+                            maxWidth: 560,
+                            width: "90%",
+                            maxHeight: "70vh",
+                            overflow: "auto",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              marginBottom: 16,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: "1.15rem",
+                                fontWeight: 800,
+                                fontFamily: "var(--font-headline)",
+                                color: "var(--on-background)",
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              {detailInsight.title}
+                            </span>
+                            <button
+                              onClick={() => setDetailInsight(null)}
+                              style={{
+                                background: "var(--surface-container-low)",
+                                border: "none",
+                                borderRadius: 8,
+                                width: 28,
+                                height: 28,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                color: "var(--on-surface-variant)",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                          <p
+                            style={{
+                              fontSize: "0.9rem",
+                              color: "var(--on-surface)",
+                              lineHeight: 1.6,
+                              margin: 0,
+                            }}
+                          >
+                            {detailInsight.description}
+                          </p>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* ── Proprietary AI Insight Banner ── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.4 }}
+                    className="luminous-shadow"
+                    style={{
+                      borderRadius: "1rem",
+                      padding: "1.5rem",
+                      backgroundColor: "var(--surface-container-lowest)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background:
+                          "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Sparkles size={22} color="#fff" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-headline)",
+                          fontWeight: 700,
+                          fontSize: "1rem",
+                          color: "var(--on-background)",
+                          marginBottom: 6,
+                        }}
+                      >
+                        Proprietary AI Insight
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "0.86rem",
+                          color: "var(--on-surface)",
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        {selectedAccount?.rationale
+                          ? selectedAccount.rationale.slice(0, 350) +
+                            (selectedAccount.rationale.length > 350
+                              ? "..."
+                              : "")
+                          : 'Analysis of Global Tech Systems\' recent quarterly report suggests a 12% increase in R&D focus toward edge computing. There is a \u00A084% correlation\u00A0 between their "Sustainability Goal" and our new Carbon Tracker module. Recommendation: Pitch the Tracker as a value-add during the Q3 renewal cycle.'}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: 8,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <button
+                        style={{
+                          padding: "0.5rem 1rem",
+                          borderRadius: 8,
+                          border: "none",
+                          background: "var(--error)",
+                          color: "#fff",
+                          fontFamily: "var(--font-label)",
+                          fontWeight: 700,
+                          fontSize: "0.78rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Action Suggestion
+                      </button>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "var(--primary)",
+                          cursor: "pointer",
+                          fontFamily: "var(--font-label)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Dismiss Insight
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
+
+                <aside
+                  className="warroom-pyramid-sidebar"
+                  style={{
+                    background: "var(--surface-container-lowest)",
+                    border: "1px solid rgba(107,113,148,0.14)",
+                    borderRadius: "1rem",
+                    padding: "1rem",
+                    position: "sticky",
+                    top: 16,
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
-                      marginBottom: 4,
+                      marginBottom: 14,
                     }}
                   >
+                    <Brain size={14} color="var(--tertiary)" />
                     <span
-                      style={{
-                        fontSize: "0.65rem",
-                        fontWeight: 700,
-                        fontFamily: "var(--font-label)",
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "var(--primary)",
-                      }}
-                    >
-                      Active Strategic Target
-                    </span>
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#22c55e",
-                        display: "inline-block",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-headline)",
-                      fontWeight: 800,
-                      fontSize: "1.6rem",
-                      color: "var(--on-background)",
-                    }}
-                  >
-                    {selectedAccount?.companyName || "Select an Account"}
-                  </div>
-                </div>
-                <button
-                  style={{
-                    padding: "0.5rem 1.2rem",
-                    borderRadius: 8,
-                    border: "1.5px solid var(--primary)",
-                    background: "transparent",
-                    color: "var(--primary)",
-                    fontFamily: "var(--font-label)",
-                    fontWeight: 700,
-                    fontSize: "0.82rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <FileText size={14} /> Export Blueprint
-                </button>
-                <button
-                  disabled={refreshing || !selectedAccount || !canRunResearch}
-                  onClick={async () => {
-                    if (!selectedAccount || !canRunResearch) return;
-                    setRefreshing(true);
-                    try {
-                      // 1. Fire n8n monolith research
-                      await fetch(`${API_URL}/api/research`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          account_name: selectedAccount.companyName,
-                          website_url: selectedAccount.website,
-                        }),
-                      });
-                      // 2. Run all agents via swarm
-                      const allAgents = [
-                        "financial-agent",
-                        "tech-stack-agent",
-                        "hiring-agent",
-                        "initiative-agent",
-                        "category-complexity-agent",
-                        "competitor-agent",
-                        "sentiment-agent",
-                        "leadership-agent",
-                        "earnings-call-agent",
-                        "vendor-tenure-agent",
-                        "champion-building-agent",
-                        "risk-flagger-agent",
-                        "market-research-agent",
-                      ];
-                      await fetch(`${API_URL}/api/swarm/run`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          account_name: selectedAccount.companyName,
-                          agents: allAgents,
-                          template: "full-refresh",
-                        }),
-                      });
-                    } catch (err) {
-                      console.error("Refresh failed:", err);
-                    } finally {
-                      setRefreshing(false);
-                    }
-                  }}
-                  style={{
-                    padding: "0.5rem 1.2rem",
-                    borderRadius: 8,
-                    border: "none",
-                    background: refreshing
-                      ? "var(--on-surface-variant)"
-                      : "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                    color: "#fff",
-                    fontFamily: "var(--font-label)",
-                    fontWeight: 700,
-                    fontSize: "0.82rem",
-                    cursor: refreshing ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    opacity: refreshing ? 0.7 : 1,
-                  }}
-                >
-                  {refreshing ? (
-                    <Loader2
-                      size={14}
-                      style={{ animation: "spin 1s linear infinite" }}
-                    />
-                  ) : (
-                    <RefreshCw size={14} />
-                  )}
-                  {refreshing ? "Refreshing..." : "Refresh the data"}
-                </button>
-              </div>
-
-              {/* ── Previous research timestamp ── */}
-              {selectedAccount && (
-                <p
-                  style={{
-                    fontSize: "0.72rem",
-                    color: "var(--on-surface-variant)",
-                    fontFamily: "var(--font-body)",
-                    marginTop: -4,
-                    marginBottom: 16,
-                  }}
-                >
-                  Previous research completed:{" "}
-                  {selectedAccount.metadata?.lastSwarmRun
-                    ? new Date(
-                        selectedAccount.metadata.lastSwarmRun,
-                      ).toLocaleString()
-                    : selectedAccount.timestamp
-                      ? new Date(selectedAccount.timestamp).toLocaleString()
-                      : "No research run yet"}
-                </p>
-              )}
-
-              {/* ── Metric Cards Row ── */}
-              <div
-                className="responsive-grid-4"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: 16,
-                  marginBottom: 32,
-                }}
-              >
-                {[
-                  {
-                    label: "Primary Industry",
-                    value: "Enterprise SaaS",
-                    icon: (
-                      <Briefcase size={16} color="var(--on-surface-variant)" />
-                    ),
-                  },
-                  {
-                    label: "Annual Revenue",
-                    value: "$14.2B USD",
-                    icon: (
-                      <TrendingUp size={16} color="var(--on-surface-variant)" />
-                    ),
-                  },
-                  {
-                    label: "Employee Count",
-                    value: "42,500+",
-                    icon: (
-                      <UsersRound size={16} color="var(--on-surface-variant)" />
-                    ),
-                  },
-                  {
-                    label: "Revenue Growth Target",
-                    value: "8.5% YoY",
-                    icon: (
-                      <TrendingUp size={16} color="var(--on-surface-variant)" />
-                    ),
-                  },
-                ].map((metric, i) => (
-                  <motion.div
-                    key={metric.label}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.06 }}
-                    className="luminous-shadow"
-                    style={{
-                      borderRadius: "0.75rem",
-                      padding: "1rem 1.25rem",
-                      backgroundColor: "var(--surface-container-lowest)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          fontFamily: "var(--font-label)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.06em",
-                          color: "var(--on-surface-variant)",
-                        }}
-                      >
-                        {metric.label}
-                      </span>
-                      {metric.icon}
-                    </div>
-                    <div
                       style={{
                         fontFamily: "var(--font-headline)",
-                        fontWeight: 800,
-                        fontSize: "1.15rem",
+                        fontWeight: 700,
+                        fontSize: "0.9rem",
                         color: "var(--on-background)",
                       }}
                     >
-                      {metric.value}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      AI Insights Tips
+                    </span>
+                  </div>
 
-              {/* ── Strategic Value Pyramid Heading ── */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 20,
-                }}
-              >
-                <div
-                  style={{
-                    width: 4,
-                    height: 28,
-                    borderRadius: 2,
-                    background: "var(--on-background)",
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: "var(--font-headline)",
-                    fontWeight: 700,
-                    fontSize: "1.2rem",
-                    color: "var(--on-background)",
-                  }}
-                >
-                  Strategic Value Pyramid
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.6rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-label)",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    padding: "0.2rem 0.6rem",
-                    borderRadius: 4,
-                    background: "rgba(18,74,241,0.08)",
-                    color: "var(--primary)",
-                  }}
-                >
-                  Dynamic Framework
-                </span>
-              </div>
+                  <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
+                    {(() => {
+                      const tips = [
+                        ...(selectedAccount?.insights?.opportunityFrame || []),
+                        ...(selectedAccount?.insights?.keyChallenges || []),
+                      ]
+                        .filter(
+                          (item) =>
+                            item &&
+                            typeof item.title === "string" &&
+                            typeof item.description === "string",
+                        )
+                        .slice(0, 4);
 
-              {/* ── Pyramid Rows ── */}
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                  marginBottom: 32,
-                }}
-              >
-                {buildPyramidRows(selectedAccount).map((row, rowIdx) => (
-                  <motion.div
-                    key={row.label}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: rowIdx * 0.07 }}
+                      if (tips.length === 0) {
+                        return (
+                          <div
+                            style={{
+                              fontSize: "0.78rem",
+                              color: "var(--on-surface-variant)",
+                              lineHeight: 1.45,
+                            }}
+                          >
+                            No tips yet. Run refresh to generate actionable
+                            insight cards for this account.
+                          </div>
+                        );
+                      }
+
+                      return tips.map((tip, idx) => (
+                        <button
+                          key={`${tip.title}-${idx}`}
+                          onClick={() =>
+                            setDetailInsight({
+                              title: tip.title,
+                              description: tip.description,
+                            })
+                          }
+                          style={{
+                            textAlign: "left",
+                            borderRadius: 10,
+                            border: "1px solid rgba(107,113,148,0.18)",
+                            background: "var(--surface-container-low)",
+                            padding: "0.6rem 0.65rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              color: "var(--on-background)",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {tip.title}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "var(--on-surface-variant)",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {tip.description.slice(0, 74)}
+                            {tip.description.length > 74 ? "..." : ""}
+                          </div>
+                        </button>
+                      ));
+                    })()}
+                  </div>
+
+                  <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "180px 1fr 1fr 1fr",
-                      gap: 14,
-                      alignItems: "stretch",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 10,
                     }}
-                    className="warroom-pyramid-row"
                   >
-                    {/* Row Label */}
-                    <div
+                    <LinkedinIcon size={14} color="var(--primary)" />
+                    <span
                       style={{
-                        background: row.gradient || row.color,
-                        borderRadius: "0.75rem",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "1rem 0.75rem",
-                        minHeight: 90,
+                        fontFamily: "var(--font-headline)",
+                        fontWeight: 700,
+                        fontSize: "0.88rem",
+                        color: "var(--on-background)",
                       }}
                     >
-                      <span
+                      Direct Links
+                    </span>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <button
+                      onClick={() => setActiveTab("ai")}
+                      style={{
+                        borderRadius: 10,
+                        border: "none",
+                        background:
+                          "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
+                        color: "#fff",
+                        padding: "0.55rem 0.75rem",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Open AI Assistant
+                    </button>
+
+                    {selectedAccount?.website && (
+                      <a
+                        href={
+                          selectedAccount.website.startsWith("http")
+                            ? selectedAccount.website
+                            : `https://${selectedAccount.website}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
                         style={{
-                          color: "#fff",
-                          fontFamily: "var(--font-headline)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          borderRadius: 10,
+                          textDecoration: "none",
+                          border: "1px solid rgba(18,74,241,0.25)",
+                          padding: "0.55rem 0.7rem",
+                          color: "var(--primary)",
+                          fontSize: "0.74rem",
                           fontWeight: 700,
-                          fontSize: "0.88rem",
-                          textAlign: "center",
-                          lineHeight: 1.3,
+                          background: "rgba(18,74,241,0.06)",
                         }}
                       >
-                        {row.label}
-                      </span>
-                    </div>
+                        Company Website
+                        <LinkedinIcon size={12} />
+                      </a>
+                    )}
 
-                    {/* 3 Detail Cards */}
-                    {row.cards.map((card, cardIdx) => {
-                      return (
-                        <div
-                          key={card.title}
+                    {[
+                      ...(selectedAccount?.champion_cxo_candidates || []),
+                      ...(selectedAccount?.champion_vp_director_candidates ||
+                        []),
+                      ...(selectedAccount?.champion_enduser_candidates || []),
+                    ]
+                      .filter((c) => !!c.linkedin_url)
+                      .slice(0, 2)
+                      .map((c, idx) => (
+                        <a
+                          key={`${c.full_name}-${idx}`}
+                          href={c.linkedin_url}
+                          target="_blank"
+                          rel="noreferrer"
                           style={{
-                            borderRadius: "0.75rem",
-                            padding: "1.25rem 1.1rem",
-                            backgroundColor: "#1e2230",
                             display: "flex",
-                            flexDirection: "column",
                             alignItems: "center",
-                            justifyContent: "center",
-                            gap: 16,
-                            minHeight: 160,
+                            justifyContent: "space-between",
+                            borderRadius: 10,
+                            textDecoration: "none",
+                            border: "1px solid rgba(107,113,148,0.22)",
+                            padding: "0.5rem 0.65rem",
+                            color: "var(--on-surface)",
+                            fontSize: "0.72rem",
+                            background: "var(--surface-container-low)",
                           }}
                         >
                           <span
                             style={{
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              fontFamily: "var(--font-headline)",
-                              color: "rgba(167,176,222,0.7)",
-                              lineHeight: 1.45,
-                              textTransform: "uppercase",
-                              textAlign: "center",
-                              letterSpacing: "0.03em",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: 220,
                             }}
                           >
-                            {card.title}
+                            {c.full_name || "Champion profile"}
                           </span>
-                          {card.description && (
-                            <button
-                              onClick={() =>
-                                setDetailInsight({
-                                  title: card.title,
-                                  description: card.description,
-                                })
-                              }
-                              style={{
-                                background: "rgba(167,176,222,0.12)",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "0.68rem",
-                                fontWeight: 600,
-                                fontFamily: "var(--font-label)",
-                                color: "rgba(167,176,222,0.6)",
-                                padding: "0.35rem 1.4rem",
-                                borderRadius: 9999,
-                                marginTop: "auto",
-                              }}
-                            >
-                              expand
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                ))}
+                          <LinkedinIcon size={12} />
+                        </a>
+                      ))}
+                  </div>
+                </aside>
               </div>
-
-              {/* ── Insight Detail Widget ── */}
-              <AnimatePresence>
-                {detailInsight && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                    onClick={() => setDetailInsight(null)}
-                    style={{
-                      position: "fixed",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: "rgba(0,0,0,0.25)",
-                      zIndex: 1000,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 12 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 12 }}
-                      transition={{ duration: 0.2 }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="luminous-shadow"
-                      style={{
-                        backgroundColor: "var(--surface-container-lowest)",
-                        borderRadius: "1rem",
-                        padding: "1.75rem",
-                        maxWidth: 560,
-                        width: "90%",
-                        maxHeight: "70vh",
-                        overflow: "auto",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "1.15rem",
-                            fontWeight: 800,
-                            fontFamily: "var(--font-headline)",
-                            color: "var(--on-background)",
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {detailInsight.title}
-                        </span>
-                        <button
-                          onClick={() => setDetailInsight(null)}
-                          style={{
-                            background: "var(--surface-container-low)",
-                            border: "none",
-                            borderRadius: 8,
-                            width: 28,
-                            height: 28,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            color: "var(--on-surface-variant)",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: "0.9rem",
-                          color: "var(--on-surface)",
-                          lineHeight: 1.6,
-                          margin: 0,
-                        }}
-                      >
-                        {detailInsight.description}
-                      </p>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Proprietary AI Insight Banner ── */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.4 }}
-                className="luminous-shadow"
-                style={{
-                  borderRadius: "1rem",
-                  padding: "1.5rem",
-                  backgroundColor: "var(--surface-container-lowest)",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 16,
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    background:
-                      "linear-gradient(135deg, var(--tertiary), var(--secondary-brand))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Sparkles size={22} color="#fff" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-headline)",
-                      fontWeight: 700,
-                      fontSize: "1rem",
-                      color: "var(--on-background)",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Proprietary AI Insight
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.86rem",
-                      color: "var(--on-surface)",
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {selectedAccount?.rationale
-                      ? selectedAccount.rationale.slice(0, 350) +
-                        (selectedAccount.rationale.length > 350 ? "..." : "")
-                      : 'Analysis of Global Tech Systems\' recent quarterly report suggests a 12% increase in R&D focus toward edge computing. There is a \u00A084% correlation\u00A0 between their "Sustainability Goal" and our new Carbon Tracker module. Recommendation: Pitch the Tracker as a value-add during the Q3 renewal cycle.'}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: 8,
-                    flexShrink: 0,
-                  }}
-                >
-                  <button
-                    style={{
-                      padding: "0.5rem 1rem",
-                      borderRadius: 8,
-                      border: "none",
-                      background: "var(--error)",
-                      color: "#fff",
-                      fontFamily: "var(--font-label)",
-                      fontWeight: 700,
-                      fontSize: "0.78rem",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Action Suggestion
-                  </button>
-                  <span
-                    style={{
-                      fontSize: "0.72rem",
-                      color: "var(--primary)",
-                      cursor: "pointer",
-                      fontFamily: "var(--font-label)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Dismiss Insight
-                  </span>
-                </div>
-              </motion.div>
             </div>
           )}
 
