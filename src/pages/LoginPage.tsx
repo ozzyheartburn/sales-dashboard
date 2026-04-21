@@ -13,7 +13,13 @@ import { useAuth } from "../App";
 import { useState } from "react";
 import heroImage from "../assets/hero.png";
 
-const API_BASE = import.meta.env.VITE_API_URL || "";
+const RAW_API_BASE = import.meta.env.VITE_API_URL || "";
+const API_BASE =
+  typeof window !== "undefined" &&
+  window.location.protocol === "https:" &&
+  RAW_API_BASE.startsWith("http://")
+    ? ""
+    : RAW_API_BASE;
 
 export function LoginPage() {
   const navigate = useNavigate();

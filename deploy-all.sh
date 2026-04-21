@@ -75,8 +75,9 @@ echo "║  Step 3/4 — Updating config files        ║"
 echo "╚══════════════════════════════════════════╝"
 
 # Update .env
-echo "VITE_API_URL=http://$PUBLIC_IP:$PORT" > "$SCRIPT_DIR/.env"
-echo "  ✓ .env updated → http://$PUBLIC_IP:$PORT"
+# Keep API base empty so frontend uses same-origin /api on Vercel (rewrite handles backend routing).
+echo "VITE_API_URL=" > "$SCRIPT_DIR/.env"
+echo "  ✓ .env updated → same-origin /api (safe for HTTPS)"
 
 # Update vercel.json
 cat > "$SCRIPT_DIR/vercel.json" <<EOF
