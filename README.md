@@ -16,13 +16,22 @@ npm install
 npm run dev
 ```
 
-## Deploy to Vercel
-1. Push this folder to a GitHub repository
-2. Import the repo in vercel.com
-3. Framework preset: **Vite**
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Click Deploy
+## Deploy to Vercel (Fully Automated)
+This repo now auto-deploys to Vercel on every push to `main` via GitHub Actions.
+
+### One-time setup
+1. In Vercel, create/import the project once.
+2. In GitHub repo settings, add these Actions secrets:
+  - `VERCEL_TOKEN`
+  - `VERCEL_ORG_ID`
+  - `VERCEL_PROJECT_ID`
+3. Confirm the workflow exists at `.github/workflows/vercel-deploy.yml`.
+
+### Day-to-day deploy
+```bash
+./deploy.sh
+```
+This script builds, commits, and pushes to `main`; GitHub Actions handles production deploy automatically.
 
 ## Folder Structure
 ```
