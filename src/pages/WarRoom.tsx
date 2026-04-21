@@ -1042,7 +1042,14 @@ export function WarRoom() {
           (a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0),
         );
         setAccounts(sorted);
-        if (sorted.length > 0) setSelectedAccount(sorted[0]);
+        if (sorted.length > 0) {
+          const normalized = (name?: string) =>
+            (name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const preferred = sorted.find(
+            (account) => normalized(account.companyName) === "mrmarvis",
+          );
+          setSelectedAccount(preferred || sorted[0]);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));

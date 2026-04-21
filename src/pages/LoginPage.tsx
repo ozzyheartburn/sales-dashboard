@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { useState } from "react";
+import heroImage from "../assets/hero.png";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -155,6 +156,32 @@ export function LoginPage() {
         </div>
 
         {/* Login Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.15 }}
+          className="luminous-shadow"
+          style={{
+            borderRadius: "1rem",
+            backgroundColor: "var(--surface-container-lowest)",
+            overflow: "hidden",
+            marginBottom: "1.1rem",
+            border: "1px solid rgba(107,113,148,0.18)",
+          }}
+        >
+          <img
+            src={heroImage}
+            alt="Neural network visualization"
+            style={{
+              width: "100%",
+              height: "170px",
+              objectFit: "cover",
+              objectPosition: "center",
+              filter: "saturate(1.07)",
+            }}
+          />
+        </motion.div>
+
         <div
           className="luminous-shadow"
           style={{

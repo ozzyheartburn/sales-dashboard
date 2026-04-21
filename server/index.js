@@ -1215,6 +1215,46 @@ app.post("/api/research", async (req, res) => {
       `Research started for ${account_name} (tenant: ${tenantSlug}, async)...`,
     );
 
+    // Ensure the account appears in shared War Room list immediately.
+    // This creates/updates a lightweight placeholder in legacy PG_Machine
+    // before n8n returns the full research payload.
+    const legacyDb = await connectDB();
+    const legacyCollection = legacyDb.collection("PG_Machine");
+    await legacyCollection.updateOne(
+      { companyName: account_name },
+      {
+        $setOnInsert: {
+          companyName: account_name,
+          website: website_url || "",
+          buyingSignalScore: 0,
+          priority: "P2",
+          rationale: "Research initiated. Awaiting n8n analysis.",
+          insights: {
+            strategicContext: [],
+            ecommercePriorities: [],
+            activeInitiatives: [],
+            keyChallenges: [],
+            opportunityFrame: [],
+          },
+          reports: {
+            chatGptAnalysis: "",
+            perplexityResearch: "",
+          },
+          metadata: {
+            citations: [],
+            searchResults: [],
+          },
+          timestamp: new Date().toISOString(),
+        },
+        $set: {
+          website: website_url || "",
+          status: "pending_research",
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+
     // Track this research as pending (include tenant for later lookup)
     pendingResearch.set(account_name.toLowerCase(), {
       status: "pending",
