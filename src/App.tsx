@@ -1,22 +1,76 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect, createContext, useContext } from "react";
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  lazy,
+  Suspense,
+} from "react";
 import { AppLayout } from "./components/AppLayout";
 import { AdminLayout } from "./components/AdminLayout";
-import { DashboardHome } from "./pages/DashboardHome";
-import { ResearchHub } from "./pages/ResearchHub";
-import { WarRoom } from "./pages/WarRoom";
-import { LoginPage } from "./pages/LoginPage";
-import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { AdminPanel } from "./pages/AdminPanel";
-import { AdminDashboard } from "./pages/AdminDashboard";
-import { AdminViewSelector } from "./pages/AdminViewSelector";
-import { AdminCompanies } from "./pages/AdminCompanies";
-import { AdminUsers } from "./pages/AdminUsers";
-import { AdminSubscriptions } from "./pages/AdminSubscriptions";
-import { AdminWorkflows } from "./pages/AdminWorkflows";
-import { AdminModules } from "./pages/AdminModules";
-import { AdminCompanyDetail } from "./pages/AdminCompanyDetail";
+
+const DashboardHome = lazy(() =>
+  import("./pages/DashboardHome").then((m) => ({ default: m.DashboardHome })),
+);
+const ResearchHub = lazy(() =>
+  import("./pages/ResearchHub").then((m) => ({ default: m.ResearchHub })),
+);
+const WarRoom = lazy(() =>
+  import("./pages/WarRoom").then((m) => ({ default: m.WarRoom })),
+);
+const LoginPage = lazy(() =>
+  import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("./pages/ForgotPasswordPage").then((m) => ({
+    default: m.ForgotPasswordPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("./pages/ResetPasswordPage").then((m) => ({
+    default: m.ResetPasswordPage,
+  })),
+);
+const AdminPanel = lazy(() =>
+  import("./pages/AdminPanel").then((m) => ({ default: m.AdminPanel })),
+);
+const AdminDashboard = lazy(() =>
+  import("./pages/AdminDashboard").then((m) => ({
+    default: m.AdminDashboard,
+  })),
+);
+const AdminViewSelector = lazy(() =>
+  import("./pages/AdminViewSelector").then((m) => ({
+    default: m.AdminViewSelector,
+  })),
+);
+const AdminCompanies = lazy(() =>
+  import("./pages/AdminCompanies").then((m) => ({
+    default: m.AdminCompanies,
+  })),
+);
+const AdminUsers = lazy(() =>
+  import("./pages/AdminUsers").then((m) => ({ default: m.AdminUsers })),
+);
+const AdminSubscriptions = lazy(() =>
+  import("./pages/AdminSubscriptions").then((m) => ({
+    default: m.AdminSubscriptions,
+  })),
+);
+const AdminWorkflows = lazy(() =>
+  import("./pages/AdminWorkflows").then((m) => ({
+    default: m.AdminWorkflows,
+  })),
+);
+const AdminModules = lazy(() =>
+  import("./pages/AdminModules").then((m) => ({ default: m.AdminModules })),
+);
+const AdminCompanyDetail = lazy(() =>
+  import("./pages/AdminCompanyDetail").then((m) => ({
+    default: m.AdminCompanyDetail,
+  })),
+);
 
 export interface AvailableRole {
   tenant: string;
@@ -277,60 +331,71 @@ export default function App() {
       }}
     >
       <BrowserRouter>
-        <Routes>
-          {user ? (
-            <>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/select-view" element={<AdminViewSelector />} />
-              <Route path="/dashboard" element={<AppLayout />}>
-                <Route index element={<DashboardHome />} />
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            {user ? (
+              <>
                 <Route
-                  path="research-hub"
-                  element={
-                    <ModuleGuard moduleKey="research-hub">
-                      <ResearchHub />
-                    </ModuleGuard>
-                  }
+                  path="/"
+                  element={<Navigate to="/dashboard" replace />}
                 />
-                <Route
-                  path="war-room"
-                  element={
-                    <ModuleGuard moduleKey="war-room">
-                      <WarRoom />
-                    </ModuleGuard>
-                  }
-                />
-              </Route>
-              {user.isPlatformAdmin && (
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="companies" element={<AdminCompanies />} />
+                <Route path="/select-view" element={<AdminViewSelector />} />
+                <Route path="/dashboard" element={<AppLayout />}>
+                  <Route index element={<DashboardHome />} />
                   <Route
-                    path="companies/:slug"
-                    element={<AdminCompanyDetail />}
+                    path="research-hub"
+                    element={
+                      <ModuleGuard moduleKey="research-hub">
+                        <ResearchHub />
+                      </ModuleGuard>
+                    }
                   />
-                  <Route path="users" element={<AdminUsers />} />
                   <Route
-                    path="subscriptions"
-                    element={<AdminSubscriptions />}
+                    path="war-room"
+                    element={
+                      <ModuleGuard moduleKey="war-room">
+                        <WarRoom />
+                      </ModuleGuard>
+                    }
                   />
-                  <Route path="workflows" element={<AdminWorkflows />} />
-                  <Route path="modules" element={<AdminModules />} />
-                  <Route path="settings" element={<AdminPanel />} />
                 </Route>
-              )}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </>
-          ) : (
-            <>
-              <Route path="/" element={<LoginPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-          )}
-        </Routes>
+                {user.isPlatformAdmin && (
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="companies" element={<AdminCompanies />} />
+                    <Route
+                      path="companies/:slug"
+                      element={<AdminCompanyDetail />}
+                    />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route
+                      path="subscriptions"
+                      element={<AdminSubscriptions />}
+                    />
+                    <Route path="workflows" element={<AdminWorkflows />} />
+                    <Route path="modules" element={<AdminModules />} />
+                    <Route path="settings" element={<AdminPanel />} />
+                  </Route>
+                )}
+                <Route
+                  path="*"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+              </>
+            ) : (
+              <>
+                <Route path="/" element={<LoginPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </>
+            )}
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthContext.Provider>
   );
