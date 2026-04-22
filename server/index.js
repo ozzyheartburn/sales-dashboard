@@ -3157,7 +3157,7 @@ async function sendPasswordResetEmail(email, resetToken, name = null) {
   }
 }
 
-// Login with email + password (step 1: send verification code)
+// Login with email + password (single-step)
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -3180,44 +3180,33 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Generate verification code
-    const verificationCode = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Store verification code
-    await platformDb.collection("verification_codes").updateOne(
-      { email: normalizedEmail },
-      {
-        $set: {
-          email: normalizedEmail,
-          code: verificationCode,
-          expiresAt,
-          createdAt: new Date().toISOString(),
-        },
-      },
-      { upsert: true },
-    );
-
-    // Send verification email
-    const emailSent = await sendVerificationEmail(
-      normalizedEmail,
-      verificationCode,
-      authUser.name,
-    );
-
-    if (!emailSent) {
-      return res
-        .status(500)
-        .json({ error: "Failed to send verification email" });
+    const userData = await resolveLoginUser(normalizedEmail);
+    if (!userData) {
+      return res.status(403).json({
+        error: "No tenant found for this email. Ask an admin to invite you.",
+      });
     }
 
-    console.log(`Login attempt: ${normalizedEmail} — verification code sent`);
+    if (authUser.name && userData.name === normalizedEmail.split("@")[0]) {
+      userData.name = authUser.name;
+    }
+
+    const credential = `session-${Date.now()}-${normalizedEmail}`;
+    await platformDb
+      .collection("auth_users")
+      .updateOne(
+        { email: normalizedEmail },
+        { $set: { lastLoginAt: new Date().toISOString() } },
+      );
+
+    console.log(
+      `Login successful: ${normalizedEmail} → tenants: ${userData.linkedTenants.join(", ")}`,
+    );
 
     res.json({
       success: true,
-      step: "verify_email",
-      message: "Verification code sent to your email",
-      email: normalizedEmail,
+      user: userData,
+      credential,
     });
   } catch (err) {
     console.error("Error with login:", err);

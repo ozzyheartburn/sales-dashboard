@@ -7,7 +7,6 @@ import {
   LogIn,
   Eye,
   EyeOff,
-  ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
@@ -25,10 +24,8 @@ const API_BASE =
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [step, setStep] = useState<"credentials" | "verify">("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,45 +55,15 @@ export function LoginPage() {
         return;
       }
 
-      if (data.step === "verify_email") {
-        setStep("verify");
-        setError(null);
-      }
-    } catch {
-      setError("Login failed. Please try again.");
-    }
-    setIsLoading(false);
-  };
-
-  const handleVerifyEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!verificationCode) {
-      setError("Please enter the verification code.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: verificationCode }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Verification failed");
-        setIsLoading(false);
+      if (data.user && data.credential) {
+        login(data.user, data.credential);
+        navigate("/select-view");
         return;
       }
 
-      login(data.user, data.credential);
-      navigate("/select-view");
+      setError("Login failed");
     } catch {
-      setError("Verification failed. Please try again.");
+      setError("Login failed. Please try again.");
     }
     setIsLoading(false);
   };
@@ -204,325 +171,176 @@ export function LoginPage() {
           }}
         >
           <div>
-            {step === "credentials" && (
-              <>
-                <h2
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    color: "var(--on-background)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Sign in
-                </h2>
-                <p
-                  style={{
-                    color: "var(--on-surface-variant)",
-                    marginBottom: "2rem",
-                  }}
-                >
-                  Enter your credentials to continue
-                </p>
+            <>
+              <h2
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: "var(--on-background)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Sign in
+              </h2>
+              <p
+                style={{
+                  color: "var(--on-surface-variant)",
+                  marginBottom: "2rem",
+                }}
+              >
+                Enter your credentials to continue
+              </p>
 
-                <form onSubmit={handleLoginSubmit}>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        background: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.3)",
-                        borderRadius: "8px",
-                        padding: "12px 16px",
-                        marginBottom: "1rem",
-                        fontSize: "14px",
-                        color: "var(--error)",
-                      }}
-                    >
-                      {error}
-                    </motion.div>
-                  )}
+              <form onSubmit={handleLoginSubmit}>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: "8px",
+                      padding: "12px 16px",
+                      marginBottom: "1rem",
+                      fontSize: "14px",
+                      color: "var(--error)",
+                    }}
+                  >
+                    {error}
+                  </motion.div>
+                )}
 
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "var(--on-surface)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "1px solid rgba(167,176,222,0.3)",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        background: "var(--surface-container-lowest)",
-                        color: "var(--on-surface)",
-                        boxSizing: "border-box",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginBottom: "2rem" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "var(--on-surface)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Password
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        style={{
-                          width: "100%",
-                          padding: "12px 16px",
-                          border: "1px solid rgba(167,176,222,0.3)",
-                          borderRadius: "8px",
-                          fontSize: "14px",
-                          background: "var(--surface-container-lowest)",
-                          color: "var(--on-surface)",
-                          boxSizing: "border-box",
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          position: "absolute",
-                          right: "12px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "var(--on-surface-variant)",
-                          padding: "4px",
-                        }}
-                      >
-                        {showPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading}
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "var(--on-surface)",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
-                      background: isLoading
-                        ? "rgba(18,74,241,0.5)"
-                        : "var(--primary)",
-                      color: "#fff",
-                      border: "none",
+                      border: "1px solid rgba(167,176,222,0.3)",
                       borderRadius: "8px",
                       fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
+                      background: "var(--surface-container-lowest)",
+                      color: "var(--on-surface)",
+                      boxSizing: "border-box",
                     }}
-                  >
-                    <LogIn size={18} />
-                    {isLoading ? "Signing in..." : "Sign in"}
-                  </motion.button>
-                </form>
-
-                <div
-                  style={{
-                    marginTop: "1.5rem",
-                    paddingTop: "1.5rem",
-                    borderTop: "1px solid rgba(167,176,222,0.2)",
-                    textAlign: "center",
-                  }}
-                >
-                  <button
-                    onClick={() => navigate("/forgot-password")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--primary)",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Forgot your password?
-                  </button>
+                  />
                 </div>
-              </>
-            )}
 
-            {step === "verify" && (
-              <>
-                <h2
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    color: "var(--on-background)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Verify your email
-                </h2>
-                <p
-                  style={{
-                    color: "var(--on-surface-variant)",
-                    marginBottom: "2rem",
-                  }}
-                >
-                  We sent a code to <strong>{email}</strong>
-                </p>
-
-                <form onSubmit={handleVerifyEmail}>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        background: "rgba(239,68,68,0.1)",
-                        border: "1px solid rgba(239,68,68,0.3)",
-                        borderRadius: "8px",
-                        padding: "12px 16px",
-                        marginBottom: "1rem",
-                        fontSize: "14px",
-                        color: "var(--error)",
-                      }}
-                    >
-                      {error}
-                    </motion.div>
-                  )}
-
-                  <div style={{ marginBottom: "2rem" }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "var(--on-surface)",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Verification code
-                    </label>
+                <div style={{ marginBottom: "2rem" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "var(--on-surface)",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Password
+                  </label>
+                  <div style={{ position: "relative" }}>
                     <input
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="000000"
-                      maxLength={6}
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
                       style={{
                         width: "100%",
                         padding: "12px 16px",
                         border: "1px solid rgba(167,176,222,0.3)",
                         borderRadius: "8px",
-                        fontSize: "24px",
-                        fontWeight: 700,
-                        letterSpacing: "8px",
-                        textAlign: "center",
+                        fontSize: "14px",
                         background: "var(--surface-container-lowest)",
                         color: "var(--on-surface)",
                         boxSizing: "border-box",
-                        fontFamily: "'Courier New', monospace",
                       }}
                     />
-                    <p
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
                       style={{
-                        fontSize: "12px",
+                        position: "absolute",
+                        right: "12px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
                         color: "var(--on-surface-variant)",
-                        marginTop: "8px",
+                        padding: "4px",
                       }}
                     >
-                      Check your email for the code. It expires in 10 minutes.
-                    </p>
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
+                </div>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: isLoading
-                        ? "rgba(18,74,241,0.5)"
-                        : "var(--primary)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: isLoading ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    {isLoading ? "Verifying..." : "Verify"}
-                  </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: isLoading
+                      ? "rgba(18,74,241,0.5)"
+                      : "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <LogIn size={18} />
+                  {isLoading ? "Signing in..." : "Sign in"}
+                </motion.button>
+              </form>
 
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    onClick={() => {
-                      setStep("credentials");
-                      setVerificationCode("");
-                      setError(null);
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "transparent",
-                      color: "var(--primary)",
-                      border: "1px solid rgba(18,74,241,0.3)",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      marginTop: "1rem",
-                    }}
-                  >
-                    <ArrowLeft size={18} />
-                    Back to login
-                  </motion.button>
-                </form>
-              </>
-            )}
+              <div
+                style={{
+                  marginTop: "1.5rem",
+                  paddingTop: "1.5rem",
+                  borderTop: "1px solid rgba(167,176,222,0.2)",
+                  textAlign: "center",
+                }}
+              >
+                <button
+                  onClick={() => navigate("/forgot-password")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--primary)",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            </>
           </div>
         </motion.div>
       </div>
@@ -538,4 +356,3 @@ export function LoginPage() {
     </div>
   );
 }
-
