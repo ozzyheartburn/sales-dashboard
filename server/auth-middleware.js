@@ -6,7 +6,6 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Platform admin emails — only these users get full platform access
 const PLATFORM_ADMIN_EMAILS = [
   "alimelkkilaoskari@gmail.com",
-  "samuli.melart@gmail.com",
 ];
 
 // Verify Google ID token from Authorization: Bearer <id_token>

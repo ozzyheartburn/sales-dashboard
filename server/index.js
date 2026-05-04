@@ -4024,6 +4024,34 @@ async function seedIdentityDB() {
     },
   );
 
+  // Ensure Samuli is not a platform_admin — update to end_user if present
+  await companiesCol.updateOne(
+    { customer_company_id: "comp_pg_machine", "users.email": "samuli.melart@gmail.com" },
+    { $set: { "users.$.role": "end_user", "users.$.customer_user_id_rbac": "end_user" } },
+  );
+
+  // Ensure Ruth Valle exists as sales end_user
+  await companiesCol.updateOne(
+    {
+      customer_company_id: "comp_pg_machine",
+      "users.email": { $ne: "oskari.ali-melkkila@constructor.io" },
+    },
+    {
+      $push: {
+        users: {
+          customer_user_id: "usr_ruth",
+          name: "Ruth Valle",
+          email: "oskari.ali-melkkila@constructor.io",
+          role: "end_user",
+          department: "Sales",
+          manager: null,
+          customer_user_id_rbac: "end_user",
+          createdAt: new Date().toISOString(),
+        },
+      },
+    },
+  );
+
   console.log("  ✅ pg_identity database seeded (companies + RBAC policies)");
 }
 

@@ -56,12 +56,12 @@ const MOCK_USERS: MockUser[] = [
   },
   {
     id: "2",
-    email: "samuli.melart@gmail.com",
-    name: "Samuli Melart",
-    role: "platform_admin",
+    email: "oskari.ali-melkkila@constructor.io",
+    name: "Ruth Valle",
+    role: "end_user",
     company: "PG Machine",
     status: "active",
-    lastLogin: "2026-04-16T14:20:00Z",
+    lastLogin: "2026-05-04T09:00:00Z",
   },
   {
     id: "5",
