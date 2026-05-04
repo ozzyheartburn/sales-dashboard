@@ -20,6 +20,14 @@ interface Account {
   companyName: string;
   buyingSignalScore: number;
   priority: string;
+  timestamp?: string;
+  insights?: {
+    strategicContext?: { title: string; description: string }[];
+    ecommercePriorities?: { title: string; description: string }[];
+    activeInitiatives?: { title: string; description: string }[];
+    keyChallenges?: { title: string; description: string }[];
+    opportunityFrame?: { title: string; description: string }[];
+  };
   champion_cxo_candidates?: { full_name: string }[];
   champion_vp_director_candidates?: { full_name: string }[];
   champion_enduser_candidates?: { full_name: string }[];
@@ -27,56 +35,17 @@ interface Account {
 
 const API_URL = import.meta.env.VITE_API_URL || "";
 
-const priorityAlerts = [
-  {
-    id: 1,
-    severity: "medium",
-    title: "Bestseller — Stakeholder coverage gap",
-    detail:
-      "You have identified only 3 potential stakeholders at Bestseller, and none of them have a mobile number in the notes.",
-    owner: "AI",
-    since: "Just now",
-    action: "Go to Org Chart",
-    link: "/dashboard/war-room",
-    externalLink: false,
-  },
-  {
-    id: 2,
-    severity: "high",
-    title: "RevolutionRace hired Peter Jansson as new CTO",
-    detail:
-      "Your target account RevolutionRace hired Peter Jansson on 1st November as their new CTO with a main task of future-proofing ecommerce tech stack.",
-    owner: "AI",
-    since: "2d ago",
-    action: "View LinkedIn Profile",
-    link: "https://linkedin.com/in/janssonpeter",
-    externalLink: true,
-  },
-  {
-    id: 3,
-    severity: "medium",
-    title: "Nordics ecommerce growth — P1 accounts outperforming peers",
-    detail:
-      "The Nordics ecommerce market is growing at 10–14% annually. Your P1 accounts Nemlig, Matas Group and SOK significantly outperform against their peers.",
-    owner: "AI",
-    since: "Today",
-    action: "View Research Hub",
-    link: "/dashboard/research-hub",
-    externalLink: false,
-  },
-  {
-    id: 4,
-    severity: "high",
-    title: "No meetings in 2 weeks — Onninen & Helly Hansen",
-    detail:
-      "You haven't had any meetings during the last 2 weeks with Onninen and Helly Hansen. I have built a new value-based point of view to help.",
-    owner: "AI",
-    since: "14d",
-    action: "Link to POV Document",
-    link: "/dashboard/research-hub",
-    externalLink: false,
-  },
-];
+interface InsightAlert {
+  id: string;
+  severity: "high" | "medium";
+  title: string;
+  detail: string;
+  owner: string;
+  since: string;
+  action: string;
+  link: string;
+  externalLink: boolean;
+}
 
 const sevStyle: Record<
   string,
@@ -98,7 +67,7 @@ export function DashboardHome() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const authHeaders = buildAuthHeaders(user);
-  const [dismissed, setDismissed] = useState<number[]>([]);
+  const [dismissed, setDismissed] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
@@ -109,7 +78,41 @@ export function DashboardHome() {
       .catch(() => {});
   }, []);
 
-  const activeAlerts = priorityAlerts.filter((a) => !dismissed.includes(a.id));
+  const insightAlerts: InsightAlert[] = accounts
+    .filter((a) => a.companyName)
+    .sort((a, b) => (b.buyingSignalScore || 0) - (a.buyingSignalScore || 0))
+    .map((account) => {
+      const insights = account.insights || {};
+      const keyChallenge = insights.keyChallenges?.[0];
+      const opportunity = insights.opportunityFrame?.[0];
+      const initiative = insights.activeInitiatives?.[0];
+      const strategic = insights.strategicContext?.[0];
+
+      const firstInsight =
+        keyChallenge || opportunity || initiative || strategic || null;
+
+      return {
+        id: account.companyName,
+        severity: (account.priority === "P0" ? "high" : "medium") as
+          | "high"
+          | "medium",
+        title: `${account.companyName} — ${firstInsight?.title || "AI insight available"}`,
+        detail:
+          firstInsight?.description ||
+          "No structured insight summary yet. Open the Value Pyramid to review and refresh account-level AI findings.",
+        owner: "AI",
+        since: account.timestamp
+          ? new Date(account.timestamp).toLocaleDateString()
+          : "Recently",
+        action: "Open Value Pyramid",
+        link: `/dashboard/war-room?account=${encodeURIComponent(account.companyName)}`,
+        externalLink: false,
+      };
+    })
+    .filter((a) => a.detail)
+    .slice(0, 6);
+
+  const activeAlerts = insightAlerts.filter((a) => !dismissed.includes(a.id));
 
   const totalAccounts = accounts.length;
   const completedResearch = accounts.filter(
@@ -364,7 +367,9 @@ export function DashboardHome() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/dashboard/war-room")}
+          onClick={() =>
+            navigate(activeAlerts[0]?.link || "/dashboard/war-room")
+          }
           style={{
             flexShrink: 0,
             padding: "0.55rem 1.15rem",
