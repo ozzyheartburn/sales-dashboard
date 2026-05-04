@@ -189,49 +189,61 @@ else
   echo "  ✓ Service created"
 fi
 
-# ─── Step 9: Wait for public IP ────────────────────────────────────────────
+ALB_DNS="pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com"
+TG_ARN="arn:aws:elasticloadbalancing:$REGION:$ACCOUNT_ID:targetgroup/pg-machine-tg/5b40e4c9c3c0fd94"
+
+# ─── Step 9: Wait for new task and register it with the ALB target group ─────
 echo ""
 echo "→ Waiting for task to start (this may take 1-2 minutes)..."
-sleep 15
-TASK_ARN=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --region "$REGION" --query 'taskArns[0]' --output text)
 
-if [ -n "$TASK_ARN" ] && [ "$TASK_ARN" != "None" ]; then
-  ENI_ID=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --region "$REGION" \
-    --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
-  
-  if [ -n "$ENI_ID" ] && [ "$ENI_ID" != "None" ]; then
-    PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI_ID" --region "$REGION" \
-      --query 'NetworkInterfaces[0].Association.PublicIp' --output text)
+NEW_TASK_ARN=""
+for i in $(seq 1 12); do
+  NEW_TASK_ARN=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --region "$REGION" --query 'taskArns[0]' --output text 2>/dev/null)
+  if [ -n "$NEW_TASK_ARN" ] && [ "$NEW_TASK_ARN" != "None" ]; then
+    TASK_STATUS=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$NEW_TASK_ARN" --region "$REGION" --query 'tasks[0].lastStatus' --output text 2>/dev/null)
+    [ "$TASK_STATUS" = "RUNNING" ] && break
   fi
-fi
+  echo "  Still waiting... ($i/12)"
+  sleep 10
+done
 
-# If task isn't ready yet, wait a bit more and retry
-if [ -z "$PUBLIC_IP" ] || [ "$PUBLIC_IP" = "None" ]; then
-  echo "  Task still starting, waiting 30 more seconds..."
-  sleep 30
-  TASK_ARN=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --region "$REGION" --query 'taskArns[0]' --output text)
-  if [ -n "$TASK_ARN" ] && [ "$TASK_ARN" != "None" ]; then
-    ENI_ID=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" --region "$REGION" \
-      --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
-    if [ -n "$ENI_ID" ] && [ "$ENI_ID" != "None" ]; then
-      PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI_ID" --region "$REGION" \
-        --query 'NetworkInterfaces[0].Association.PublicIp' --output text)
-    fi
+if [ -z "$NEW_TASK_ARN" ] || [ "$NEW_TASK_ARN" = "None" ]; then
+  echo "  ⚠️  Could not detect running task. Register manually."
+else
+  # Get private IP of new task
+  NEW_PRIVATE_IP=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$NEW_TASK_ARN" --region "$REGION" \
+    --query 'tasks[0].attachments[0].details[?name==`privateIPv4Address`].value' --output text 2>/dev/null)
+
+  if [ -n "$NEW_PRIVATE_IP" ] && [ "$NEW_PRIVATE_IP" != "None" ]; then
+    # Deregister all old targets
+    OLD_TARGETS=$(aws --region "$REGION" elbv2 describe-target-health --target-group-arn "$TG_ARN" \
+      --query 'TargetHealthDescriptions[?TargetHealth.State!=`healthy` || Target.Id!=`'"$NEW_PRIVATE_IP"'`].Target.Id' \
+      --output text 2>/dev/null)
+    for OLD_IP in $OLD_TARGETS; do
+      [ "$OLD_IP" = "$NEW_PRIVATE_IP" ] && continue
+      aws --region "$REGION" elbv2 deregister-targets --target-group-arn "$TG_ARN" --targets "Id=$OLD_IP,Port=$PORT" 2>/dev/null || true
+      echo "  ✓ Deregistered old target: $OLD_IP"
+    done
+
+    # Register new task
+    aws --region "$REGION" elbv2 register-targets --target-group-arn "$TG_ARN" --targets "Id=$NEW_PRIVATE_IP,Port=$PORT"
+    echo "  ✓ Registered new task: $NEW_PRIVATE_IP → ALB target group"
+
+    # Wait for healthy
+    echo "  Waiting for health check..."
+    for i in $(seq 1 6); do
+      HEALTH=$(aws --region "$REGION" elbv2 describe-target-health --target-group-arn "$TG_ARN" \
+        --targets "Id=$NEW_PRIVATE_IP,Port=$PORT" \
+        --query 'TargetHealthDescriptions[0].TargetHealth.State' --output text 2>/dev/null)
+      [ "$HEALTH" = "healthy" ] && echo "  ✓ Target is healthy" && break
+      echo "  Health: $HEALTH ($i/6)..."
+      sleep 10
+    done
   fi
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-if [ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "None" ]; then
-  echo "  ✅ Backend deployed: http://$PUBLIC_IP:$PORT"
-
-  # ─── ALB provides stable DNS — no need to update vercel.json ──────────────
-  ALB_DNS="pg-machine-alb-1643756400.eu-north-1.elb.amazonaws.com"
-  echo "  ℹ️  ALB DNS: $ALB_DNS (vercel.json already uses this — no update needed)"
-else
-  echo "  ⚠️  Could not detect public IP. Task may still be starting."
-  echo "  Run manually:"
-  echo "  aws ecs list-tasks --cluster $CLUSTER_NAME --service-name $SERVICE_NAME --region $REGION"
-fi
+echo "  ✅ Backend deployed via ALB: http://$ALB_DNS"
+echo "  ✓  vercel.json → ALB DNS (stable, no IP changes needed)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
