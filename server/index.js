@@ -4026,8 +4026,16 @@ async function seedIdentityDB() {
 
   // Ensure Samuli is not a platform_admin — update to end_user if present
   await companiesCol.updateOne(
-    { customer_company_id: "comp_pg_machine", "users.email": "samuli.melart@gmail.com" },
-    { $set: { "users.$.role": "end_user", "users.$.customer_user_id_rbac": "end_user" } },
+    {
+      customer_company_id: "comp_pg_machine",
+      "users.email": "samuli.melart@gmail.com",
+    },
+    {
+      $set: {
+        "users.$.role": "end_user",
+        "users.$.customer_user_id_rbac": "end_user",
+      },
+    },
   );
 
   // Ensure Ruth Valle exists as sales end_user

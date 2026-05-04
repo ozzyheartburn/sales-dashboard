@@ -37,6 +37,7 @@ import {
   Plus,
   RefreshCw,
   Loader2,
+  ChevronDown,
   ExternalLink as LinkedinIcon,
 } from "lucide-react";
 
@@ -854,6 +855,7 @@ export function WarRoom() {
     title: string;
     description: string;
   } | null>(null);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [newPerson, setNewPerson] = useState({
     name: "",
@@ -1123,17 +1125,43 @@ export function WarRoom() {
               justifyContent: "space-between",
             }}
           >
-            <div>
-              <div
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowAccountDropdown((v) => !v)}
                 style={{
-                  fontFamily: "var(--font-headline)",
-                  fontWeight: 800,
-                  fontSize: "1.4rem",
-                  color: "var(--on-background)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  cursor: accounts.length > 1 ? "pointer" : "default",
                 }}
               >
-                {selectedAccount?.companyName || "Select an Account"}
-              </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-headline)",
+                    fontWeight: 800,
+                    fontSize: "1.4rem",
+                    color: "var(--on-background)",
+                  }}
+                >
+                  {selectedAccount?.companyName || "Select an Account"}
+                </div>
+                {accounts.length > 1 && (
+                  <ChevronDown
+                    size={20}
+                    color="var(--on-surface-variant)"
+                    style={{
+                      transition: "transform 150ms ease",
+                      transform: showAccountDropdown
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+              </button>
               {selectedAccount?.website && (
                 <div
                   style={{
@@ -1143,6 +1171,116 @@ export function WarRoom() {
                   }}
                 >
                   {selectedAccount.website}
+                </div>
+              )}
+              {/* Account switcher dropdown */}
+              {showAccountDropdown && accounts.length > 1 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: 0,
+                    zIndex: 200,
+                    background: "var(--surface-container-lowest)",
+                    borderRadius: 12,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                    border: "1px solid rgba(107,113,148,0.15)",
+                    minWidth: 260,
+                    maxHeight: 320,
+                    overflowY: "auto",
+                    padding: "6px 0",
+                  }}
+                >
+                  {accounts.map((acc) => (
+                    <button
+                      key={acc._id}
+                      onClick={() => {
+                        setSelectedAccount(acc);
+                        setShowAccountDropdown(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        padding: "0.6rem 1rem",
+                        background:
+                          acc._id === selectedAccount?._id
+                            ? "var(--surface-container-low)"
+                            : "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        gap: 10,
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontFamily: "var(--font-headline)",
+                            fontWeight: 700,
+                            fontSize: "0.9rem",
+                            color:
+                              acc._id === selectedAccount?._id
+                                ? "var(--primary)"
+                                : "var(--on-background)",
+                          }}
+                        >
+                          {acc.companyName}
+                        </div>
+                        {acc.website && (
+                          <div
+                            style={{
+                              fontSize: "0.72rem",
+                              color: "var(--on-surface-variant)",
+                              marginTop: 1,
+                            }}
+                          >
+                            {acc.website}
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {acc.priority && (
+                          <span
+                            style={{
+                              fontSize: "0.6rem",
+                              fontWeight: 700,
+                              fontFamily: "var(--font-label)",
+                              padding: "0.1rem 0.45rem",
+                              borderRadius: 4,
+                              background:
+                                acc.priority === "P1"
+                                  ? "var(--error)"
+                                  : "var(--secondary-brand)",
+                              color: "#fff",
+                            }}
+                          >
+                            {acc.priority}
+                          </span>
+                        )}
+                        {acc.buyingSignalScore != null && (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              color: "var(--primary)",
+                              fontFamily: "var(--font-label)",
+                            }}
+                          >
+                            {acc.buyingSignalScore}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

@@ -4,9 +4,7 @@ const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Platform admin emails — only these users get full platform access
-const PLATFORM_ADMIN_EMAILS = [
-  "alimelkkilaoskari@gmail.com",
-];
+const PLATFORM_ADMIN_EMAILS = ["alimelkkilaoskari@gmail.com"];
 
 // Verify Google ID token from Authorization: Bearer <id_token>
 async function verifyGoogleToken(req, res, next) {
