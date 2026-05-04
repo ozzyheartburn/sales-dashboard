@@ -3,9 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../App";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  LayoutDashboard,
   Users,
-  Building2,
   Workflow,
   Settings,
   Sparkles,
@@ -14,7 +12,6 @@ import {
   LogOut,
   ArrowLeftRight,
   Menu,
-  CreditCard,
   Target,
   ToggleRight,
 } from "lucide-react";
@@ -30,10 +27,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const adminNavItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
-  { icon: Building2, label: "Companies", path: "/admin/companies" },
   { icon: Users, label: "Users & Roles", path: "/admin/users" },
-  { icon: CreditCard, label: "Subscriptions", path: "/admin/subscriptions" },
   { icon: Workflow, label: "Workflows", path: "/admin/workflows" },
   { icon: ToggleRight, label: "Module Access", path: "/admin/modules" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },

@@ -35,28 +35,13 @@ const ResetPasswordPage = lazy(() =>
 const AdminPanel = lazy(() =>
   import("./pages/AdminPanel").then((m) => ({ default: m.AdminPanel })),
 );
-const AdminDashboard = lazy(() =>
-  import("./pages/AdminDashboard").then((m) => ({
-    default: m.AdminDashboard,
-  })),
-);
 const AdminViewSelector = lazy(() =>
   import("./pages/AdminViewSelector").then((m) => ({
     default: m.AdminViewSelector,
   })),
 );
-const AdminCompanies = lazy(() =>
-  import("./pages/AdminCompanies").then((m) => ({
-    default: m.AdminCompanies,
-  })),
-);
 const AdminUsers = lazy(() =>
   import("./pages/AdminUsers").then((m) => ({ default: m.AdminUsers })),
-);
-const AdminSubscriptions = lazy(() =>
-  import("./pages/AdminSubscriptions").then((m) => ({
-    default: m.AdminSubscriptions,
-  })),
 );
 const AdminWorkflows = lazy(() =>
   import("./pages/AdminWorkflows").then((m) => ({
@@ -196,17 +181,8 @@ function LoadingScreen() {
         <span
           style={{
             color: "var(--on-surface-variant)",
-            fontSize: "0.85rem",
-            fontFamily: "var(--font-label)",
-            fontWeight: 600,
-          }}
-        >
-          Loading…
+                    <Route index element={<Navigate to="users" replace />} />
         </span>
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    </div>
-  );
 }
 
 function ModuleGuard({
