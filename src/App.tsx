@@ -51,11 +51,6 @@ const AdminWorkflows = lazy(() =>
 const AdminModules = lazy(() =>
   import("./pages/AdminModules").then((m) => ({ default: m.AdminModules })),
 );
-const AdminCompanyDetail = lazy(() =>
-  import("./pages/AdminCompanyDetail").then((m) => ({
-    default: m.AdminCompanyDetail,
-  })),
-);
 
 export interface AvailableRole {
   tenant: string;
@@ -181,8 +176,17 @@ function LoadingScreen() {
         <span
           style={{
             color: "var(--on-surface-variant)",
-                    <Route index element={<Navigate to="users" replace />} />
+            fontSize: "0.85rem",
+            fontFamily: "var(--font-label)",
+            fontWeight: 600,
+          }}
+        >
+          Loading...
         </span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    </div>
+  );
 }
 
 function ModuleGuard({
@@ -337,17 +341,8 @@ export default function App() {
                 </Route>
                 {user.isPlatformAdmin && (
                   <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="companies" element={<AdminCompanies />} />
-                    <Route
-                      path="companies/:slug"
-                      element={<AdminCompanyDetail />}
-                    />
+                    <Route index element={<Navigate to="users" replace />} />
                     <Route path="users" element={<AdminUsers />} />
-                    <Route
-                      path="subscriptions"
-                      element={<AdminSubscriptions />}
-                    />
                     <Route path="workflows" element={<AdminWorkflows />} />
                     <Route path="modules" element={<AdminModules />} />
                     <Route path="settings" element={<AdminPanel />} />
