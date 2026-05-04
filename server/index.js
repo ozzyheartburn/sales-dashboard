@@ -51,7 +51,7 @@ let db;
 async function connectDB() {
   await ensureConnected();
   if (!db) {
-    db = client.db("PG_Machine");
+    db = client.db("PGmachine");
   }
   return db;
 }
@@ -173,7 +173,7 @@ app.get("/api/accounts", async (req, res) => {
     } else {
       database = await connectDB();
     }
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     // Build filter based on role (use RBAC level if available, fall back to role header)
     const effectiveRole = customerRbac || userRole;
@@ -215,7 +215,7 @@ app.put("/api/accounts/:companyName/assign", async (req, res) => {
     } else {
       database = await connectDB();
     }
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     const setFields = { updatedAt: new Date().toISOString() };
     if (assignedTo) setFields.assignedTo = assignedTo.toLowerCase();
@@ -254,7 +254,7 @@ app.delete("/api/accounts/:companyName", async (req, res) => {
     } else {
       database = await connectDB();
     }
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     const result = await collection.deleteOne({
       companyName: { $regex: new RegExp(`^${companyName}$`, "i") },
@@ -291,7 +291,7 @@ app.post("/api/accounts/bulk-assign", async (req, res) => {
     } else {
       database = await connectDB();
     }
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     const results = [];
     for (const a of assignments) {
@@ -483,7 +483,7 @@ app.post("/api/swarm/run", async (req, res) => {
     (async () => {
       try {
         const database = await connectDB();
-        const collection = database.collection("PG_Machine");
+        const collection = database.collection("PGmachine");
 
         // Load tenant workflow overrides
         const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
@@ -827,7 +827,7 @@ app.post("/api/swarm/run-all", async (req, res) => {
     );
 
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     // If specific account_names provided, use those; otherwise fetch all
     let accountNames;
@@ -1170,7 +1170,7 @@ app.post("/api/org-chart/save", async (req, res) => {
     }
 
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     await collection.updateOne(
       { companyName: { $regex: new RegExp(`^${account_name}$`, "i") } },
@@ -1201,7 +1201,7 @@ app.get("/api/org-chart/:accountName", async (req, res) => {
     const accountName = decodeURIComponent(req.params.accountName);
 
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     const account = await collection.findOne(
       { companyName: { $regex: new RegExp(`^${accountName}$`, "i") } },
@@ -1306,9 +1306,9 @@ app.post("/api/research/save", async (req, res) => {
     // Normalize: ensure companyName is set in the data
     researchData.companyName = companyName;
 
-    // Save to legacy MongoDB only (temporary): always write to PG_Machine DB
+    // Save to legacy MongoDB only (temporary): always write to PGmachine DB
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
     // Remove tenant field from stored data to keep it clean
     delete researchData.tenant;
     const result = await collection.updateOne(
@@ -1316,6 +1316,7 @@ app.post("/api/research/save", async (req, res) => {
       {
         $set: {
           ...researchData,
+          research_status: "completed",
           timestamp: researchData.timestamp || new Date().toISOString(),
         },
       },
@@ -1418,7 +1419,7 @@ app.get("/api/research/status/:account", async (req, res) => {
     } else {
       database = await connectDB();
     }
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
     const exists = await collection.findOne(
       { companyName: { $regex: new RegExp(`^${account}$`, "i") } },
       { projection: { _id: 1 } },
@@ -1452,7 +1453,7 @@ app.post("/api/vector-search", async (req, res) => {
 
     // 2. Run $vectorSearch aggregation against Atlas
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     const results = await collection
       .aggregate([
@@ -1569,7 +1570,7 @@ app.post("/api/hybrid-search", async (req, res) => {
     const queryVector = embeddingResponse.data[0].embedding;
 
     const database = await connectDB();
-    const collection = database.collection("PG_Machine");
+    const collection = database.collection("PGmachine");
 
     // 2. Run vector search
     const vectorResults = await collection
@@ -1744,10 +1745,10 @@ app.post("/api/hybrid-search", async (req, res) => {
 // Collection: "SalesActivities" in PG_Machine database
 // =========================================================================
 
-// Helper: sync all PG_Machine research data into a SalesActivities document
+// Helper: sync all PGmachine research data into a SalesActivities document
 async function syncAccountToSalesActivities(companyName) {
   const database = await connectDB();
-  const pgCollection = database.collection("PG_Machine");
+  const pgCollection = database.collection("PGmachine");
   const saCollection = database.collection("SalesActivities");
 
   const account = await pgCollection.findOne(
@@ -1803,7 +1804,7 @@ async function syncAccountToSalesActivities(companyName) {
 app.post("/api/sales-activities/sync", async (req, res) => {
   try {
     const database = await connectDB();
-    const pgCollection = database.collection("PG_Machine");
+    const pgCollection = database.collection("PGmachine");
     const accounts = await pgCollection
       .find({ companyName: { $ne: null } })
       .project({ companyName: 1 })
