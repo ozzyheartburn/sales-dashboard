@@ -71,14 +71,6 @@ const MOCK_ENRICHMENT: Record<
     activeModules: ["Research Hub", "War Room", "Agent Swarm"],
     billingEmail: "billing@pgmachine.com",
   },
-  "6gnordic": {
-    plan: "Pro",
-    mrr: 2400,
-    activeUsers: 8,
-    totalUsers: 10,
-    activeModules: ["Research Hub", "War Room"],
-    billingEmail: "admin@6gnordic.com",
-  },
   pg_identity: {
     plan: "Starter",
     mrr: 1200,

@@ -64,24 +64,6 @@ const MOCK_USERS: MockUser[] = [
     lastLogin: "2026-04-16T14:20:00Z",
   },
   {
-    id: "3",
-    email: "anna.k@6gnordic.com",
-    name: "Anna Korhonen",
-    role: "sales_leader",
-    company: "6G Nordic",
-    status: "active",
-    lastLogin: "2026-04-15T09:10:00Z",
-  },
-  {
-    id: "4",
-    email: "mika.v@6gnordic.com",
-    name: "Mika Virtanen",
-    role: "end_user",
-    company: "6G Nordic",
-    status: "active",
-    lastLogin: "2026-04-14T11:45:00Z",
-  },
-  {
     id: "5",
     email: "lars.n@pgidentity.com",
     name: "Lars Nilsson",
@@ -107,15 +89,6 @@ const MOCK_USERS: MockUser[] = [
     company: "PG Machine",
     status: "active",
     lastLogin: "2026-04-12T08:30:00Z",
-  },
-  {
-    id: "8",
-    email: "petra.h@6gnordic.com",
-    name: "Petra Haapala",
-    role: "end_user",
-    company: "6G Nordic",
-    status: "disabled",
-    lastLogin: "2026-03-20T10:00:00Z",
   },
 ];
 

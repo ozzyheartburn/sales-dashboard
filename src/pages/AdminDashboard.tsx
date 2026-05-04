@@ -37,11 +37,6 @@ const MOCK_TENANT_EXTRAS: Record<
     activeUsers: 12,
     activeModules: ["Research Hub", "War Room", "Agent Swarm"],
   },
-  "6gnordic": {
-    mrr: 2400,
-    activeUsers: 8,
-    activeModules: ["Research Hub", "War Room"],
-  },
   pg_identity: { mrr: 1200, activeUsers: 3, activeModules: ["Research Hub"] },
 };
 
@@ -63,12 +58,6 @@ const USAGE_DATA = [
 
 const RECENT_ACTIVITY = [
   {
-    action: "New company added",
-    detail: "6G Nordic — Pro plan",
-    time: "2h ago",
-    type: "company",
-  },
-  {
     action: "User invited",
     detail: "samuli.melart@gmail.com → PG Machine",
     time: "5h ago",
@@ -85,12 +74,6 @@ const RECENT_ACTIVITY = [
     detail: "Research prompt v3 deployed",
     time: "2d ago",
     type: "workflow",
-  },
-  {
-    action: "New user registered",
-    detail: "anna.k@6gnordic.com",
-    time: "3d ago",
-    type: "user",
   },
 ];
 

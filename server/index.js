@@ -3845,7 +3845,7 @@ async function seedUsersAndRoles(database, tenantSlug) {
     {
       email: "samuli.melart@gmail.com",
       name: "Samuli Melart",
-      primaryTenant: "6gnordic",
+      primaryTenant: "PG_Machine",
     },
   ];
 
@@ -4017,61 +4017,6 @@ async function seedIdentityDB() {
           department: "Master Admin",
           manager: null,
           backupEmail: "oskari.ali-melkkila@hotmail.com",
-          customer_user_id_rbac: "platform_admin",
-          createdAt: new Date().toISOString(),
-        },
-      },
-    },
-  );
-
-  // Seed company: 6G Nordic (Samuli's workspace)
-  await companiesCol.updateOne(
-    { customer_company_id: "comp_6gnordic" },
-    {
-      $set: {
-        customer_company_id: "comp_6gnordic",
-        companyName: "6G Nordic",
-        slug: "6gnordic",
-        databaseName: "6gnordic",
-        status: "active",
-        updatedAt: new Date().toISOString(),
-      },
-      $setOnInsert: {
-        createdAt: new Date().toISOString(),
-        users: [
-          {
-            customer_user_id: "usr_samuli",
-            name: "Samuli Melart",
-            email: "samuli.melart@gmail.com",
-            role: "platform_admin",
-            department: "Master Admin",
-            manager: null,
-            backupEmail: "alimelkkilaoskari@gmail.com",
-            customer_user_id_rbac: "platform_admin",
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      },
-    },
-    { upsert: true },
-  );
-
-  // Ensure Samuli user exists in 6G Nordic company
-  await companiesCol.updateOne(
-    {
-      customer_company_id: "comp_6gnordic",
-      "users.email": { $ne: "samuli.melart@gmail.com" },
-    },
-    {
-      $push: {
-        users: {
-          customer_user_id: "usr_samuli",
-          name: "Samuli Melart",
-          email: "samuli.melart@gmail.com",
-          role: "platform_admin",
-          department: "Master Admin",
-          manager: null,
-          backupEmail: "alimelkkilaoskari@gmail.com",
           customer_user_id_rbac: "platform_admin",
           createdAt: new Date().toISOString(),
         },
