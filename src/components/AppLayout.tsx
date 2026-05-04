@@ -346,7 +346,11 @@ export function AppLayout() {
                       {topAccounts.map((acc, i) => (
                         <button
                           key={acc.companyName}
-                          onClick={() => navigate("/dashboard/war-room")}
+                            onClick={() =>
+                              navigate(
+                                `/dashboard/war-room?account=${encodeURIComponent(acc.companyName)}`,
+                              )
+                            }
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -479,6 +483,8 @@ export function AppLayout() {
                                 role: tu.role || "end_user",
                                 teamName: tu.teamName || null,
                                 isPlatformAdmin: false,
+                                customer_user_id_rbac: tu.role || "end_user",
+                                customer_user_id: null,
                               };
                               login(updatedUser, credential);
                               setRoleSwitcherOpen(false);

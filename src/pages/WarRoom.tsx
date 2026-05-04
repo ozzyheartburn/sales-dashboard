@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth, buildAuthHeaders } from "../App";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ReactFlow,
@@ -836,6 +837,7 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function WarRoom() {
+  const location = useLocation();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1037,6 +1039,12 @@ export function WarRoom() {
     );
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const requestedAccount = (params.get("account") || "").trim();
+    const normalizedRequested = requestedAccount
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
     fetch(`${API_URL}/api/accounts`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data: Account[]) => {
@@ -1047,15 +1055,25 @@ export function WarRoom() {
         if (sorted.length > 0) {
           const normalized = (name?: string) =>
             (name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const fromQuery = normalizedRequested
+            ? sorted.find(
+                (account) => normalized(account.companyName) === normalizedRequested,
+              )
+            : null;
+          const keepCurrent = selectedAccount
+            ? sorted.find((account) => account._id === selectedAccount._id)
+            : null;
           const preferred = sorted.find(
             (account) => normalized(account.companyName) === "mrmarvis",
           );
-          setSelectedAccount(preferred || sorted[0]);
+          setSelectedAccount(fromQuery || keepCurrent || preferred || sorted[0]);
+        } else {
+          setSelectedAccount(null);
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [user?.email, user?.role, activeTenant, location.search]);
 
   const handleSendChat = () => {
     if (!chatInput.trim()) return;
