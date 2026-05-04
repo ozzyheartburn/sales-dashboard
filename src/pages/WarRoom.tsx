@@ -1057,7 +1057,8 @@ export function WarRoom() {
             (name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
           const fromQuery = normalizedRequested
             ? sorted.find(
-                (account) => normalized(account.companyName) === normalizedRequested,
+                (account) =>
+                  normalized(account.companyName) === normalizedRequested,
               )
             : null;
           const keepCurrent = selectedAccount
@@ -1066,7 +1067,9 @@ export function WarRoom() {
           const preferred = sorted.find(
             (account) => normalized(account.companyName) === "mrmarvis",
           );
-          setSelectedAccount(fromQuery || keepCurrent || preferred || sorted[0]);
+          setSelectedAccount(
+            fromQuery || keepCurrent || preferred || sorted[0],
+          );
         } else {
           setSelectedAccount(null);
         }

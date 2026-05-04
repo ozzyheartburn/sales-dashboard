@@ -97,9 +97,8 @@ export function AppLayout() {
   const [tenantUsers, setTenantUsers] = useState<
     { email: string; name?: string; role?: string; teamName?: string | null }[]
   >([]);
-  const [impersonationSource, setImpersonationSource] = useState<AuthUser | null>(
-    null,
-  );
+  const [impersonationSource, setImpersonationSource] =
+    useState<AuthUser | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "";
 
@@ -129,7 +128,8 @@ export function AppLayout() {
       .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
         const filtered = (Array.isArray(data) ? data : []).filter(
-          (u) => u && u.email && u.email.toLowerCase() !== user.email.toLowerCase(),
+          (u) =>
+            u && u.email && u.email.toLowerCase() !== user.email.toLowerCase(),
         );
         setTenantUsers(filtered);
       })
@@ -346,11 +346,11 @@ export function AppLayout() {
                       {topAccounts.map((acc, i) => (
                         <button
                           key={acc.companyName}
-                            onClick={() =>
-                              navigate(
-                                `/dashboard/war-room?account=${encodeURIComponent(acc.companyName)}`,
-                              )
-                            }
+                          onClick={() =>
+                            navigate(
+                              `/dashboard/war-room?account=${encodeURIComponent(acc.companyName)}`,
+                            )
+                          }
                           style={{
                             display: "flex",
                             alignItems: "center",
@@ -470,7 +470,11 @@ export function AppLayout() {
                             key={`imp-${tu.email}`}
                             onClick={() => {
                               if (!user || !credential) return;
-                              if (!localStorage.getItem("impersonation_source_user")) {
+                              if (
+                                !localStorage.getItem(
+                                  "impersonation_source_user",
+                                )
+                              ) {
                                 localStorage.setItem(
                                   "impersonation_source_user",
                                   JSON.stringify(user),
@@ -568,7 +572,9 @@ export function AppLayout() {
                           onClick={() => {
                             if (!credential || !impersonationSource) return;
                             login(impersonationSource, credential);
-                            localStorage.removeItem("impersonation_source_user");
+                            localStorage.removeItem(
+                              "impersonation_source_user",
+                            );
                             setImpersonationSource(null);
                             setRoleSwitcherOpen(false);
                             navigate("/admin");
