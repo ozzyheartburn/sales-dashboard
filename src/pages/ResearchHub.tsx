@@ -28,6 +28,7 @@ import {
   FileText,
   ExternalLink,
   Link2,
+  Trash2,
 } from "lucide-react";
 import {
   BarChart,
@@ -163,6 +164,27 @@ export function ResearchHub() {
     setShowModal(false);
     setAccountName("");
     setWebsite("");
+  };
+
+  const handleDeleteAccount = async (acc: Account, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Delete "${acc.companyName}" from the Research Hub? This cannot be undone.`,
+      )
+    )
+      return;
+    try {
+      const res = await fetch(
+        `${API_URL}/api/accounts/${encodeURIComponent(acc.companyName)}`,
+        { method: "DELETE", headers: authHeaders },
+      );
+      if (res.ok) {
+        setAccounts((prev) => prev.filter((a) => a._id !== acc._id));
+      }
+    } catch {
+      // ignore
+    }
   };
 
   // Poll for research completion when pollingAccount is set
@@ -1372,6 +1394,33 @@ export function ResearchHub() {
                     </span>
                   )}
                 </div>
+              )}
+
+              {/* Delete button */}
+              {canRunResearch && (
+                <button
+                  onClick={(e) => handleDeleteAccount(acc, e)}
+                  title="Delete account"
+                  style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 4,
+                    borderRadius: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#ef4444",
+                    opacity: 0.5,
+                    transition: "opacity 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+                >
+                  <Trash2 size={14} />
+                </button>
               )}
 
               {/* Reports indicator */}

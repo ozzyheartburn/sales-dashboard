@@ -242,6 +242,38 @@ app.put("/api/accounts/:companyName/assign", async (req, res) => {
   }
 });
 
+// Delete a single account by companyName
+app.delete("/api/accounts/:companyName", async (req, res) => {
+  try {
+    const companyName = decodeURIComponent(req.params.companyName);
+    const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
+
+    let database;
+    if (tenantSlug && tenantSlug !== "PG_Machine") {
+      database = await connectTenantDB(tenantSlug);
+    } else {
+      database = await connectDB();
+    }
+    const collection = database.collection("PG_Machine");
+
+    const result = await collection.deleteOne({
+      companyName: { $regex: new RegExp(`^${companyName}$`, "i") },
+    });
+
+    if (result.deletedCount === 0) {
+      return res
+        .status(404)
+        .json({ error: `Account "${companyName}" not found` });
+    }
+
+    console.log(`Account "${companyName}" deleted`);
+    res.json({ success: true, companyName });
+  } catch (err) {
+    console.error("Error deleting account:", err);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 // Bulk assign accounts to a user/team
 app.post("/api/accounts/bulk-assign", async (req, res) => {
   try {
