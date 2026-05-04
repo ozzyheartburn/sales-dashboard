@@ -49,10 +49,9 @@ function resolveUserTenant(connectPlatformDB, connectTenantDB) {
     try {
       const email = req.googleUser.email;
 
-      // Platform admins can specify tenant via header
+      // Platform admins are fixed to the primary tenant to prevent impersonation.
       if (req.isPlatformAdmin) {
-        const tenantSlug = req.headers["x-tenant"] || "PG_Machine";
-        req.tenantSlug = tenantSlug;
+        req.tenantSlug = "PG_Machine";
         req.userRole = "platform_admin";
         next();
         return;

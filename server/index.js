@@ -3015,6 +3015,13 @@ async function resolveLoginUser(normalizedEmail) {
 
   // Platform admins always get all roles for PG_Machine
   if (isPlatformAdmin) {
+    // Prevent cross-tenant role inheritance for platform admins.
+    const pgOnlyRoles = availableRoles.filter((r) => r.tenant === "PG_Machine");
+    availableRoles.length = 0;
+    availableRoles.push(...pgOnlyRoles);
+    linked.length = 0;
+    linked.push("PG_Machine");
+
     if (!linked.includes("PG_Machine")) {
       linked.push("PG_Machine");
     }
