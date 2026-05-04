@@ -290,6 +290,7 @@ export default function App() {
     localStorage.removeItem("auth_user");
     localStorage.removeItem("auth_credential");
     localStorage.removeItem("active_tenant");
+    localStorage.removeItem("impersonation_source_user");
   };
 
   if (isLoading) {

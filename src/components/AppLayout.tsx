@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth, buildAuthHeaders } from "../App";
+import { useAuth, buildAuthHeaders, type AuthUser } from "../App";
 import { motion, AnimatePresence } from "motion/react";
 import {
   LayoutDashboard,
@@ -94,8 +94,47 @@ export function AppLayout() {
   >([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
+  const [tenantUsers, setTenantUsers] = useState<
+    { email: string; name?: string; role?: string; teamName?: string | null }[]
+  >([]);
+  const [impersonationSource, setImpersonationSource] = useState<AuthUser | null>(
+    null,
+  );
 
   const API_URL = import.meta.env.VITE_API_URL || "";
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("impersonation_source_user");
+      if (!raw) {
+        setImpersonationSource(null);
+        return;
+      }
+      setImpersonationSource(JSON.parse(raw));
+    } catch {
+      setImpersonationSource(null);
+      localStorage.removeItem("impersonation_source_user");
+    }
+  }, [user?.email, user?.role]);
+
+  // Platform admins can impersonate users inside their current company tenant.
+  useEffect(() => {
+    if (!user?.isPlatformAdmin || !user?.tenant) {
+      setTenantUsers([]);
+      return;
+    }
+    fetch(`${API_URL}/api/tenants/${encodeURIComponent(user.tenant)}/users`, {
+      headers: authHeaders,
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        const filtered = (Array.isArray(data) ? data : []).filter(
+          (u) => u && u.email && u.email.toLowerCase() !== user.email.toLowerCase(),
+        );
+        setTenantUsers(filtered);
+      })
+      .catch(() => setTenantUsers([]));
+  }, [user?.isPlatformAdmin, user?.tenant, user?.email]);
 
   // Fetch sidebar accounts: prioritize pending/new research, then top signal.
   useEffect(() => {
@@ -407,6 +446,163 @@ export function AppLayout() {
                       marginBottom: 4,
                     }}
                   >
+                    {user?.isPlatformAdmin && tenantUsers.length > 0 && (
+                      <>
+                        <p
+                          style={{
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            color: "var(--on-surface-variant)",
+                            padding: "4px 10px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            fontFamily: "var(--font-label)",
+                          }}
+                        >
+                          Impersonate User
+                        </p>
+                        {tenantUsers.map((tu) => (
+                          <button
+                            key={`imp-${tu.email}`}
+                            onClick={() => {
+                              if (!user || !credential) return;
+                              if (!localStorage.getItem("impersonation_source_user")) {
+                                localStorage.setItem(
+                                  "impersonation_source_user",
+                                  JSON.stringify(user),
+                                );
+                              }
+                              const updatedUser = {
+                                ...user,
+                                email: tu.email.toLowerCase(),
+                                name: tu.name || tu.email,
+                                role: tu.role || "end_user",
+                                teamName: tu.teamName || null,
+                                isPlatformAdmin: false,
+                              };
+                              login(updatedUser, credential);
+                              setRoleSwitcherOpen(false);
+                              navigate("/dashboard");
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              width: "100%",
+                              padding: "8px 10px",
+                              border: "none",
+                              background: "transparent",
+                              borderRadius: 8,
+                              cursor: "pointer",
+                              transition: "background 100ms",
+                              textAlign: "left",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background =
+                                "rgba(167,176,222,0.08)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
+                          >
+                            <ArrowLeftRight
+                              size={12}
+                              color="var(--on-surface-variant)"
+                            />
+                            <div style={{ flex: 1 }}>
+                              <p
+                                style={{
+                                  fontSize: "0.72rem",
+                                  fontWeight: 600,
+                                  color: "var(--on-surface)",
+                                  fontFamily: "var(--font-headline)",
+                                }}
+                              >
+                                {tu.name || tu.email}
+                              </p>
+                              <p
+                                style={{
+                                  fontSize: "0.6rem",
+                                  color: "var(--on-surface-variant)",
+                                }}
+                              >
+                                {ROLE_LABELS[tu.role || "end_user"] ||
+                                  tu.role ||
+                                  "Sales Rep"}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                        <div
+                          style={{
+                            borderTop: "1px solid rgba(167,176,222,0.08)",
+                            marginTop: 4,
+                            paddingTop: 4,
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {!user?.isPlatformAdmin && impersonationSource && (
+                      <>
+                        <p
+                          style={{
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            color: "var(--on-surface-variant)",
+                            padding: "4px 10px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            fontFamily: "var(--font-label)",
+                          }}
+                        >
+                          Impersonation
+                        </p>
+                        <button
+                          onClick={() => {
+                            if (!credential || !impersonationSource) return;
+                            login(impersonationSource, credential);
+                            localStorage.removeItem("impersonation_source_user");
+                            setImpersonationSource(null);
+                            setRoleSwitcherOpen(false);
+                            navigate("/admin");
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            width: "100%",
+                            padding: "8px 10px",
+                            border: "none",
+                            background: "rgba(18,74,241,0.08)",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            transition: "background 100ms",
+                            textAlign: "left",
+                          }}
+                        >
+                          <ArrowLeftRight size={12} color="var(--primary)" />
+                          <span
+                            style={{
+                              fontSize: "0.72rem",
+                              fontWeight: 600,
+                              color: "var(--primary)",
+                              fontFamily: "var(--font-headline)",
+                            }}
+                          >
+                            Stop Impersonating
+                          </span>
+                        </button>
+                        <div
+                          style={{
+                            borderTop: "1px solid rgba(167,176,222,0.08)",
+                            marginTop: 4,
+                            paddingTop: 4,
+                          }}
+                        />
+                      </>
+                    )}
+
                     {availableRoles.length > 0 && (
                       <>
                         <p
